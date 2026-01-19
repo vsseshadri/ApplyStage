@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { View, StyleSheet, ScrollView, Alert, Platform } from 'react-native';
 import { Text, List, Switch, useTheme, Button, Divider, Avatar } from 'react-native-paper';
-import { useAuth } from '../../contexts/AuthContext';
+import { useAuth } from '../contexts/AuthContext';
 import { useThemeStore } from '../stores/themeStore';
 import { Ionicons } from '@expo/vector-icons';
 import * as Linking from 'expo-linking';
