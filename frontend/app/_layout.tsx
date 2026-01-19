@@ -1,8 +1,8 @@
 import React, { useEffect } from 'react';
 import { Stack } from 'expo-router';
 import { PaperProvider, MD3LightTheme, MD3DarkTheme } from 'react-native-paper';
-import { AuthProvider, useAuth } from './contexts/AuthContext';
-import { useThemeStore } from './stores/themeStore';
+import { AuthProvider, useAuth } from '../contexts/AuthContext';
+import { useThemeStore } from '../stores/themeStore';
 import { View, ActivityIndicator, StyleSheet } from 'react-native';
 
 function RootLayoutContent() {
