@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { View, StyleSheet, ScrollView, RefreshControl, Platform } from 'react-native';
 import { Text, Card, useTheme, ActivityIndicator, List } from 'react-native-paper';
-import { LineChart } from 'react-native-gifted-charts';
 import * as SecureStore from 'expo-secure-store';
 import Constants from 'expo-constants';
 import { Ionicons } from '@expo/vector-icons';
@@ -23,9 +22,11 @@ export default function AnalyticsScreen() {
   const [patterns, setPatterns] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const fetchPatterns = async () => {
     try {
+      setError(null);
       const token = await storage.getItem('session_token');
       const response = await fetch(`${API_URL}/api/analytics/patterns`, {
         headers: { Authorization: `Bearer ${token}` },
@@ -33,9 +34,12 @@ export default function AnalyticsScreen() {
       if (response.ok) {
         const data = await response.json();
         setPatterns(data);
+      } else {
+        setError('Failed to load analytics');
       }
     } catch (error) {
       console.error('Failed to fetch patterns:', error);
+      setError('Error loading analytics');
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -59,13 +63,25 @@ export default function AnalyticsScreen() {
     );
   }
 
-  if (!patterns) {
+  if (error || !patterns) {
     return (
       <View style={styles.center}>
-        <Text>No analytics data available</Text>
+        <Ionicons name="analytics-outline" size={64} color={theme.colors.onSurfaceDisabled} />
+        <Text variant="titleLarge" style={{ marginTop: 16, color: theme.colors.onSurfaceDisabled }}>
+          {error || 'No analytics data available'}
+        </Text>
+        <Text variant="bodyMedium" style={{ color: theme.colors.onSurfaceDisabled, marginTop: 8 }}>
+          Add some job applications to see insights
+        </Text>
       </View>
     );
   }
+
+  const totalApps = patterns.total_applications || 0;
+  const stageDistribution = patterns.stage_distribution || {};
+  const jobFamilyDistribution = patterns.job_family_distribution || {};
+  const insights = patterns.insights || [];
+  const recommendations = patterns.recommendations || [];
 
   const getSeverityIcon = (severity: string) => {
     switch (severity) {
@@ -89,6 +105,20 @@ export default function AnalyticsScreen() {
     }
   };
 
+  if (totalApps === 0) {
+    return (
+      <View style={styles.center}>
+        <Ionicons name="analytics-outline" size={64} color={theme.colors.onSurfaceDisabled} />
+        <Text variant="titleLarge" style={{ marginTop: 16, color: theme.colors.onSurfaceDisabled }}>
+          No Applications Yet
+        </Text>
+        <Text variant="bodyMedium" style={{ color: theme.colors.onSurfaceDisabled, marginTop: 8 }}>
+          Add job applications to see AI-powered insights
+        </Text>
+      </View>
+    );
+  }
+
   return (
     <ScrollView
       style={[styles.container, { backgroundColor: theme.colors.background }]}
@@ -102,15 +132,15 @@ export default function AnalyticsScreen() {
           </Text>
           <View style={styles.statsRow}>
             <View style={styles.statItem}>
-              <Text variant="displaySmall">{patterns.total_applications}</Text>
+              <Text variant="displaySmall">{totalApps}</Text>
               <Text variant="bodyMedium">Total Apps</Text>
             </View>
             <View style={styles.statItem}>
-              <Text variant="displaySmall">{Object.keys(patterns.stage_distribution).length}</Text>
+              <Text variant="displaySmall">{Object.keys(stageDistribution).length}</Text>
               <Text variant="bodyMedium">Active Stages</Text>
             </View>
             <View style={styles.statItem}>
-              <Text variant="displaySmall">{Object.keys(patterns.job_family_distribution).length}</Text>
+              <Text variant="displaySmall">{Object.keys(jobFamilyDistribution).length}</Text>
               <Text variant="bodyMedium">Job Families</Text>
             </View>
           </View>
@@ -118,7 +148,7 @@ export default function AnalyticsScreen() {
       </Card>
 
       {/* AI Insights */}
-      {patterns.insights && patterns.insights.length > 0 && (
+      {insights.length > 0 && (
         <Card style={[styles.card, { backgroundColor: theme.colors.elevation.level1 }]}>
           <Card.Content>
             <View style={styles.titleRow}>
@@ -127,7 +157,7 @@ export default function AnalyticsScreen() {
                 AI-Powered Insights
               </Text>
             </View>
-            {patterns.insights.map((insight: any, index: number) => (
+            {insights.map((insight: any, index: number) => (
               <List.Item
                 key={index}
                 title={insight.message}
@@ -148,7 +178,7 @@ export default function AnalyticsScreen() {
       )}
 
       {/* Recommendations */}
-      {patterns.recommendations && patterns.recommendations.length > 0 && (
+      {recommendations.length > 0 && (
         <Card style={[styles.card, { backgroundColor: theme.colors.elevation.level1 }]}>
           <Card.Content>
             <View style={styles.titleRow}>
@@ -157,7 +187,7 @@ export default function AnalyticsScreen() {
                 Recommendations
               </Text>
             </View>
-            {patterns.recommendations.map((rec: string, index: number) => (
+            {recommendations.map((rec: string, index: number) => (
               <List.Item
                 key={index}
                 title={rec}
@@ -170,64 +200,68 @@ export default function AnalyticsScreen() {
       )}
 
       {/* Stage Distribution */}
-      <Card style={[styles.card, { backgroundColor: theme.colors.elevation.level1 }]}>
-        <Card.Content>
-          <Text variant="titleLarge" style={styles.title}>
-            Stage Distribution
-          </Text>
-          {Object.entries(patterns.stage_distribution).map(([stage, count]: [string, any]) => (
-            <View key={stage} style={styles.progressItem}>
-              <Text variant="bodyMedium" style={styles.progressLabel}>
-                {stage}
-              </Text>
-              <View style={styles.progressBarContainer}>
-                <View
-                  style={[
-                    styles.progressBar,
-                    {
-                      width: `${(count / patterns.total_applications) * 100}%`,
-                      backgroundColor: '#3B82F6',
-                    },
-                  ]}
-                />
+      {Object.keys(stageDistribution).length > 0 && (
+        <Card style={[styles.card, { backgroundColor: theme.colors.elevation.level1 }]}>
+          <Card.Content>
+            <Text variant="titleLarge" style={styles.title}>
+              Stage Distribution
+            </Text>
+            {Object.entries(stageDistribution).map(([stage, count]: [string, any]) => (
+              <View key={stage} style={styles.progressItem}>
+                <Text variant="bodyMedium" style={[styles.progressLabel, { fontFamily: 'monospace' }]}>
+                  {stage}
+                </Text>
+                <View style={styles.progressBarContainer}>
+                  <View
+                    style={[
+                      styles.progressBar,
+                      {
+                        width: `${(count / totalApps) * 100}%`,
+                        backgroundColor: '#3B82F6',
+                      },
+                    ]}
+                  />
+                </View>
+                <Text variant="bodyMedium" style={styles.progressCount}>
+                  {count}
+                </Text>
               </View>
-              <Text variant="bodyMedium" style={styles.progressCount}>
-                {count}
-              </Text>
-            </View>
-          ))}
-        </Card.Content>
-      </Card>
+            ))}
+          </Card.Content>
+        </Card>
+      )}
 
       {/* Job Family Distribution */}
-      <Card style={[styles.card, { backgroundColor: theme.colors.elevation.level1 }]}>
-        <Card.Content>
-          <Text variant="titleLarge" style={styles.title}>
-            Job Family Distribution
-          </Text>
-          {Object.entries(patterns.job_family_distribution).map(([family, count]: [string, any]) => (
-            <View key={family} style={styles.progressItem}>
-              <Text variant="bodyMedium" style={styles.progressLabel}>
-                {family}
-              </Text>
-              <View style={styles.progressBarContainer}>
-                <View
-                  style={[
-                    styles.progressBar,
-                    {
-                      width: `${(count / patterns.total_applications) * 100}%`,
-                      backgroundColor: '#10B981',
-                    },
-                  ]}
-                />
+      {Object.keys(jobFamilyDistribution).length > 0 && (
+        <Card style={[styles.card, { backgroundColor: theme.colors.elevation.level1 }]}>
+          <Card.Content>
+            <Text variant="titleLarge" style={styles.title}>
+              Job Family Distribution
+            </Text>
+            {Object.entries(jobFamilyDistribution).map(([family, count]: [string, any]) => (
+              <View key={family} style={styles.progressItem}>
+                <Text variant="bodyMedium" style={styles.progressLabel}>
+                  {family}
+                </Text>
+                <View style={styles.progressBarContainer}>
+                  <View
+                    style={[
+                      styles.progressBar,
+                      {
+                        width: `${(count / totalApps) * 100}%`,
+                        backgroundColor: '#10B981',
+                      },
+                    ]}
+                  />
+                </View>
+                <Text variant="bodyMedium" style={styles.progressCount}>
+                  {count}
+                </Text>
               </View>
-              <Text variant="bodyMedium" style={styles.progressCount}>
-                {count}
-              </Text>
-            </View>
-          ))}
-        </Card.Content>
-      </Card>
+            ))}
+          </Card.Content>
+        </Card>
+      )}
     </ScrollView>
   );
 }
@@ -241,6 +275,7 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+    padding: 32,
   },
   card: {
     marginBottom: 16,
