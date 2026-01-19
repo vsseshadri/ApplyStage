@@ -159,7 +159,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const logout = async () => {
     try {
-      const sessionToken = await SecureStore.getItemAsync('session_token');
+      const sessionToken = await storage.getItem('session_token');
       if (sessionToken) {
         await fetch(`${API_URL}/api/auth/logout`, {
           method: 'POST',
@@ -168,7 +168,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           },
         });
       }
-      await SecureStore.deleteItemAsync('session_token');
+      await storage.deleteItem('session_token');
       setUser(null);
     } catch (error) {
       console.error('Logout error:', error);
