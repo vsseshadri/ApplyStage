@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, StyleSheet, Image, Dimensions } from 'react-native';
 import { Text, Button, useTheme } from 'react-native-paper';
-import { useAuth } from '../contexts/AuthContext';
+import { useAuth } from './contexts/AuthContext';
 import { Ionicons } from '@expo/vector-icons';
 
 const { width } = Dimensions.get('window');

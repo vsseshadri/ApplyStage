@@ -10,8 +10,8 @@ import {
 import { Text, Card, Chip, FAB, useTheme, Searchbar } from 'react-native-paper';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { useJobStore } from '../../stores/jobStore';
-import { getStageColor, WORK_TYPE_COLORS } from '../../utils/colors';
+import { useJobStore } from '../stores/jobStore';
+import { getStageColor, WORK_TYPE_COLORS } from '../utils/colors';
 import { format } from 'date-fns';
 
 const { width } = Dimensions.get('window');

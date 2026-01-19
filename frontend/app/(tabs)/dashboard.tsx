@@ -4,8 +4,8 @@ import { Text, Card, useTheme, ActivityIndicator } from 'react-native-paper';
 import { BarChart, PieChart } from 'react-native-gifted-charts';
 import * as SecureStore from 'expo-secure-store';
 import Constants from 'expo-constants';
-import { useThemeStore } from '../../stores/themeStore';
-import { getStageColor } from '../../utils/colors';
+import { useThemeStore } from '../stores/themeStore';
+import { getStageColor } from '../utils/colors';
 
 const API_URL = Constants.expoConfig?.extra?.EXPO_PUBLIC_BACKEND_URL || process.env.EXPO_PUBLIC_BACKEND_URL;
 const { width } = Dimensions.get('window');
