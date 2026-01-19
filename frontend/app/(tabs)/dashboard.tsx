@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, StyleSheet, ScrollView, Dimensions, RefreshControl } from 'react-native';
+import { View, StyleSheet, ScrollView, Dimensions, RefreshControl, Platform } from 'react-native';
 import { Text, Card, useTheme, ActivityIndicator } from 'react-native-paper';
 import { BarChart, PieChart } from 'react-native-gifted-charts';
 import * as SecureStore from 'expo-secure-store';
@@ -9,6 +9,16 @@ import { getStageColor } from '../utils/colors';
 
 const API_URL = Constants.expoConfig?.extra?.EXPO_PUBLIC_BACKEND_URL || process.env.EXPO_PUBLIC_BACKEND_URL;
 const { width } = Dimensions.get('window');
+
+// Storage adapter for web vs native
+const storage = {
+  async getItem(key: string): Promise<string | null> {
+    if (Platform.OS === 'web') {
+      return localStorage.getItem(key);
+    }
+    return await SecureStore.getItemAsync(key);
+  },
+};
 
 interface DashboardStats {
   total_applications: number;
