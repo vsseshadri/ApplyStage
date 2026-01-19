@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, StyleSheet, ScrollView, RefreshControl } from 'react-native';
+import { View, StyleSheet, ScrollView, RefreshControl, Platform } from 'react-native';
 import { Text, Card, useTheme, ActivityIndicator, List } from 'react-native-paper';
 import { LineChart } from 'react-native-gifted-charts';
 import * as SecureStore from 'expo-secure-store';
@@ -7,6 +7,16 @@ import Constants from 'expo-constants';
 import { Ionicons } from '@expo/vector-icons';
 
 const API_URL = Constants.expoConfig?.extra?.EXPO_PUBLIC_BACKEND_URL || process.env.EXPO_PUBLIC_BACKEND_URL;
+
+// Storage adapter for web vs native
+const storage = {
+  async getItem(key: string): Promise<string | null> {
+    if (Platform.OS === 'web') {
+      return localStorage.getItem(key);
+    }
+    return await SecureStore.getItemAsync(key);
+  },
+};
 
 export default function AnalyticsScreen() {
   const theme = useTheme();
@@ -16,7 +26,7 @@ export default function AnalyticsScreen() {
 
   const fetchPatterns = async () => {
     try {
-      const token = await SecureStore.getItemAsync('session_token');
+      const token = await storage.getItem('session_token');
       const response = await fetch(`${API_URL}/api/analytics/patterns`, {
         headers: { Authorization: `Bearer ${token}` },
       });
