@@ -1,16 +1,12 @@
-import { Text, View, StyleSheet, Image } from "react-native";
-
-const EXPO_PUBLIC_BACKEND_URL = process.env.EXPO_PUBLIC_BACKEND_URL;
+import React from 'react';
+import { View, Text, StyleSheet } from 'react-native';
 
 export default function Index() {
-  console.log(EXPO_PUBLIC_BACKEND_URL, "EXPO_PUBLIC_BACKEND_URL");
-
   return (
     <View style={styles.container}>
-      <Image
-        source={require("../assets/images/app-image.png")}
-        style={styles.image}
-      />
+      <Text style={styles.text}>Job Journey</Text>
+      <Text style={styles.subtext}>Job Application Tracker</Text>
+      <Text style={styles.info}>App is loading...</Text>
     </View>
   );
 }
@@ -18,13 +14,23 @@ export default function Index() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#0c0c0c",
-    alignItems: "center",
-    justifyContent: "center",
+    backgroundColor: '#3B82F6',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  image: {
-    width: "100%",
-    height: "100%",
-    resizeMode: "contain",
+  text: {
+    fontSize: 32,
+    fontWeight: 'bold',
+    color: '#FFF',
+    marginBottom: 8,
+  },
+  subtext: {
+    fontSize: 18,
+    color: '#FFF',
+    marginBottom: 32,
+  },
+  info: {
+    fontSize: 14,
+    color: '#E5E7EB',
   },
 });
