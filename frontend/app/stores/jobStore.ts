@@ -1,8 +1,19 @@
 import { create } from 'zustand';
+import { Platform } from 'react-native';
 import * as SecureStore from 'expo-secure-store';
 import Constants from 'expo-constants';
 
 const API_URL = Constants.expoConfig?.extra?.EXPO_PUBLIC_BACKEND_URL || process.env.EXPO_PUBLIC_BACKEND_URL;
+
+// Storage adapter for web vs native
+const storage = {
+  async getItem(key: string): Promise<string | null> {
+    if (Platform.OS === 'web') {
+      return localStorage.getItem(key);
+    }
+    return await SecureStore.getItemAsync(key);
+  },
+};
 
 interface Job {
   job_id: string;
@@ -33,7 +44,7 @@ interface JobState {
 }
 
 const getAuthHeader = async () => {
-  const token = await SecureStore.getItemAsync('session_token');
+  const token = await storage.getItem('session_token');
   return {
     'Authorization': `Bearer ${token}`,
     'Content-Type': 'application/json',
