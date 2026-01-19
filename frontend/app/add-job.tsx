@@ -17,7 +17,7 @@ import {
   Modal,
 } from 'react-native-paper';
 import { useRouter } from 'expo-router';
-import { useJobStore } from '../stores/jobStore';
+import { useJobStore } from './stores/jobStore';
 import { Ionicons } from '@expo/vector-icons';
 import * as SecureStore from 'expo-secure-store';
 import Constants from 'expo-constants';

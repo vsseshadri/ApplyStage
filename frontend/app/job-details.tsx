@@ -24,8 +24,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { format } from 'date-fns';
 import * as SecureStore from 'expo-secure-store';
 import Constants from 'expo-constants';
-import { useJobStore } from '../stores/jobStore';
-import { getStageColor } from '../utils/colors';
+import { useJobStore } from './stores/jobStore';
+import { getStageColor } from './utils/colors';
 
 const API_URL = Constants.expoConfig?.extra?.EXPO_PUBLIC_BACKEND_URL || process.env.EXPO_PUBLIC_BACKEND_URL;
 
