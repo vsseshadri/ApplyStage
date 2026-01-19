@@ -10,6 +10,16 @@ import Constants from 'expo-constants';
 
 const API_URL = Constants.expoConfig?.extra?.EXPO_PUBLIC_BACKEND_URL || process.env.EXPO_PUBLIC_BACKEND_URL;
 
+// Storage adapter for web vs native
+const storage = {
+  async getItem(key: string): Promise<string | null> {
+    if (Platform.OS === 'web') {
+      return localStorage.getItem(key);
+    }
+    return await SecureStore.getItemAsync(key);
+  },
+};
+
 export default function SettingsScreen() {
   const theme = useTheme();
   const { user, logout } = useAuth();
@@ -27,7 +37,7 @@ export default function SettingsScreen() {
 
   const handleExportCSV = async () => {
     try {
-      const token = await SecureStore.getItemAsync('session_token');
+      const token = await storage.getItem('session_token');
       const url = `${API_URL}/api/jobs/export/csv`;
       
       if (Platform.OS === 'web') {
