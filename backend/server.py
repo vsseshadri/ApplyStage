@@ -636,7 +636,13 @@ async def get_dashboard_stats(current_user: User = Depends(require_auth)):
     
     # Recent applications (last 7 days)
     seven_days_ago = datetime.now(timezone.utc) - timedelta(days=7)
-    recent_apps = [job for job in jobs if job["applied_date"] >= seven_days_ago]
+    recent_apps = []
+    for job in jobs:
+        applied_date = job["applied_date"]
+        if applied_date.tzinfo is None:
+            applied_date = applied_date.replace(tzinfo=timezone.utc)
+        if applied_date >= seven_days_ago:
+            recent_apps.append(job)
     
     return {
         "total_applications": total_applications,
