@@ -669,7 +669,13 @@ async def get_analytics(current_user: User = Depends(require_auth)):
     for i in range(4):
         week_start = now - timedelta(weeks=i+1)
         week_end = now - timedelta(weeks=i)
-        week_jobs = [j for j in jobs if week_start <= j["applied_date"] <= week_end]
+        week_jobs = []
+        for j in jobs:
+            applied_date = j["applied_date"]
+            if applied_date.tzinfo is None:
+                applied_date = applied_date.replace(tzinfo=timezone.utc)
+            if week_start <= applied_date <= week_end:
+                week_jobs.append(j)
         weekly_data[f"Week {i+1}"] = len(week_jobs)
     
     return {
