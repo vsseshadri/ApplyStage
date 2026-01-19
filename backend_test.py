@@ -511,7 +511,7 @@ class JobTrackerAPITester:
         print("\n🧹 Cleaning up test environment...")
         
         # Clean up test data
-        if self.db:
+        if self.db is not None:
             await self.db.users.delete_one({"email": TEST_USER_EMAIL})
             await self.db.user_sessions.delete_one({"session_token": TEST_SESSION_TOKEN})
             if self.test_job_id:
