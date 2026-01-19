@@ -104,7 +104,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       if (response.ok) {
         const data = await response.json();
-        await SecureStore.setItemAsync('session_token', data.session_token);
+        await storage.setItem('session_token', data.session_token);
         setUser(data.user);
       }
     } catch (error) {
