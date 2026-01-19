@@ -114,7 +114,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const checkExistingSession = async () => {
     try {
-      const sessionToken = await SecureStore.getItemAsync('session_token');
+      const sessionToken = await storage.getItem('session_token');
       if (sessionToken) {
         const response = await fetch(`${API_URL}/api/auth/me`, {
           headers: {
@@ -126,7 +126,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           const userData = await response.json();
           setUser(userData);
         } else {
-          await SecureStore.deleteItemAsync('session_token');
+          await storage.deleteItem('session_token');
         }
       }
     } catch (error) {
