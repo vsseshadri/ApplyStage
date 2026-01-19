@@ -11,8 +11,8 @@ import { Text, Card, Chip, FAB, useTheme, Searchbar } from 'react-native-paper';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useJobStore } from '../stores/jobStore';
-import { getStageColor, WORK_TYPE_COLORS } from '../utils/colors';
-import { format } from 'date-fns';
+import { getStageColor } from '../utils/colors';
+import { formatDate } from '../utils/dateFormatter';
 
 const { width } = Dimensions.get('window');
 const isTablet = width >= 768;
@@ -69,7 +69,7 @@ export default function JobsScreen() {
             <Chip
               mode="flat"
               style={[styles.chip, { backgroundColor: getStageColor(item.current_stage) + '20' }]}
-              textStyle={{ color: getStageColor(item.current_stage), fontFamily: 'monospace' }}
+              textStyle={{ color: getStageColor(item.current_stage), fontFamily: 'monospace', fontWeight: '600' }}
             >
               {item.current_stage}
             </Chip>
@@ -91,7 +91,7 @@ export default function JobsScreen() {
 
           <View style={styles.footer}>
             <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant }}>
-              Applied: {format(new Date(item.applied_date), 'MMM dd, yyyy')}
+              Applied: {formatDate(item.applied_date)}
             </Text>
             <Text
               variant="bodySmall"
