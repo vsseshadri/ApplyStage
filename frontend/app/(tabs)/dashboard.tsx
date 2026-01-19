@@ -38,7 +38,7 @@ export default function DashboardScreen() {
 
   const fetchStats = async () => {
     try {
-      const token = await SecureStore.getItemAsync('session_token');
+      const token = await storage.getItem('session_token');
       const response = await fetch(`${API_URL}/api/dashboard/stats`, {
         headers: { Authorization: `Bearer ${token}` },
       });
