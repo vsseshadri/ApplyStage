@@ -1,7 +1,7 @@
 import React from 'react';
 import { Tabs } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { useThemeStore } from '../../stores/themeStore';
+import { useThemeStore } from '../stores/themeStore';
 
 export default function TabLayout() {
   const { actualTheme } = useThemeStore();
