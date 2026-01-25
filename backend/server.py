@@ -573,7 +573,6 @@ async def get_ai_insights(current_user: User = Depends(get_current_user)):
         
         # Track progression
         early_stages = ['applied', 'recruiter_screening']
-        mid_stages = ['phone_screen', 'coding_round_1', 'coding_round_2']
         advanced_stages_list = ['system_design', 'behavioural', 'hiring_manager', 'final_round', 'offer']
         
         if status in advanced_stages_list:
@@ -611,10 +610,6 @@ async def get_ai_insights(current_user: User = Depends(get_current_user)):
     
     # STRATEGIC INSIGHT 3: Pipeline Health & Progression Rates
     if total >= 3:
-        # Calculate progression rate
-        progressed = total - stage_counts['applied'] - stage_counts['rejected']
-        progression_rate = (progressed / total) * 100 if total > 0 else 0
-        
         advanced = stage_progression['advanced']
         if advanced > 0 and active_jobs > 0:
             advanced_rate = (advanced / active_jobs) * 100
