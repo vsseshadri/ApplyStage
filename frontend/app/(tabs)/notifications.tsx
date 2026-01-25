@@ -16,6 +16,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { differenceInDays, format } from 'date-fns';
 import { useFocusEffect } from '@react-navigation/native';
 import Constants from 'expo-constants';
+import { Swipeable } from 'react-native-gesture-handler';
 
 const BACKEND_URL = Constants.expoConfig?.extra?.EXPO_PUBLIC_BACKEND_URL || process.env.EXPO_PUBLIC_BACKEND_URL;
 
@@ -53,7 +54,6 @@ export default function NotificationsScreen() {
       if (response.ok) {
         const jobs = await response.json();
         
-        // Calculate notifications based on follow-up days
         const now = new Date();
         const notifs: Notification[] = [];
 
@@ -63,7 +63,6 @@ export default function NotificationsScreen() {
             const daysSinceApplied = differenceInDays(now, appliedDate);
             const followUpDays = parseInt(job.follow_up_days);
 
-            // If days since applied is greater than or equal to follow-up days, create notification
             if (daysSinceApplied >= followUpDays) {
               notifs.push({
                 id: job.job_id,
@@ -79,7 +78,6 @@ export default function NotificationsScreen() {
           }
         });
 
-        // Sort by days overdue (most overdue first)
         notifs.sort((a, b) => b.days_overdue - a.days_overdue);
         setNotifications(notifs);
       }
@@ -103,7 +101,7 @@ export default function NotificationsScreen() {
       if (canOpen) {
         await Linking.openURL(emailUrl);
       } else {
-        Alert.alert('Error', 'Unable to open email app. Please check your email settings.');
+        Alert.alert('Error', 'Unable to open email app.');
       }
     } catch (error) {
       console.error('Error opening email:', error);
@@ -112,84 +110,61 @@ export default function NotificationsScreen() {
   };
 
   const handleDismissNotification = (notificationId: string) => {
-    Alert.alert(
-      'Dismiss Notification',
-      'Are you sure you want to dismiss this reminder?',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Dismiss',
-          style: 'destructive',
-          onPress: () => {
-            setDismissedNotifications(prev => new Set([...prev, notificationId]));
-            setNotifications(prev => prev.filter(n => n.id !== notificationId));
-          },
-        },
-      ]
+    setDismissedNotifications(prev => new Set([...prev, notificationId]));
+    setNotifications(prev => prev.filter(n => n.id !== notificationId));
+  };
+
+  const renderRightActions = (notificationId: string) => {
+    return (
+      <TouchableOpacity
+        style={styles.deleteAction}
+        onPress={() => handleDismissNotification(notificationId)}
+      >
+        <Ionicons name="trash-outline" size={20} color="#FFF" />
+        <Text style={styles.deleteText}>Delete</Text>
+      </TouchableOpacity>
     );
   };
 
   const getUrgencyColor = (daysOverdue: number) => {
-    if (daysOverdue > 7) return '#EF4444'; // Red
-    if (daysOverdue > 3) return '#F59E0B'; // Orange
-    return '#3B82F6'; // Blue
+    if (daysOverdue > 7) return '#EF4444';
+    if (daysOverdue > 3) return '#F59E0B';
+    return '#3B82F6';
   };
 
   const renderNotification = (notification: Notification) => {
     const urgencyColor = getUrgencyColor(notification.days_overdue);
 
     return (
-      <View
+      <Swipeable
         key={notification.id}
-        style={[
-          styles.notificationCard,
-          { backgroundColor: colors.card, borderLeftColor: urgencyColor }
-        ]}
+        renderRightActions={() => renderRightActions(notification.id)}
+        overshootRight={false}
       >
-        <View style={styles.notificationContent}>
-          <View style={styles.notificationHeader}>
-            <View style={{ flex: 1 }}>
-              <Text style={[styles.companyName, { color: colors.text }]}>
+        <View style={[styles.notificationCard, { backgroundColor: colors.card, borderLeftColor: urgencyColor }]}>
+          <View style={styles.notificationRow}>
+            <View style={styles.notificationInfo}>
+              <Text style={[styles.companyName, { color: colors.text }]} numberOfLines={1}>
                 {notification.company_name}
               </Text>
-              <Text style={[styles.position, { color: colors.textSecondary }]}>
+              <Text style={[styles.position, { color: colors.textSecondary }]} numberOfLines={1}>
                 {notification.position}
               </Text>
+              <Text style={[styles.overdueText, { color: urgencyColor }]}>
+                {notification.days_overdue === 0 ? `Due today` : `${notification.days_overdue}d overdue`}
+              </Text>
             </View>
+            
             <TouchableOpacity
-              onPress={() => handleDismissNotification(notification.id)}
-              style={styles.deleteIcon}
+              style={[styles.followUpButton, { borderColor: colors.primary }]}
+              onPress={() => handleSendEmail(notification)}
             >
-              <Ionicons name="close-circle" size={24} color={colors.textSecondary} />
+              <Ionicons name="mail-outline" size={16} color={colors.primary} />
+              <Text style={[styles.followUpText, { color: colors.primary }]}>Follow-up</Text>
             </TouchableOpacity>
           </View>
-          
-          <Text style={[styles.overdueText, { color: urgencyColor }]}>
-            {notification.days_overdue === 0
-              ? `Follow-up reminder: Today is the day!`
-              : `Follow-up overdue by ${notification.days_overdue} day${notification.days_overdue !== 1 ? 's' : ''}`}
-          </Text>
-          
-          <Text style={[styles.dateText, { color: colors.textSecondary }]}>
-            Applied: {format(new Date(notification.date_applied), 'MMM dd, yyyy')} • 
-            Follow-up due: Every {notification.follow_up_days} days
-          </Text>
-
-          {notification.recruiter_email && (
-            <Text style={[styles.dateText, { color: colors.textSecondary }]}>
-              <Ionicons name="mail" size={12} /> {notification.recruiter_email}
-            </Text>
-          )}
-
-          <TouchableOpacity
-            style={[styles.emailButton, { backgroundColor: colors.primary }]}
-            onPress={() => handleSendEmail(notification)}
-          >
-            <Ionicons name="mail-outline" size={18} color="#FFF" />
-            <Text style={styles.emailButtonText}>Send Follow-up Email</Text>
-          </TouchableOpacity>
         </View>
-      </View>
+      </Swipeable>
     );
   };
 
@@ -211,21 +186,16 @@ export default function NotificationsScreen() {
       <View style={[styles.header, { backgroundColor: colors.card, borderBottomColor: colors.border }]}>
         <Text style={[styles.headerTitle, { color: colors.text }]}>Notifications</Text>
         <Text style={[styles.headerSubtitle, { color: colors.textSecondary }]}>
-          {notifications.length} follow-up reminder{notifications.length !== 1 ? 's' : ''}
+          {notifications.length} reminder{notifications.length !== 1 ? 's' : ''}
         </Text>
       </View>
 
       {notifications.length === 0 ? (
         <View style={styles.emptyContainer}>
-          <Ionicons
-            name="notifications-off-outline"
-            size={64}
-            color={colors.textSecondary}
-            style={styles.emptyIcon}
-          />
+          <Ionicons name="notifications-off-outline" size={64} color={colors.textSecondary} />
           <Text style={[styles.emptyText, { color: colors.textSecondary }]}>No Notifications</Text>
           <Text style={[styles.emptySubtext, { color: colors.textSecondary }]}>
-            You're all caught up! Follow-up reminders will appear here when it's time to reach out.
+            You're all caught up! Reminders will appear here.
           </Text>
         </View>
       ) : (
@@ -242,94 +212,97 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   header: {
-    padding: 20,
-    paddingTop: Platform.OS === 'ios' ? 60 : 40,
+    padding: 16,
+    paddingTop: Platform.OS === 'ios' ? 50 : 30,
     borderBottomWidth: 1,
   },
   headerTitle: {
-    fontSize: 28,
+    fontSize: 24,
     fontWeight: '700',
   },
   headerSubtitle: {
-    fontSize: 14,
-    marginTop: 4,
+    fontSize: 13,
+    marginTop: 2,
   },
   scrollContent: {
-    padding: 16,
+    padding: 12,
   },
   notificationCard: {
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 12,
-    borderLeftWidth: 4,
+    borderRadius: 10,
+    padding: 12,
+    marginBottom: 10,
+    borderLeftWidth: 3,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
+    shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
+    shadowRadius: 2,
+    elevation: 2,
   },
-  notificationContent: {
-    flex: 1,
-  },
-  notificationHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    marginBottom: 8,
-  },
-  deleteIcon: {
-    padding: 4,
-  },
-  companyName: {
-    fontSize: 18,
-    fontWeight: '700',
-    marginBottom: 4,
-  },
-  position: {
-    fontSize: 14,
-    marginBottom: 8,
-  },
-  overdueText: {
-    fontSize: 14,
-    fontWeight: '600',
-    marginBottom: 8,
-  },
-  dateText: {
-    fontSize: 12,
-    marginBottom: 8,
-  },
-  emailButton: {
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    borderRadius: 8,
+  notificationRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
-    marginTop: 8,
+    justifyContent: 'space-between',
   },
-  emailButtonText: {
-    color: '#FFF',
-    fontSize: 14,
+  notificationInfo: {
+    flex: 1,
+    marginRight: 12,
+  },
+  companyName: {
+    fontSize: 15,
     fontWeight: '600',
-    marginLeft: 8,
+    marginBottom: 2,
+  },
+  position: {
+    fontSize: 13,
+    marginBottom: 4,
+  },
+  overdueText: {
+    fontSize: 11,
+    fontWeight: '600',
+    fontFamily: 'monospace',
+  },
+  followUpButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 6,
+    paddingHorizontal: 10,
+    borderRadius: 6,
+    borderWidth: 1,
+  },
+  followUpText: {
+    fontSize: 12,
+    fontWeight: '600',
+    marginLeft: 4,
+  },
+  deleteAction: {
+    backgroundColor: '#EF4444',
+    justifyContent: 'center',
+    alignItems: 'center',
+    width: 70,
+    marginBottom: 10,
+    borderRadius: 10,
+  },
+  deleteText: {
+    color: '#FFF',
+    fontSize: 11,
+    fontWeight: '600',
+    marginTop: 2,
   },
   emptyContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    paddingTop: 100,
+    paddingTop: 80,
     paddingHorizontal: 40,
   },
-  emptyIcon: {
-    marginBottom: 16,
-  },
   emptyText: {
-    fontSize: 18,
+    fontSize: 17,
     fontWeight: '600',
-    marginBottom: 8,
+    marginTop: 12,
+    marginBottom: 6,
   },
   emptySubtext: {
-    fontSize: 14,
+    fontSize: 13,
     textAlign: 'center',
   },
   loadingContainer: {
