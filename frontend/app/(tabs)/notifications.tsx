@@ -388,13 +388,13 @@ const styles = StyleSheet.create({
   followUpButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 6,
-    paddingHorizontal: 12,
+    paddingVertical: 4,
+    paddingHorizontal: 10,
     borderRadius: 6,
-    gap: 5,
+    gap: 4,
   },
   followUpText: {
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: '600',
   },
   deleteAction: {
