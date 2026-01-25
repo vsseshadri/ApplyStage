@@ -202,7 +202,7 @@ export default function NotificationsScreen() {
 
   const renderNotification = (notification: Notification) => {
     const urgencyColor = getUrgencyColor(notification.days_overdue);
-    const appliedDate = format(new Date(notification.date_applied), 'MMM d');
+    const appliedDate = format(new Date(notification.date_applied), 'MMM d, yyyy');
 
     return (
       <Swipeable
@@ -211,36 +211,41 @@ export default function NotificationsScreen() {
         overshootRight={false}
       >
         <View style={[styles.notificationCard, { backgroundColor: colors.card, borderLeftColor: urgencyColor }]}>
-          {/* Main Row: Info + Aging */}
-          <View style={styles.notificationMainRow}>
-            {/* Left: Company, Position, Applied Date */}
-            <View style={styles.notificationInfo}>
-              <Text style={[styles.companyName, { color: colors.text }]} numberOfLines={1}>
-                {notification.company_name}
+          {/* Row 1: Company Name + Aging Badge */}
+          <View style={styles.row}>
+            <Text style={[styles.companyName, { color: colors.text }]} numberOfLines={1}>
+              {notification.company_name}
+            </Text>
+            <View style={[styles.agingBadge, { backgroundColor: urgencyColor + '15' }]}>
+              <Text style={[styles.agingNumber, { color: urgencyColor }]}>
+                {notification.total_aging}
               </Text>
-              <Text style={[styles.position, { color: colors.textSecondary }]} numberOfLines={1}>
-                {notification.position}
-              </Text>
-              <Text style={[styles.appliedText, { color: colors.textSecondary }]}>
-                Applied {appliedDate} • {notification.days_overdue === 0 ? 'Due today' : `${notification.days_overdue}d overdue`}
-              </Text>
+              <Text style={[styles.agingLabel, { color: urgencyColor }]}>days</Text>
             </View>
-            
-            {/* Right: Total Aging & Follow-up */}
-            <View style={styles.notificationRight}>
-              <View style={[styles.agingBadge, { backgroundColor: urgencyColor + '15' }]}>
-                <Text style={[styles.agingNumber, { color: urgencyColor }]}>
-                  {notification.total_aging}
-                </Text>
-                <Text style={[styles.agingLabel, { color: urgencyColor }]}>days</Text>
-              </View>
-              <TouchableOpacity
-                style={[styles.followUpButton, { borderColor: colors.primary }]}
-                onPress={() => handleSendEmail(notification)}
-              >
-                <Ionicons name="mail-outline" size={14} color={colors.primary} />
-              </TouchableOpacity>
-            </View>
+          </View>
+          
+          {/* Row 2: Position */}
+          <View style={styles.row}>
+            <Text style={[styles.position, { color: colors.textSecondary }]} numberOfLines={1}>
+              {notification.position}
+            </Text>
+          </View>
+          
+          {/* Row 3: Applied Date */}
+          <View style={styles.row}>
+            <Text style={[styles.appliedText, { color: colors.textSecondary }]}>
+              Applied: {appliedDate}
+            </Text>
+          </View>
+          
+          {/* Row 4: Follow-up Button */}
+          <View style={styles.row}>
+            <TouchableOpacity
+              style={[styles.followUpButton, { backgroundColor: colors.primary + '12' }]}
+              onPress={() => handleSendEmail(notification)}
+            >
+              <Text style={[styles.followUpText, { color: colors.primary }]}>Follow-up</Text>
+            </TouchableOpacity>
           </View>
         </View>
       </Swipeable>
