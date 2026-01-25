@@ -199,14 +199,14 @@ export default function DashboardScreen() {
 
   return (
     <SafeAreaView style={dynamicStyles.container} edges={['top']}>
-      {/* Header with integrated date */}
+      {/* Header with integrated date including day */}
       <View style={dynamicStyles.header}>
         <View style={dynamicStyles.headerContent}>
           <View style={dynamicStyles.headerLeft}>
             <Text style={dynamicStyles.greeting}>Welcome back,</Text>
             <Text style={dynamicStyles.userName}>{user?.name?.split(' ')[0] || 'User'}</Text>
           </View>
-          <Text style={dynamicStyles.dateText}>{format(new Date(), 'MMM d, yyyy')}</Text>
+          <Text style={dynamicStyles.dateText}>{format(new Date(), 'EEE, MMM d, yyyy')}</Text>
         </View>
       </View>
 
@@ -455,7 +455,7 @@ const createStyles = (colors: any, isDark: boolean) => StyleSheet.create({
     color: colors.headerText,
   },
   dateText: {
-    fontSize: 15,
+    fontSize: 14,
     fontWeight: '600',
     color: 'white',
     opacity: 0.95,

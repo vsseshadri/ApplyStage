@@ -10,15 +10,37 @@ import {
   Linking,
   ActivityIndicator,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuth } from '../../contexts/AuthContext';
 import { useTheme } from '../../contexts/ThemeContext';
 import { Ionicons } from '@expo/vector-icons';
-import { differenceInDays, format } from 'date-fns';
+import { differenceInDays, format, differenceInBusinessDays } from 'date-fns';
 import { useFocusEffect } from '@react-navigation/native';
 import Constants from 'expo-constants';
 import { Swipeable } from 'react-native-gesture-handler';
 
 const BACKEND_URL = Constants.expoConfig?.extra?.EXPO_PUBLIC_BACKEND_URL || process.env.EXPO_PUBLIC_BACKEND_URL;
+
+// Status colors
+const STATUS_COLORS: {[key: string]: string} = {
+  applied: '#3B82F6',
+  recruiter_screening: '#F59E0B',
+  phone_screen: '#EF4444',
+  coding_round_1: '#8B5CF6',
+  coding_round_2: '#A855F7',
+  system_design: '#C084FC',
+  behavioural: '#06B6D4',
+  hiring_manager: '#14B8A6',
+  final_round: '#10B981',
+  offer: '#22C55E',
+  rejected: '#DC2626'
+};
+
+interface StageInfo {
+  status: string;
+  timestamp: string;
+  daysInStage: number;
+}
 
 interface Notification {
   id: string;
@@ -29,6 +51,9 @@ interface Notification {
   days_overdue: number;
   date_applied: string;
   follow_up_days: number;
+  current_status: string;
+  total_aging: number;
+  stages: StageInfo[];
 }
 
 export default function NotificationsScreen() {
@@ -43,6 +68,17 @@ export default function NotificationsScreen() {
       fetchNotifications();
     }, [])
   );
+
+  const calculateBusinessDays = (startDate: Date, endDate: Date): number => {
+    let count = 0;
+    let current = new Date(startDate);
+    while (current < endDate) {
+      const day = current.getDay();
+      if (day !== 0 && day !== 6) count++;
+      current.setDate(current.getDate() + 1);
+    }
+    return count;
+  };
 
   const fetchNotifications = async () => {
     setLoading(true);
@@ -64,6 +100,27 @@ export default function NotificationsScreen() {
             const followUpDays = parseInt(job.follow_up_days);
 
             if (daysSinceApplied >= followUpDays) {
+              // Calculate stage aging
+              const stages: StageInfo[] = [];
+              const jobStages = job.stages || [];
+              
+              for (let i = 0; i < jobStages.length; i++) {
+                const stage = jobStages[i];
+                const stageDate = new Date(stage.timestamp);
+                const nextStageDate = i < jobStages.length - 1 
+                  ? new Date(jobStages[i + 1].timestamp) 
+                  : now;
+                const daysInStage = calculateBusinessDays(stageDate, nextStageDate);
+                
+                stages.push({
+                  status: stage.status,
+                  timestamp: stage.timestamp,
+                  daysInStage
+                });
+              }
+
+              const totalAging = calculateBusinessDays(appliedDate, now);
+
               notifs.push({
                 id: job.job_id,
                 job_id: job.job_id,
@@ -73,6 +130,9 @@ export default function NotificationsScreen() {
                 days_overdue: daysSinceApplied - followUpDays,
                 date_applied: job.date_applied,
                 follow_up_days: followUpDays,
+                current_status: job.status,
+                total_aging: totalAging,
+                stages,
               });
             }
           }
@@ -132,8 +192,17 @@ export default function NotificationsScreen() {
     return '#3B82F6';
   };
 
+  const formatStatus = (status: string): string => {
+    return status.split('_').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
+  };
+
+  const getStatusColor = (status: string): string => {
+    return STATUS_COLORS[status] || '#6B7280';
+  };
+
   const renderNotification = (notification: Notification) => {
     const urgencyColor = getUrgencyColor(notification.days_overdue);
+    const appliedDate = format(new Date(notification.date_applied), 'MMM d, yyyy');
 
     return (
       <Swipeable
@@ -142,16 +211,58 @@ export default function NotificationsScreen() {
         overshootRight={false}
       >
         <View style={[styles.notificationCard, { backgroundColor: colors.card, borderLeftColor: urgencyColor }]}>
-          <View style={styles.notificationRow}>
-            <View style={styles.notificationInfo}>
-              <Text style={[styles.companyName, { color: colors.text }]} numberOfLines={1}>
-                {notification.company_name}
+          {/* Row 1: Company & Urgency */}
+          <View style={styles.notificationHeader}>
+            <Text style={[styles.companyName, { color: colors.text }]} numberOfLines={1}>
+              {notification.company_name}
+            </Text>
+            <Text style={[styles.overdueText, { color: urgencyColor }]}>
+              {notification.days_overdue === 0 ? `Due today` : `${notification.days_overdue}d overdue`}
+            </Text>
+          </View>
+          
+          {/* Row 2: Position */}
+          <Text style={[styles.position, { color: colors.textSecondary }]} numberOfLines={1}>
+            {notification.position}
+          </Text>
+          
+          {/* Row 3: Applied Date & Total Aging */}
+          <View style={styles.infoRow}>
+            <View style={styles.infoItem}>
+              <Ionicons name="calendar-outline" size={12} color={colors.textSecondary} />
+              <Text style={[styles.infoText, { color: colors.textSecondary }]}>
+                Applied: {appliedDate}
               </Text>
-              <Text style={[styles.position, { color: colors.textSecondary }]} numberOfLines={1}>
-                {notification.position}
+            </View>
+            <View style={styles.infoItem}>
+              <Ionicons name="time-outline" size={12} color={colors.textSecondary} />
+              <Text style={[styles.infoText, { color: colors.textSecondary }]}>
+                {notification.total_aging} biz days
               </Text>
-              <Text style={[styles.overdueText, { color: urgencyColor }]}>
-                {notification.days_overdue === 0 ? `Due today` : `${notification.days_overdue}d overdue`}
+            </View>
+          </View>
+          
+          {/* Row 4: Stage Progression with Aging */}
+          <View style={styles.stageProgressRow}>
+            {notification.stages.slice(-3).map((stage, index) => (
+              <View key={index} style={styles.stageChip}>
+                <View style={[styles.stageDot, { backgroundColor: getStatusColor(stage.status) }]} />
+                <Text style={[styles.stageText, { color: colors.text }]} numberOfLines={1}>
+                  {formatStatus(stage.status).substring(0, 8)}
+                </Text>
+                <Text style={[styles.stageDays, { color: colors.textSecondary }]}>
+                  {stage.daysInStage}d
+                </Text>
+              </View>
+            ))}
+          </View>
+          
+          {/* Row 5: Current Status & Follow-up Button */}
+          <View style={styles.actionRow}>
+            <View style={[styles.currentStatusBadge, { backgroundColor: getStatusColor(notification.current_status) + '20' }]}>
+              <View style={[styles.statusDot, { backgroundColor: getStatusColor(notification.current_status) }]} />
+              <Text style={[styles.currentStatusText, { color: getStatusColor(notification.current_status) }]}>
+                {formatStatus(notification.current_status)}
               </Text>
             </View>
             
@@ -159,7 +270,7 @@ export default function NotificationsScreen() {
               style={[styles.followUpButton, { borderColor: colors.primary }]}
               onPress={() => handleSendEmail(notification)}
             >
-              <Ionicons name="mail-outline" size={16} color={colors.primary} />
+              <Ionicons name="mail-outline" size={14} color={colors.primary} />
               <Text style={[styles.followUpText, { color: colors.primary }]}>Follow-up</Text>
             </TouchableOpacity>
           </View>
@@ -168,24 +279,26 @@ export default function NotificationsScreen() {
     );
   };
 
+  const dynamicStyles = createDynamicStyles(colors, isDark);
+
   if (loading) {
     return (
-      <View style={[styles.container, { backgroundColor: colors.background }]}>
-        <View style={styles.header}>
-          <Text style={[styles.headerTitle, { color: colors.text }]}>Notifications</Text>
+      <SafeAreaView style={[dynamicStyles.container]} edges={['top']}>
+        <View style={dynamicStyles.header}>
+          <Text style={dynamicStyles.headerTitle}>Notifications</Text>
         </View>
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color={colors.primary} />
         </View>
-      </View>
+      </SafeAreaView>
     );
   }
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.background }]}>
-      <View style={[styles.header, { backgroundColor: colors.card, borderBottomColor: colors.border }]}>
-        <Text style={[styles.headerTitle, { color: colors.text }]}>Notifications</Text>
-        <Text style={[styles.headerSubtitle, { color: colors.textSecondary }]}>
+    <SafeAreaView style={[dynamicStyles.container]} edges={['top']}>
+      <View style={dynamicStyles.header}>
+        <Text style={dynamicStyles.headerTitle}>Notifications</Text>
+        <Text style={dynamicStyles.headerSubtitle}>
           {notifications.length} reminder{notifications.length !== 1 ? 's' : ''}
         </Text>
       </View>
@@ -201,78 +314,147 @@ export default function NotificationsScreen() {
       ) : (
         <ScrollView style={styles.scrollContent} showsVerticalScrollIndicator={false}>
           {notifications.map(renderNotification)}
+          <View style={{ height: 20 }} />
         </ScrollView>
       )}
-    </View>
+    </SafeAreaView>
   );
 }
 
-const styles = StyleSheet.create({
+const createDynamicStyles = (colors: any, isDark: boolean) => StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: colors.background,
   },
   header: {
-    padding: 16,
-    paddingTop: Platform.OS === 'ios' ? 50 : 30,
-    borderBottomWidth: 1,
+    backgroundColor: colors.headerBackground,
+    paddingHorizontal: 20,
+    paddingVertical: 16,
   },
   headerTitle: {
     fontSize: 24,
     fontWeight: '700',
+    color: colors.headerText,
   },
   headerSubtitle: {
     fontSize: 13,
     marginTop: 2,
+    color: colors.headerText,
+    opacity: 0.8,
   },
+});
+
+const styles = StyleSheet.create({
   scrollContent: {
     padding: 12,
   },
   notificationCard: {
-    borderRadius: 10,
-    padding: 12,
+    borderRadius: 12,
+    padding: 14,
     marginBottom: 10,
-    borderLeftWidth: 3,
+    borderLeftWidth: 4,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.1,
     shadowRadius: 2,
     elevation: 2,
   },
-  notificationRow: {
+  notificationHeader: {
     flexDirection: 'row',
-    alignItems: 'center',
     justifyContent: 'space-between',
-  },
-  notificationInfo: {
-    flex: 1,
-    marginRight: 12,
+    alignItems: 'center',
+    marginBottom: 4,
   },
   companyName: {
-    fontSize: 15,
-    fontWeight: '600',
-    marginBottom: 2,
+    fontSize: 16,
+    fontWeight: '700',
+    flex: 1,
+    marginRight: 8,
+  },
+  overdueText: {
+    fontSize: 12,
+    fontWeight: '700',
+    fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace',
   },
   position: {
     fontSize: 13,
-    marginBottom: 4,
+    marginBottom: 8,
   },
-  overdueText: {
+  infoRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 10,
+  },
+  infoItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  infoText: {
+    fontSize: 11,
+  },
+  stageProgressRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 6,
+    marginBottom: 10,
+  },
+  stageChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0,0,0,0.05)',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
+    gap: 4,
+  },
+  stageDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+  },
+  stageText: {
+    fontSize: 10,
+    fontWeight: '500',
+  },
+  stageDays: {
+    fontSize: 10,
+    fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace',
+  },
+  actionRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  currentStatusBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 14,
+    gap: 5,
+  },
+  statusDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+  },
+  currentStatusText: {
     fontSize: 11,
     fontWeight: '600',
-    fontFamily: 'monospace',
   },
   followUpButton: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingVertical: 6,
-    paddingHorizontal: 10,
-    borderRadius: 6,
+    paddingHorizontal: 12,
+    borderRadius: 8,
     borderWidth: 1,
+    gap: 4,
   },
   followUpText: {
     fontSize: 12,
     fontWeight: '600',
-    marginLeft: 4,
   },
   deleteAction: {
     backgroundColor: '#EF4444',
@@ -280,7 +462,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     width: 70,
     marginBottom: 10,
-    borderRadius: 10,
+    borderRadius: 12,
   },
   deleteText: {
     color: '#FFF',
