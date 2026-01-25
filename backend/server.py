@@ -63,7 +63,7 @@ class JobApplication(BaseModel):
     reminders: List[Dict[str, Any]] = []
     is_priority: bool = False
     created_at: datetime
-    updated_at: datetime
+    updated_at: Optional[datetime] = None
 
 class JobApplicationCreate(BaseModel):
     company_name: str
