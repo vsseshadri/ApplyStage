@@ -299,13 +299,13 @@ export default function MyJobsScreen() {
     
     const trimmedPosition = newPosition.trim();
     
-    // Add to custom positions locally
-    setCustomPositions([...customPositions, trimmedPosition]);
-    setFormData({ ...formData, position: trimmedPosition });
+    // Add to custom positions locally FIRST
+    setCustomPositions(prev => [...prev, trimmedPosition]);
+    setFormData(prev => ({ ...prev, position: trimmedPosition }));
     setNewPosition('');
     setShowPositionInput(false);
     
-    // Try to sync with backend but don't block on failure
+    // Sync with backend async (non-blocking)
     try {
       await fetch(`${BACKEND_URL}/api/positions`, {
         method: 'POST',
