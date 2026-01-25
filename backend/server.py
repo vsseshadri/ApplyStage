@@ -649,44 +649,6 @@ async def get_ai_insights(current_user: User = Depends(get_current_user)):
         "insights": strategic_insights,
         "follow_ups": follow_up_reminders
     }
-        
-        # Stall detection
-        if stage_progression['stalled'] >= 3:
-            insights.append(f"🔄 {stage_progression['stalled']} applications appear stalled (15+ biz days in early stages). This may indicate: resume-role mismatch, competitive candidate pool, or slow company processes.")
-    
-    # STRATEGIC INSIGHT 4: Priority Jobs Summary
-    if priority_jobs:
-        priority_count = len(priority_jobs)
-        priority_advanced = sum(1 for p in priority_jobs if p['status'] in ['phone_screen', 'coding_round_1', 'coding_round_2', 'system_design', 'behavioural', 'hiring_manager', 'final_round'])
-        
-        if priority_advanced > 0:
-            insights.append(f"⭐ {priority_advanced} of {priority_count} priority jobs are advancing through interviews. Focus your prep time on these high-value opportunities.")
-        elif priority_count > 0:
-            stalled_priorities = [p for p in priority_jobs if p['biz_days'] >= 10 and p['status'] in ['applied', 'recruiter_screening']]
-            if stalled_priorities:
-                insights.append(f"⭐ {len(stalled_priorities)} priority job{'s have' if len(stalled_priorities) > 1 else ' has'} been waiting 10+ days. Consider reaching out directly to hiring managers via LinkedIn.")
-    
-    # STRATEGIC INSIGHT 5: Offers & Final Rounds
-    if stage_counts['offer'] > 0:
-        insights.append(f"🎉 You have {stage_counts['offer']} offer{'s' if stage_counts['offer'] > 1 else ''}! If negotiating, remember: 73% of employers expect candidates to negotiate base salary.")
-    
-    if stage_counts['final_round'] > 0:
-        insights.append(f"🌟 {stage_counts['final_round']} in final rounds. Tip: Prepare 3-5 thoughtful questions about team dynamics and success metrics—interviewers notice engaged candidates.")
-    
-    if stage_counts['hiring_manager'] > 0:
-        insights.append(f"💼 {stage_counts['hiring_manager']} at hiring manager stage. Research recent company news and prepare to discuss how you'd contribute to current initiatives.")
-    
-    # STRATEGIC INSIGHT 6: Rejection Analysis
-    if stage_counts['rejected'] > 0 and total >= 5:
-        rejection_rate = (stage_counts['rejected'] / total) * 100
-        if rejection_rate > 60:
-            insights.append(f"💡 High rejection rate ({rejection_rate:.0f}%). Consider: narrowing role focus, tailoring resume keywords to job descriptions, or seeking referrals for better visibility.")
-    
-    # Default insight
-    if not insights:
-        insights.append("🚀 Add job applications with follow-up reminders to receive strategic insights on your job search!")
-    
-    return {"insights": insights}
 
 @api_router.get("/positions", response_model=List[CustomPosition])
 async def get_positions(current_user: User = Depends(get_current_user)):
