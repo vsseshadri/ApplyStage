@@ -340,6 +340,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 8,
   },
+  rowRight: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    alignItems: 'center',
+    marginBottom: 0,
+  },
   companyName: {
     fontSize: 15,
     fontWeight: '700',
@@ -371,9 +377,12 @@ const styles = StyleSheet.create({
     fontWeight: '500',
   },
   followUpButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
     paddingVertical: 6,
-    paddingHorizontal: 14,
+    paddingHorizontal: 12,
     borderRadius: 6,
+    gap: 5,
   },
   followUpText: {
     fontSize: 12,
