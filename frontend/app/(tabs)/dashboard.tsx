@@ -73,6 +73,7 @@ export default function DashboardScreen() {
   const [insights, setInsights] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [followUps, setFollowUps] = useState<string[]>([]);
 
   useFocusEffect(
     React.useCallback(() => {
@@ -101,6 +102,7 @@ export default function DashboardScreen() {
       if (insightsRes.ok) {
         const insightsData = await insightsRes.json();
         setInsights(insightsData.insights || []);
+        setFollowUps(insightsData.follow_ups || []);
       }
     } catch (error) {
       console.error('Error fetching data:', error);
