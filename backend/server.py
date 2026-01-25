@@ -483,6 +483,14 @@ async def get_dashboard_stats(current_user: User = Depends(get_current_user)):
 
 @api_router.get("/dashboard/ai-insights")
 async def get_ai_insights(current_user: User = Depends(get_current_user)):
+    """
+    Generate strategic AI-powered insights focused on:
+    - Follow-up recommendations
+    - Aging analysis and urgency
+    - Progression rates across statuses
+    - Priority job focus
+    - Actionable next steps
+    """
     # Get all jobs for detailed analysis
     jobs = await db.job_applications.find(
         {"user_id": current_user.user_id},
@@ -490,157 +498,166 @@ async def get_ai_insights(current_user: User = Depends(get_current_user)):
     ).to_list(1000)
     
     insights = []
-    
-    # Calculate time-based stats
     now = datetime.now(timezone.utc)
-    seven_days_ago = now - timedelta(days=7)
-    thirty_days_ago = now - timedelta(days=30)
     
-    week_count = 0
-    month_count = 0
+    # Data structures for analysis
     follow_ups_needed = []
     priority_jobs = []
-    aging_jobs = []
+    aging_analysis = {'critical': [], 'warning': [], 'healthy': []}
+    stage_counts = {}
+    stage_progression = {'advanced': 0, 'stalled': 0}
     
-    # Stage counts for progress tracking
-    stage_counts = {
-        'applied': 0,
-        'recruiter_screening': 0,
-        'phone_screen': 0,
-        'coding_round_1': 0,
-        'coding_round_2': 0,
-        'system_design': 0,
-        'behavioural': 0,
-        'hiring_manager': 0,
-        'final_round': 0,
-        'offer': 0,
-        'rejected': 0
-    }
+    # Initialize stage counts
+    all_stages = ['applied', 'recruiter_screening', 'phone_screen', 'coding_round_1', 
+                  'coding_round_2', 'system_design', 'behavioural', 'hiring_manager', 
+                  'final_round', 'offer', 'rejected']
+    for stage in all_stages:
+        stage_counts[stage] = 0
     
     for job in jobs:
-        # Count stages
         status = job.get("status", "applied")
         if status in stage_counts:
             stage_counts[status] += 1
         
-        # Check for priority jobs
-        if job.get("is_priority", False):
+        company = job.get("company_name", "Unknown")
+        position = job.get("position", "")
+        is_priority = job.get("is_priority", False)
+        
+        # Get date applied
+        date_applied = job.get("date_applied") or job.get("created_at")
+        if date_applied:
+            if isinstance(date_applied, str):
+                date_applied = datetime.fromisoformat(date_applied.replace('Z', '+00:00'))
+            if date_applied.tzinfo is None:
+                date_applied = date_applied.replace(tzinfo=timezone.utc)
+            
+            days_old = (now - date_applied).days
+            # Calculate business days (exclude weekends)
+            biz_days = sum(1 for i in range(days_old) if (date_applied + timedelta(days=i)).weekday() < 5)
+        else:
+            days_old = 0
+            biz_days = 0
+        
+        # Priority jobs tracking
+        if is_priority:
             priority_jobs.append({
-                "company": job.get("company_name", "Unknown"),
-                "position": job.get("position", ""),
-                "status": status
+                "company": company,
+                "position": position,
+                "status": status,
+                "days_old": days_old,
+                "biz_days": biz_days
             })
         
-        # Time-based counting
-        created_at = job.get("created_at")
-        date_applied = job.get("date_applied")
-        aging_date = date_applied if date_applied else created_at
-        
-        if created_at:
-            if isinstance(created_at, str):
-                created_at = datetime.fromisoformat(created_at.replace('Z', '+00:00'))
-            if created_at.tzinfo is None:
-                created_at = created_at.replace(tzinfo=timezone.utc)
-            
-            if created_at >= seven_days_ago:
-                week_count += 1
-            if created_at >= thirty_days_ago:
-                month_count += 1
-        
-        # Check for aging applications (over 14 days old and still in early stages)
-        if aging_date:
-            if isinstance(aging_date, str):
-                aging_date = datetime.fromisoformat(aging_date.replace('Z', '+00:00'))
-            if aging_date.tzinfo is None:
-                aging_date = aging_date.replace(tzinfo=timezone.utc)
-            
-            days_old = (now - aging_date).days
-            
-            # Applications older than 14 days in early stages
-            if days_old >= 14 and status in ['applied', 'recruiter_screening', 'phone_screen']:
-                aging_jobs.append({
-                    "company": job.get("company_name", "Unknown"),
-                    "position": job.get("position", ""),
-                    "days_old": days_old,
-                    "status": status
+        # Aging analysis (excluding offers and rejections)
+        if status not in ['offer', 'rejected']:
+            if biz_days >= 20 and status in ['applied', 'recruiter_screening']:
+                aging_analysis['critical'].append({
+                    "company": company, "days": biz_days, "status": status
+                })
+            elif biz_days >= 10 and status in ['applied', 'recruiter_screening', 'phone_screen']:
+                aging_analysis['warning'].append({
+                    "company": company, "days": biz_days, "status": status
                 })
         
-        # Check for follow-ups needed
+        # Follow-up analysis
         follow_up_days = job.get("follow_up_days")
-        if follow_up_days and aging_date and status not in ['offer', 'rejected']:
-            days_since = (now - aging_date).days
-            if days_since >= follow_up_days:
-                follow_ups_needed.append(job.get("company_name", "Unknown"))
+        if follow_up_days and status not in ['offer', 'rejected']:
+            if days_old >= follow_up_days:
+                overdue_by = days_old - follow_up_days
+                follow_ups_needed.append({
+                    "company": company,
+                    "position": position,
+                    "overdue_days": overdue_by,
+                    "is_priority": is_priority
+                })
+        
+        # Track progression
+        early_stages = ['applied', 'recruiter_screening']
+        mid_stages = ['phone_screen', 'coding_round_1', 'coding_round_2']
+        advanced_stages_list = ['system_design', 'behavioural', 'hiring_manager', 'final_round', 'offer']
+        
+        if status in advanced_stages_list:
+            stage_progression['advanced'] += 1
+        elif status in early_stages and biz_days >= 15:
+            stage_progression['stalled'] += 1
     
     total = len(jobs)
+    active_jobs = total - stage_counts['offer'] - stage_counts['rejected']
     
-    # Priority jobs insights (highest priority)
+    # STRATEGIC INSIGHT 1: Follow-up Strategy
+    if follow_ups_needed:
+        # Sort by priority first, then by overdue days
+        follow_ups_needed.sort(key=lambda x: (-x['is_priority'], -x['overdue_days']))
+        priority_followups = [f for f in follow_ups_needed if f['is_priority']]
+        
+        if priority_followups:
+            top = priority_followups[0]
+            insights.append(f"🎯 Priority follow-up: {top['company']} is {top['overdue_days']}d overdue. Sending a brief update inquiry could re-engage the recruiter.")
+        
+        if len(follow_ups_needed) > len(priority_followups):
+            regular = len(follow_ups_needed) - len(priority_followups)
+            insights.append(f"📧 {regular} other application{'s need' if regular > 1 else ' needs'} follow-up. Consider batch-sending check-ins on Monday mornings for best response rates.")
+    
+    # STRATEGIC INSIGHT 2: Aging & Urgency Analysis
+    critical_count = len(aging_analysis['critical'])
+    warning_count = len(aging_analysis['warning'])
+    
+    if critical_count > 0:
+        oldest = max(aging_analysis['critical'], key=lambda x: x['days'])
+        insights.append(f"⚠️ {oldest['company']} has been at '{oldest['status'].replace('_', ' ')}' for {oldest['days']} business days. Applications beyond 20 biz days in early stages have <15% progression rate—consider a strategic follow-up or moving focus elsewhere.")
+    
+    if warning_count > 2:
+        insights.append(f"⏰ {warning_count} applications are aging (10+ biz days) in early stages. Industry data shows response rates drop 40% after 2 weeks—prioritize follow-ups on your top picks.")
+    
+    # STRATEGIC INSIGHT 3: Pipeline Health & Progression Rates
+    if total >= 3:
+        # Calculate progression rate
+        progressed = total - stage_counts['applied'] - stage_counts['rejected']
+        progression_rate = (progressed / total) * 100 if total > 0 else 0
+        
+        advanced = stage_progression['advanced']
+        if advanced > 0 and active_jobs > 0:
+            advanced_rate = (advanced / active_jobs) * 100
+            if advanced_rate >= 30:
+                insights.append(f"📈 Strong pipeline: {advanced_rate:.0f}% of active applications have reached advanced stages. Your materials are resonating well with hiring teams.")
+            elif advanced_rate >= 15:
+                insights.append(f"📊 Pipeline progress: {advanced} of {active_jobs} active applications in advanced stages ({advanced_rate:.0f}%). Consider optimizing your interview preparation for higher conversion.")
+        
+        # Stall detection
+        if stage_progression['stalled'] >= 3:
+            insights.append(f"🔄 {stage_progression['stalled']} applications appear stalled (15+ biz days in early stages). This may indicate: resume-role mismatch, competitive candidate pool, or slow company processes.")
+    
+    # STRATEGIC INSIGHT 4: Priority Jobs Summary
     if priority_jobs:
         priority_count = len(priority_jobs)
-        insights.append(f"⭐ You have {priority_count} priority job{'s' if priority_count != 1 else ''} marked for focused attention.")
+        priority_advanced = sum(1 for p in priority_jobs if p['status'] in ['phone_screen', 'coding_round_1', 'coding_round_2', 'system_design', 'behavioural', 'hiring_manager', 'final_round'])
         
-        # Mention specific priority jobs
-        if priority_count <= 3:
-            priority_names = [f"{j['company']} ({j['position']})" for j in priority_jobs[:3]]
-            insights.append(f"🎯 Priority: {', '.join(priority_names)}")
+        if priority_advanced > 0:
+            insights.append(f"⭐ {priority_advanced} of {priority_count} priority jobs are advancing through interviews. Focus your prep time on these high-value opportunities.")
+        elif priority_count > 0:
+            stalled_priorities = [p for p in priority_jobs if p['biz_days'] >= 10 and p['status'] in ['applied', 'recruiter_screening']]
+            if stalled_priorities:
+                insights.append(f"⭐ {len(stalled_priorities)} priority job{'s have' if len(stalled_priorities) > 1 else ' has'} been waiting 10+ days. Consider reaching out directly to hiring managers via LinkedIn.")
     
-    # Weekly/Monthly application insights
-    if week_count > 0:
-        insights.append(f"📊 You applied to {week_count} job{'s' if week_count != 1 else ''} this week.")
-    if month_count > 0:
-        insights.append(f"📅 {month_count} application{'s' if month_count != 1 else ''} submitted this month.")
-    
-    # Aging applications - subtle professional suggestions
-    if aging_jobs:
-        aging_jobs.sort(key=lambda x: x['days_old'], reverse=True)
-        oldest_job = aging_jobs[0]
-        
-        if oldest_job['days_old'] >= 30:
-            insights.append(f"⏳ Your application at {oldest_job['company']} has been pending for {oldest_job['days_old']} days. Consider sending a polite follow-up to demonstrate continued interest.")
-        elif oldest_job['days_old'] >= 21:
-            insights.append(f"📬 {oldest_job['company']} application is {oldest_job['days_old']} days old. A follow-up email might help move the process along.")
-        elif oldest_job['days_old'] >= 14:
-            insights.append(f"💼 Your {oldest_job['company']} application ({oldest_job['days_old']} days) could benefit from a gentle follow-up check-in.")
-        
-        # If multiple jobs are aging
-        if len(aging_jobs) > 3:
-            insights.append(f"📋 {len(aging_jobs)} applications are awaiting response for 14+ days. Consider following up on your top priorities.")
-    
-    # Follow-up reminders
-    if follow_ups_needed:
-        if len(follow_ups_needed) <= 3:
-            companies = ", ".join(follow_ups_needed)
-            insights.append(f"⏰ Follow-up needed: {companies}")
-        else:
-            insights.append(f"⏰ {len(follow_ups_needed)} applications need follow-up!")
-    
-    # Interview stage progress insights
-    advanced_stages = stage_counts['phone_screen'] + stage_counts['coding_round_1'] + stage_counts['coding_round_2'] + stage_counts['system_design'] + stage_counts['behavioural'] + stage_counts['hiring_manager'] + stage_counts['final_round']
-    
+    # STRATEGIC INSIGHT 5: Offers & Final Rounds
     if stage_counts['offer'] > 0:
-        insights.append(f"🎉 Congratulations! You have {stage_counts['offer']} offer{'s' if stage_counts['offer'] != 1 else ''}!")
+        insights.append(f"🎉 You have {stage_counts['offer']} offer{'s' if stage_counts['offer'] > 1 else ''}! If negotiating, remember: 73% of employers expect candidates to negotiate base salary.")
     
     if stage_counts['final_round'] > 0:
-        insights.append(f"🌟 {stage_counts['final_round']} application{'s are' if stage_counts['final_round'] != 1 else ' is'} in final round - great progress!")
+        insights.append(f"🌟 {stage_counts['final_round']} in final rounds. Tip: Prepare 3-5 thoughtful questions about team dynamics and success metrics—interviewers notice engaged candidates.")
     
     if stage_counts['hiring_manager'] > 0:
-        insights.append(f"💼 {stage_counts['hiring_manager']} at hiring manager stage - you're advancing well!")
+        insights.append(f"💼 {stage_counts['hiring_manager']} at hiring manager stage. Research recent company news and prepare to discuss how you'd contribute to current initiatives.")
     
-    if advanced_stages > 0 and stage_counts['offer'] == 0 and stage_counts['final_round'] == 0:
-        insights.append(f"📈 {advanced_stages} application{'s have' if advanced_stages != 1 else ' has'} progressed past initial screening.")
+    # STRATEGIC INSIGHT 6: Rejection Analysis
+    if stage_counts['rejected'] > 0 and total >= 5:
+        rejection_rate = (stage_counts['rejected'] / total) * 100
+        if rejection_rate > 60:
+            insights.append(f"💡 High rejection rate ({rejection_rate:.0f}%). Consider: narrowing role focus, tailoring resume keywords to job descriptions, or seeking referrals for better visibility.")
     
-    if stage_counts['recruiter_screening'] > 0:
-        insights.append(f"👀 {stage_counts['recruiter_screening']} application{'s' if stage_counts['recruiter_screening'] != 1 else ''} under recruiter review.")
-    
-    # Calculate success rate if there's enough data
-    if total >= 5:
-        progress_rate = ((total - stage_counts['applied'] - stage_counts['rejected']) / total) * 100
-        if progress_rate > 50:
-            insights.append(f"✨ {progress_rate:.0f}% of your applications are progressing - excellent conversion!")
-    
-    # Default insight if nothing else
+    # Default insight
     if not insights:
-        insights.append("🚀 Start tracking your applications to get personalized insights!")
+        insights.append("🚀 Add job applications with follow-up reminders to receive strategic insights on your job search!")
     
     return {"insights": insights}
 
