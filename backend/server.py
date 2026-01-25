@@ -499,6 +499,8 @@ async def get_ai_insights(current_user: User = Depends(get_current_user)):
     week_count = 0
     month_count = 0
     follow_ups_needed = []
+    priority_jobs = []
+    aging_jobs = []
     
     # Stage counts for progress tracking
     stage_counts = {
@@ -521,8 +523,19 @@ async def get_ai_insights(current_user: User = Depends(get_current_user)):
         if status in stage_counts:
             stage_counts[status] += 1
         
+        # Check for priority jobs
+        if job.get("is_priority", False):
+            priority_jobs.append({
+                "company": job.get("company_name", "Unknown"),
+                "position": job.get("position", ""),
+                "status": status
+            })
+        
         # Time-based counting
         created_at = job.get("created_at")
+        date_applied = job.get("date_applied")
+        aging_date = date_applied if date_applied else created_at
+        
         if created_at:
             if isinstance(created_at, str):
                 created_at = datetime.fromisoformat(created_at.replace('Z', '+00:00'))
@@ -534,26 +547,64 @@ async def get_ai_insights(current_user: User = Depends(get_current_user)):
             if created_at >= thirty_days_ago:
                 month_count += 1
         
+        # Check for aging applications (over 14 days old and still in early stages)
+        if aging_date:
+            if isinstance(aging_date, str):
+                aging_date = datetime.fromisoformat(aging_date.replace('Z', '+00:00'))
+            if aging_date.tzinfo is None:
+                aging_date = aging_date.replace(tzinfo=timezone.utc)
+            
+            days_old = (now - aging_date).days
+            
+            # Applications older than 14 days in early stages
+            if days_old >= 14 and status in ['applied', 'recruiter_screening', 'phone_screen']:
+                aging_jobs.append({
+                    "company": job.get("company_name", "Unknown"),
+                    "position": job.get("position", ""),
+                    "days_old": days_old,
+                    "status": status
+                })
+        
         # Check for follow-ups needed
         follow_up_days = job.get("follow_up_days")
-        date_applied = job.get("date_applied")
-        if follow_up_days and date_applied and status not in ['offer', 'rejected']:
-            if isinstance(date_applied, str):
-                date_applied = datetime.fromisoformat(date_applied.replace('Z', '+00:00'))
-            if date_applied.tzinfo is None:
-                date_applied = date_applied.replace(tzinfo=timezone.utc)
-            
-            days_since = (now - date_applied).days
+        if follow_up_days and aging_date and status not in ['offer', 'rejected']:
+            days_since = (now - aging_date).days
             if days_since >= follow_up_days:
                 follow_ups_needed.append(job.get("company_name", "Unknown"))
     
     total = len(jobs)
+    
+    # Priority jobs insights (highest priority)
+    if priority_jobs:
+        priority_count = len(priority_jobs)
+        insights.append(f"⭐ You have {priority_count} priority job{'s' if priority_count != 1 else ''} marked for focused attention.")
+        
+        # Mention specific priority jobs
+        if priority_count <= 3:
+            priority_names = [f"{j['company']} ({j['position']})" for j in priority_jobs[:3]]
+            insights.append(f"🎯 Priority: {', '.join(priority_names)}")
     
     # Weekly/Monthly application insights
     if week_count > 0:
         insights.append(f"📊 You applied to {week_count} job{'s' if week_count != 1 else ''} this week.")
     if month_count > 0:
         insights.append(f"📅 {month_count} application{'s' if month_count != 1 else ''} submitted this month.")
+    
+    # Aging applications - subtle professional suggestions
+    if aging_jobs:
+        aging_jobs.sort(key=lambda x: x['days_old'], reverse=True)
+        oldest_job = aging_jobs[0]
+        
+        if oldest_job['days_old'] >= 30:
+            insights.append(f"⏳ Your application at {oldest_job['company']} has been pending for {oldest_job['days_old']} days. Consider sending a polite follow-up to demonstrate continued interest.")
+        elif oldest_job['days_old'] >= 21:
+            insights.append(f"📬 {oldest_job['company']} application is {oldest_job['days_old']} days old. A follow-up email might help move the process along.")
+        elif oldest_job['days_old'] >= 14:
+            insights.append(f"💼 Your {oldest_job['company']} application ({oldest_job['days_old']} days) could benefit from a gentle follow-up check-in.")
+        
+        # If multiple jobs are aging
+        if len(aging_jobs) > 3:
+            insights.append(f"📋 {len(aging_jobs)} applications are awaiting response for 14+ days. Consider following up on your top priorities.")
     
     # Follow-up reminders
     if follow_ups_needed:
