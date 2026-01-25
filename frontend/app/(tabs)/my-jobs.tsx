@@ -429,13 +429,18 @@ export default function MyJobsScreen() {
   };
 
   const handleSubmit = async () => {
+    // Debug logging
+    console.log('Form Data on Submit:', formData);
+    console.log('Position Value:', formData.position);
+    
     // Only Company Name, Position, Location (State & City), and Date Applied are mandatory
     if (!formData.company_name.trim()) {
       Alert.alert('Error', 'Company Name is required');
       return;
     }
-    if (!formData.position.trim()) {
+    if (!formData.position || !formData.position.trim()) {
       Alert.alert('Error', 'Position is required');
+      console.log('Position validation failed:', formData.position);
       return;
     }
     if (!selectedState || !selectedCity) {
