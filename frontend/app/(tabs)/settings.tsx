@@ -1,16 +1,29 @@
-import React from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Switch, Alert, Platform } from 'react-native';
+import React, { useState } from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Switch, Image, Alert, Platform } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useAuth } from '../../contexts/AuthContext';
+import { useRouter } from 'expo-router';
+import * as ImagePicker from 'expo-image-picker';
 import * as LocalAuthentication from 'expo-local-authentication';
+import Constants from 'expo-constants';
+
+const BACKEND_URL = Constants.expoConfig?.extra?.EXPO_PUBLIC_BACKEND_URL || process.env.EXPO_PUBLIC_BACKEND_URL;
 
 export default function SettingsScreen() {
   const { theme, setTheme, colors, isDark } = useTheme();
-  const { biometricEnabled, biometricAvailable, enableBiometric, disableBiometric } = useAuth();
-  const [twoFactorEnabled, setTwoFactorEnabled] = React.useState(false);
-  const [biometricType, setBiometricType] = React.useState<string>('Biometrics');
+  const { user, logout, sessionToken, biometricEnabled, biometricAvailable, enableBiometric, disableBiometric } = useAuth();
+  const router = useRouter();
+  
+  // Profile state
+  const [profilePhoto, setProfilePhoto] = useState(user?.picture || null);
+  const [weeklyEmail, setWeeklyEmail] = useState(user?.preferences?.weekly_email ?? true);
+  const [monthlyEmail, setMonthlyEmail] = useState(user?.preferences?.monthly_email ?? true);
+  
+  // Settings state
+  const [twoFactorEnabled, setTwoFactorEnabled] = useState(false);
+  const [biometricType, setBiometricType] = useState<string>('Biometrics');
 
   React.useEffect(() => {
     checkBiometricType();
@@ -31,6 +44,66 @@ export default function SettingsScreen() {
     }
   };
 
+  const handlePhotoUpload = async () => {
+    try {
+      const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (status !== 'granted') {
+        Alert.alert('Permission Needed', 'Please grant permission to access your photos.');
+        return;
+      }
+
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: true,
+        aspect: [1, 1],
+        quality: 0.8,
+      });
+
+      if (!result.canceled && result.assets[0]) {
+        const imageUri = result.assets[0].uri;
+        setProfilePhoto(imageUri);
+        Alert.alert('Success', 'Profile photo updated.');
+      }
+    } catch (error) {
+      console.error('Error picking image:', error);
+      Alert.alert('Error', 'Failed to upload photo.');
+    }
+  };
+
+  const handleWeeklyEmailToggle = async (value: boolean) => {
+    setWeeklyEmail(value);
+    // TODO: Update backend
+    try {
+      await fetch(`${BACKEND_URL}/api/user/preferences`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${sessionToken}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ weekly_email: value }),
+      });
+    } catch (error) {
+      console.error('Error updating preference:', error);
+    }
+  };
+
+  const handleMonthlyEmailToggle = async (value: boolean) => {
+    setMonthlyEmail(value);
+    // TODO: Update backend
+    try {
+      await fetch(`${BACKEND_URL}/api/user/preferences`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${sessionToken}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ monthly_email: value }),
+      });
+    } catch (error) {
+      console.error('Error updating preference:', error);
+    }
+  };
+
   const handleThemeChange = async (newTheme: 'light' | 'dark' | 'auto') => {
     await setTheme(newTheme);
   };
@@ -44,51 +117,24 @@ export default function SettingsScreen() {
         `Are you sure you want to disable ${biometricType} login?`,
         [
           { text: 'Cancel', style: 'cancel' },
-          {
-            text: 'Disable',
-            style: 'destructive',
-            onPress: async () => {
-              await disableBiometric();
-            }
-          }
+          { text: 'Disable', style: 'destructive', onPress: async () => await disableBiometric() }
         ]
       );
     }
   };
 
-  const handleTwoFactorToggle = (value: boolean) => {
-    if (value) {
-      Alert.alert(
-        'Enable 2FA',
-        'Two-factor authentication adds an extra layer of security to your account.',
-        [
-          { text: 'Cancel', style: 'cancel' },
-          {
-            text: 'Enable',
-            onPress: () => {
-              setTwoFactorEnabled(true);
-              Alert.alert('Success', '2FA has been enabled for your account');
-            }
-          }
-        ]
-      );
-    } else {
-      Alert.alert(
-        'Disable 2FA',
-        'Are you sure you want to disable two-factor authentication?',
-        [
-          { text: 'Cancel', style: 'cancel' },
-          {
-            text: 'Disable',
-            style: 'destructive',
-            onPress: () => {
-              setTwoFactorEnabled(false);
-              Alert.alert('Disabled', '2FA has been disabled');
-            }
-          }
-        ]
-      );
-    }
+  const handleLogout = () => {
+    Alert.alert(
+      'Logout',
+      'Are you sure you want to logout?',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        { text: 'Logout', style: 'destructive', onPress: async () => {
+          await logout();
+          router.replace('/');
+        }}
+      ]
+    );
   };
 
   const styles = StyleSheet.create({
@@ -106,12 +152,92 @@ export default function SettingsScreen() {
       fontWeight: 'bold',
       color: colors.headerText,
     },
-    scrollView: {
-      flex: 1,
-    },
     scrollContent: {
       padding: 16,
     },
+    
+    // Profile Section
+    profileSection: {
+      backgroundColor: colors.card,
+      borderRadius: 12,
+      padding: 20,
+      alignItems: 'center',
+      marginBottom: 24,
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.1,
+      shadowRadius: 4,
+      elevation: 3,
+    },
+    profilePhotoContainer: {
+      position: 'relative',
+      marginBottom: 16,
+    },
+    profilePhoto: {
+      width: 100,
+      height: 100,
+      borderRadius: 50,
+      backgroundColor: colors.inputBackground,
+      justifyContent: 'center',
+      alignItems: 'center',
+      borderWidth: 3,
+      borderColor: colors.primary,
+    },
+    profilePhotoPlaceholder: {
+      width: 100,
+      height: 100,
+      borderRadius: 50,
+      backgroundColor: colors.inputBackground,
+      justifyContent: 'center',
+      alignItems: 'center',
+      borderWidth: 3,
+      borderColor: colors.primary,
+    },
+    editPhotoButton: {
+      position: 'absolute',
+      bottom: 0,
+      right: 0,
+      backgroundColor: colors.primary,
+      borderRadius: 16,
+      width: 32,
+      height: 32,
+      justifyContent: 'center',
+      alignItems: 'center',
+      borderWidth: 2,
+      borderColor: colors.card,
+    },
+    userEmail: {
+      fontSize: 16,
+      color: colors.text,
+      marginBottom: 20,
+      textAlign: 'center',
+    },
+    notificationPrefsLabel: {
+      fontSize: 14,
+      fontWeight: '600',
+      color: colors.text,
+      marginBottom: 12,
+      alignSelf: 'flex-start',
+      width: '100%',
+    },
+    notificationRow: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      width: '100%',
+      paddingVertical: 8,
+    },
+    notificationLabel: {
+      fontSize: 15,
+      color: colors.text,
+    },
+    notificationSubtext: {
+      fontSize: 12,
+      color: colors.textSecondary,
+      marginTop: 2,
+    },
+
+    // Section styling
     section: {
       marginBottom: 24,
     },
@@ -151,86 +277,98 @@ export default function SettingsScreen() {
       marginHorizontal: 4,
     },
     themeButtonActive: {
+      backgroundColor: colors.primary,
       borderColor: colors.primary,
-      backgroundColor: colors.primary + '10',
     },
-    themeText: {
-      fontSize: 14,
-      color: colors.textSecondary,
+    themeButtonText: {
       marginTop: 8,
+      fontSize: 14,
+      color: colors.text,
     },
-    themeTextActive: {
-      color: colors.primary,
+    themeButtonTextActive: {
+      color: '#fff',
       fontWeight: '600',
     },
     settingRow: {
       flexDirection: 'row',
       justifyContent: 'space-between',
       alignItems: 'center',
-      paddingVertical: 8,
-    },
-    settingInfo: {
-      flex: 1,
-      flexDirection: 'row',
-      alignItems: 'center',
-    },
-    iconContainer: {
-      width: 40,
-      height: 40,
-      borderRadius: 20,
-      backgroundColor: colors.primary + '15',
-      justifyContent: 'center',
-      alignItems: 'center',
-      marginRight: 12,
+      paddingVertical: 12,
     },
     settingLabel: {
-      fontSize: 16,
+      fontSize: 15,
       color: colors.text,
-      fontWeight: '500',
     },
-    settingDescription: {
-      fontSize: 13,
-      color: colors.textSecondary,
-      marginTop: 2,
-    },
-    divider: {
-      height: 1,
-      backgroundColor: colors.border,
-      marginVertical: 12,
-    },
-    infoRow: {
-      flexDirection: 'row',
+    logoutButton: {
+      backgroundColor: colors.error || '#EF4444',
+      borderRadius: 12,
+      padding: 16,
       alignItems: 'center',
-      paddingVertical: 8,
+      marginTop: 20,
     },
-    infoText: {
-      marginLeft: 12,
-      flex: 1,
-    },
-    infoLabel: {
-      fontSize: 14,
-      color: colors.textSecondary,
-      marginBottom: 2,
-    },
-    infoValue: {
-      fontSize: 14,
-      color: colors.text,
-    },
-    unavailableText: {
-      fontSize: 13,
-      color: colors.textSecondary,
-      fontStyle: 'italic',
-      marginTop: 4,
+    logoutButtonText: {
+      color: '#fff',
+      fontSize: 16,
+      fontWeight: '600',
     },
   });
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
-      <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent}>
+      <View style={styles.header}>
+        <Text style={styles.headerTitle}>Settings</Text>
+      </View>
+      
+      <ScrollView style={styles.scrollContent} showsVerticalScrollIndicator={false}>
+        {/* Profile Section */}
+        <View style={styles.profileSection}>
+          <TouchableOpacity onPress={handlePhotoUpload} style={styles.profilePhotoContainer}>
+            {profilePhoto ? (
+              <Image source={{ uri: profilePhoto }} style={styles.profilePhoto} />
+            ) : (
+              <View style={styles.profilePhotoPlaceholder}>
+                <Ionicons name="person" size={50} color={colors.textSecondary} />
+              </View>
+            )}
+            <View style={styles.editPhotoButton}>
+              <Ionicons name="camera" size={16} color="#fff" />
+            </View>
+          </TouchableOpacity>
+          
+          <Text style={styles.userEmail}>{user?.email || 'user@example.com'}</Text>
+          
+          <Text style={styles.notificationPrefsLabel}>Email Summary Preferences</Text>
+          
+          <View style={styles.notificationRow}>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.notificationLabel}>Weekly Summary</Text>
+              <Text style={styles.notificationSubtext}>Every Sunday at 1 AM</Text>
+            </View>
+            <Switch
+              value={weeklyEmail}
+              onValueChange={handleWeeklyEmailToggle}
+              trackColor={{ false: colors.border, true: colors.primary }}
+            />
+          </View>
+          
+          <View style={styles.notificationRow}>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.notificationLabel}>Monthly Summary</Text>
+              <Text style={styles.notificationSubtext}>Last day of month at 9 AM</Text>
+            </View>
+            <Switch
+              value={monthlyEmail}
+              onValueChange={handleMonthlyEmailToggle}
+              trackColor={{ false: colors.border, true: colors.primary }}
+            />
+          </View>
+        </View>
+
+        {/* Appearance Section */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Appearance</Text>
           <View style={styles.card}>
-            <Text style={styles.cardLabel}>Theme Mode</Text>
+            <Text style={styles.cardLabel}>Theme</Text>
             <View style={styles.themeOptions}>
               <TouchableOpacity
                 style={[styles.themeButton, theme === 'light' && styles.themeButtonActive]}
@@ -239,9 +377,9 @@ export default function SettingsScreen() {
                 <Ionicons 
                   name="sunny" 
                   size={24} 
-                  color={theme === 'light' ? colors.primary : colors.textSecondary} 
+                  color={theme === 'light' ? '#fff' : colors.text} 
                 />
-                <Text style={[styles.themeText, theme === 'light' && styles.themeTextActive]}>
+                <Text style={[styles.themeButtonText, theme === 'light' && styles.themeButtonTextActive]}>
                   Light
                 </Text>
               </TouchableOpacity>
@@ -253,9 +391,9 @@ export default function SettingsScreen() {
                 <Ionicons 
                   name="moon" 
                   size={24} 
-                  color={theme === 'dark' ? colors.primary : colors.textSecondary} 
+                  color={theme === 'dark' ? '#fff' : colors.text} 
                 />
-                <Text style={[styles.themeText, theme === 'dark' && styles.themeTextActive]}>
+                <Text style={[styles.themeButtonText, theme === 'dark' && styles.themeButtonTextActive]}>
                   Dark
                 </Text>
               </TouchableOpacity>
@@ -265,11 +403,11 @@ export default function SettingsScreen() {
                 onPress={() => handleThemeChange('auto')}
               >
                 <Ionicons 
-                  name="contrast" 
+                  name="phone-portrait" 
                   size={24} 
-                  color={theme === 'auto' ? colors.primary : colors.textSecondary} 
+                  color={theme === 'auto' ? '#fff' : colors.text} 
                 />
-                <Text style={[styles.themeText, theme === 'auto' && styles.themeTextActive]}>
+                <Text style={[styles.themeButtonText, theme === 'auto' && styles.themeButtonTextActive]}>
                   Auto
                 </Text>
               </TouchableOpacity>
@@ -277,77 +415,27 @@ export default function SettingsScreen() {
           </View>
         </View>
 
+        {/* Security Section */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Security</Text>
           <View style={styles.card}>
-            {/* Biometric Login Setting */}
-            <View style={styles.settingRow}>
-              <View style={styles.settingInfo}>
-                <View style={styles.iconContainer}>
-                  <Ionicons 
-                    name={Platform.OS === 'ios' ? 'scan' : 'finger-print'} 
-                    size={22} 
-                    color={colors.primary} 
-                  />
-                </View>
-                <View style={{ flex: 1 }}>
-                  <Text style={styles.settingLabel}>{biometricType} Login</Text>
-                  <Text style={styles.settingDescription}>
-                    Quick login using {biometricType.toLowerCase()}
-                  </Text>
-                  {!biometricAvailable && (
-                    <Text style={styles.unavailableText}>
-                      {biometricType} not available on this device
-                    </Text>
-                  )}
-                </View>
+            {biometricAvailable && (
+              <View style={styles.settingRow}>
+                <Text style={styles.settingLabel}>{biometricType} Login</Text>
+                <Switch
+                  value={biometricEnabled}
+                  onValueChange={handleBiometricToggle}
+                  trackColor={{ false: colors.border, true: colors.primary }}
+                />
               </View>
-              <Switch
-                value={biometricEnabled}
-                onValueChange={handleBiometricToggle}
-                trackColor={{ false: colors.border, true: colors.primary }}
-                thumbColor="white"
-                disabled={!biometricAvailable}
-              />
-            </View>
-
-            <View style={styles.divider} />
-
-            {/* Two-Factor Authentication */}
-            <View style={styles.settingRow}>
-              <View style={styles.settingInfo}>
-                <View style={styles.iconContainer}>
-                  <Ionicons name="shield-checkmark" size={22} color={colors.primary} />
-                </View>
-                <View style={{ flex: 1 }}>
-                  <Text style={styles.settingLabel}>Two-Factor Authentication</Text>
-                  <Text style={styles.settingDescription}>
-                    Add an extra layer of security
-                  </Text>
-                </View>
-              </View>
-              <Switch
-                value={twoFactorEnabled}
-                onValueChange={handleTwoFactorToggle}
-                trackColor={{ false: colors.border, true: colors.primary }}
-                thumbColor="white"
-              />
-            </View>
+            )}
           </View>
         </View>
 
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>About</Text>
-          <View style={styles.card}>
-            <View style={styles.infoRow}>
-              <Ionicons name="information-circle-outline" size={20} color={colors.textSecondary} />
-              <View style={styles.infoText}>
-                <Text style={styles.infoLabel}>App Version</Text>
-                <Text style={styles.infoValue}>1.0.0</Text>
-              </View>
-            </View>
-          </View>
-        </View>
+        {/* Logout Button */}
+        <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
+          <Text style={styles.logoutButtonText}>Logout</Text>
+        </TouchableOpacity>
       </ScrollView>
     </SafeAreaView>
   );
