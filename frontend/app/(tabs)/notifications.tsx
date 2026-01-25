@@ -334,7 +334,13 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 8,
+    marginBottom: 6,
+  },
+  rowSpaceBetween: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 0,
   },
   rowRight: {
     flexDirection: 'row',
@@ -348,12 +354,19 @@ const styles = StyleSheet.create({
     flex: 1,
     marginRight: 10,
   },
+  positionLabel: {
+    fontSize: 12,
+    flex: 1,
+  },
+  positionValue: {
+    fontWeight: '500',
+  },
   position: {
     fontSize: 13,
     flex: 1,
   },
   appliedText: {
-    fontSize: 12,
+    fontSize: 11,
   },
   agingBadge: {
     flexDirection: 'row',
