@@ -1,25 +1,35 @@
 import React from 'react';
 import { Tabs } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { useThemeStore } from '../stores/themeStore';
+import { useTheme } from '../../contexts/ThemeContext';
+import { Platform } from 'react-native';
 
-export default function TabLayout() {
-  const { actualTheme } = useThemeStore();
-  const isDark = actualTheme === 'dark';
+export default function TabsLayout() {
+  const { colors, isDark } = useTheme();
 
   return (
     <Tabs
       screenOptions={{
-        tabBarActiveTintColor: '#3B82F6',
-        tabBarInactiveTintColor: isDark ? '#9CA3AF' : '#6B7280',
+        tabBarActiveTintColor: colors.primary,
+        tabBarInactiveTintColor: colors.textSecondary,
         tabBarStyle: {
-          backgroundColor: isDark ? '#1F2937' : '#FFFFFF',
-          borderTopColor: isDark ? '#374151' : '#E5E7EB',
+          backgroundColor: colors.card,
+          borderTopWidth: 1,
+          borderTopColor: colors.border,
+          height: Platform.OS === 'ios' ? 88 : 64,
+          paddingBottom: Platform.OS === 'ios' ? 28 : 8,
+          paddingTop: 8,
+          paddingHorizontal: 4,
         },
-        headerStyle: {
-          backgroundColor: isDark ? '#1F2937' : '#FFFFFF',
+        tabBarLabelStyle: {
+          fontSize: 11,
+          fontWeight: '600',
+          marginTop: 2,
         },
-        headerTintColor: isDark ? '#FFFFFF' : '#000000',
+        tabBarIconStyle: {
+          marginTop: 4,
+        },
+        headerShown: false,
       }}
     >
       <Tabs.Screen
@@ -27,25 +37,16 @@ export default function TabLayout() {
         options={{
           title: 'Dashboard',
           tabBarIcon: ({ color, size }) => (
-            <Ionicons name="stats-chart" size={size} color={color} />
+            <Ionicons name="stats-chart" size={22} color={color} />
           ),
         }}
       />
       <Tabs.Screen
-        name="jobs"
+        name="my-jobs"
         options={{
           title: 'My Jobs',
           tabBarIcon: ({ color, size }) => (
-            <Ionicons name="briefcase" size={size} color={color} />
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="analytics"
-        options={{
-          title: 'Analytics',
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="analytics" size={size} color={color} />
+            <Ionicons name="briefcase" size={22} color={color} />
           ),
         }}
       />
@@ -54,7 +55,16 @@ export default function TabLayout() {
         options={{
           title: 'Settings',
           tabBarIcon: ({ color, size }) => (
-            <Ionicons name="settings" size={size} color={color} />
+            <Ionicons name="settings" size={22} color={color} />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="profile"
+        options={{
+          title: 'Profile',
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="person" size={22} color={color} />
           ),
         }}
       />
