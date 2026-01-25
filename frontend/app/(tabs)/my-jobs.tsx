@@ -936,8 +936,8 @@ export default function MyJobsScreen() {
           {/* Row 2: Position + Work Mode (right aligned) */}
           <View style={dynamicStyles.cardRow2}>
             <Text style={dynamicStyles.position} numberOfLines={1}>{job.position}</Text>
-            <View style={dynamicStyles.workModeBadge}>
-              <Text style={dynamicStyles.workModeText}>{formatWorkMode(job.work_mode)}</Text>
+            <View style={[dynamicStyles.workModeBadge, { backgroundColor: getWorkModeColor(job.work_mode).bg }]}>
+              <Text style={[dynamicStyles.workModeText, { color: getWorkModeColor(job.work_mode).text }]}>{formatWorkMode(job.work_mode)}</Text>
             </View>
           </View>
 
