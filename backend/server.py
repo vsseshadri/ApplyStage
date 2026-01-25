@@ -649,45 +649,6 @@ async def get_ai_insights(current_user: User = Depends(get_current_user)):
         "insights": strategic_insights,
         "follow_ups": follow_up_reminders
     }
-            stage_progression['stalled'] += 1
-    
-    total = len(jobs)
-    active_jobs = total - stage_counts['offer'] - stage_counts['rejected']
-    
-    # STRATEGIC INSIGHT 1: Follow-up Strategy
-    if follow_ups_needed:
-        # Sort by priority first, then by overdue days
-        follow_ups_needed.sort(key=lambda x: (-x['is_priority'], -x['overdue_days']))
-        priority_followups = [f for f in follow_ups_needed if f['is_priority']]
-        
-        if priority_followups:
-            top = priority_followups[0]
-            insights.append(f"🎯 Priority follow-up: {top['company']} is {top['overdue_days']}d overdue. Sending a brief update inquiry could re-engage the recruiter.")
-        
-        if len(follow_ups_needed) > len(priority_followups):
-            regular = len(follow_ups_needed) - len(priority_followups)
-            insights.append(f"📧 {regular} other application{'s need' if regular > 1 else ' needs'} follow-up. Consider batch-sending check-ins on Monday mornings for best response rates.")
-    
-    # STRATEGIC INSIGHT 2: Aging & Urgency Analysis
-    critical_count = len(aging_analysis['critical'])
-    warning_count = len(aging_analysis['warning'])
-    
-    if critical_count > 0:
-        oldest = max(aging_analysis['critical'], key=lambda x: x['days'])
-        insights.append(f"⚠️ {oldest['company']} has been at '{oldest['status'].replace('_', ' ')}' for {oldest['days']} business days. Applications beyond 20 biz days in early stages have <15% progression rate—consider a strategic follow-up or moving focus elsewhere.")
-    
-    if warning_count > 2:
-        insights.append(f"⏰ {warning_count} applications are aging (10+ biz days) in early stages. Industry data shows response rates drop 40% after 2 weeks—prioritize follow-ups on your top picks.")
-    
-    # STRATEGIC INSIGHT 3: Pipeline Health & Progression Rates
-    if total >= 3:
-        advanced = stage_progression['advanced']
-        if advanced > 0 and active_jobs > 0:
-            advanced_rate = (advanced / active_jobs) * 100
-            if advanced_rate >= 30:
-                insights.append(f"📈 Strong pipeline: {advanced_rate:.0f}% of active applications have reached advanced stages. Your materials are resonating well with hiring teams.")
-            elif advanced_rate >= 15:
-                insights.append(f"📊 Pipeline progress: {advanced} of {active_jobs} active applications in advanced stages ({advanced_rate:.0f}%). Consider optimizing your interview preparation for higher conversion.")
         
         # Stall detection
         if stage_progression['stalled'] >= 3:
