@@ -1,4 +1,4 @@
-from fastapi import FastAPI, APIRouter, HTTPException, Depends, Header, Response, Request
+from fastapi import FastAPI, APIRouter, HTTPException, Depends, Header
 from fastapi.responses import StreamingResponse
 from dotenv import load_dotenv
 from starlette.middleware.cors import CORSMiddleware
@@ -6,769 +6,694 @@ from motor.motor_asyncio import AsyncIOMotorClient
 import os
 import logging
 from pathlib import Path
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, EmailStr
 from typing import List, Optional, Dict, Any
 import uuid
 from datetime import datetime, timezone, timedelta
 import httpx
-from emergentintegrations.llm.chat import LlmChat, UserMessage
+from sendgrid import SendGridAPIClient
+from sendgrid.helpers.mail import Mail
 import csv
 import io
 
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
 
-# MongoDB connection
 mongo_url = os.environ['MONGO_URL']
 client = AsyncIOMotorClient(mongo_url)
 db = client[os.environ['DB_NAME']]
 
-# Get Emergent LLM Key
-EMERGENT_LLM_KEY = os.environ.get('EMERGENT_LLM_KEY')
-
-# Create the main app
 app = FastAPI()
 api_router = APIRouter(prefix="/api")
-
-# Configure logging
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-logger = logging.getLogger(__name__)
-
-# ==================== MODELS ====================
 
 class User(BaseModel):
     user_id: str
     email: str
     name: str
     picture: Optional[str] = None
-    subscription: Dict[str, Any] = {"type": "free", "expiresAt": None}
-    preferences: Dict[str, Any] = {
-        "theme": "auto",
-        "notifications": True,
-        "emailSummary": {"weekly": True, "monthly": True}
-    }
+    payment_status: str = "trial"
+    trial_end_date: Optional[datetime] = None
+    applications_count: int = 0
+    preferences: Dict[str, Any] = {"weekly_email": True, "monthly_email": True}
     created_at: datetime
 
-class UserSession(BaseModel):
-    user_id: str
+class SessionDataResponse(BaseModel):
+    id: str
+    email: str
+    name: str
+    picture: Optional[str] = None
     session_token: str
-    expires_at: datetime
-    created_at: datetime
 
-class StageHistory(BaseModel):
-    stage: str
-    start_date: datetime
-    end_date: Optional[datetime] = None
-    outcome: str = "pending"  # pending, passed, failed
-    notes: Optional[str] = None
-
-class AIInsights(BaseModel):
-    job_family: str
-    confidence: float
-    suggested_stages: List[str]
-    analysis: Optional[str] = None
-
-class Job(BaseModel):
-    job_id: str = Field(default_factory=lambda: f"job_{uuid.uuid4().hex[:12]}")
+class JobApplication(BaseModel):
+    job_id: str
     user_id: str
-    company: str
+    company_name: str
     position: str
-    job_family: str
-    location: str
-    salary_range: Optional[Dict[str, Any]] = None
-    work_type: str  # onsite, remote, hybrid
-    applied_date: datetime
-    current_stage: str
+    location: Dict[str, str]
+    salary_range: Dict[str, float]
+    work_mode: str
+    job_url: Optional[str] = None
+    recruiter_email: Optional[str] = None
+    resume_file: Optional[str] = None
+    date_applied: Optional[datetime] = None
+    follow_up_days: Optional[int] = None
+    status: str = "applied"
+    stages: List[Dict[str, Any]] = []
     custom_stages: List[str] = []
-    stage_history: List[StageHistory] = []
-    total_business_days_aging: int = 0
-    stage_business_days_aging: int = 0
-    url: Optional[str] = None
-    notes: Optional[str] = None
-    ai_insights: Optional[AIInsights] = None
+    reminders: List[Dict[str, Any]] = []
     created_at: datetime
     updated_at: datetime
 
-class JobCreate(BaseModel):
-    company: str
+class JobApplicationCreate(BaseModel):
+    company_name: str
     position: str
-    location: str
-    salary_range: Optional[Dict[str, Any]] = None
-    work_type: str
-    applied_date: datetime
-    current_stage: str
+    location: Dict[str, str]
+    salary_range: Dict[str, float]
+    work_mode: str
+    job_url: Optional[str] = None
+    recruiter_email: Optional[str] = None
+    resume_file: Optional[str] = None
+    date_applied: Optional[str] = None
+    follow_up_days: Optional[int] = None
+    status: str = "applied"
     custom_stages: List[str] = []
-    url: Optional[str] = None
-    notes: Optional[str] = None
 
-class JobUpdate(BaseModel):
-    company: Optional[str] = None
+class JobApplicationUpdate(BaseModel):
+    company_name: Optional[str] = None
     position: Optional[str] = None
-    location: Optional[str] = None
-    salary_range: Optional[Dict[str, Any]] = None
-    work_type: Optional[str] = None
-    current_stage: Optional[str] = None
-    url: Optional[str] = None
-    notes: Optional[str] = None
+    location: Optional[Dict[str, str]] = None
+    salary_range: Optional[Dict[str, float]] = None
+    work_mode: Optional[str] = None
+    job_url: Optional[str] = None
+    recruiter_email: Optional[str] = None
+    resume_file: Optional[str] = None
+    date_applied: Optional[str] = None
+    follow_up_days: Optional[int] = None
+    status: Optional[str] = None
+    custom_stages: Optional[List[str]] = None
 
-class StageUpdate(BaseModel):
-    stage: str
-    outcome: Optional[str] = "pending"
-    notes: Optional[str] = None
-
-class InterviewStageTemplate(BaseModel):
-    template_id: str = Field(default_factory=lambda: f"template_{uuid.uuid4().hex[:12]}")
-    job_family: str
-    stages: List[str]
-    is_default: bool = False
-    user_id: Optional[str] = None
+class CustomPosition(BaseModel):
+    position_id: str
+    user_id: str
+    position_name: str
     created_at: datetime
 
-class TemplateCreate(BaseModel):
-    job_family: str
-    stages: List[str]
+class CustomPositionCreate(BaseModel):
+    position_name: str
 
-class SubscriptionVerify(BaseModel):
+class ReminderCreate(BaseModel):
+    job_id: str
+    reminder_date: datetime
+    message: str
+
+class UserPreferences(BaseModel):
+    weekly_email: bool
+    monthly_email: bool
+
+class PaymentVerification(BaseModel):
     receipt: str
-    platform: str  # ios or android
+    platform: str
 
-# ==================== AUTH HELPERS ====================
-
-async def get_current_user(authorization: Optional[str] = Header(None)) -> Optional[User]:
-    """Get current user from session token (Authorization header or cookie)"""
+async def get_current_user(authorization: Optional[str] = Header(None)) -> User:
     if not authorization:
-        return None
+        raise HTTPException(status_code=401, detail="Not authenticated")
     
-    # Extract token from "Bearer <token>" format
     session_token = authorization.replace("Bearer ", "") if authorization.startswith("Bearer ") else authorization
     
-    # Find session
-    session = await db.user_sessions.find_one({"session_token": session_token}, {"_id": 0})
-    if not session:
-        return None
+    session = await db.user_sessions.find_one(
+        {"session_token": session_token},
+        {"_id": 0}
+    )
     
-    # Check expiration with timezone awareness
+    if not session:
+        raise HTTPException(status_code=401, detail="Invalid session")
+    
     expires_at = session["expires_at"]
     if expires_at.tzinfo is None:
         expires_at = expires_at.replace(tzinfo=timezone.utc)
     
-    if expires_at <= datetime.now(timezone.utc):
-        # Session expired, delete it
-        await db.user_sessions.delete_one({"session_token": session_token})
-        return None
+    if expires_at < datetime.now(timezone.utc):
+        raise HTTPException(status_code=401, detail="Session expired")
     
-    # Get user
-    user_doc = await db.users.find_one({"user_id": session["user_id"]}, {"_id": 0})
-    if user_doc:
-        return User(**user_doc)
-    return None
-
-def require_auth(user: Optional[User] = Depends(get_current_user)) -> User:
-    """Dependency to require authentication"""
-    if not user:
-        raise HTTPException(status_code=401, detail="Not authenticated")
-    return user
-
-# ==================== DEFAULT TEMPLATES ====================
-
-DEFAULT_TEMPLATES = {
-    "Software Engineer": ["Applied", "Recruiter Screening", "Phone Screen", "Coding Round", "System Design Round", "Behavioral Round", "Hiring Manager", "Final Onsite Interview"],
-    "Accountant": ["Applied", "Initial Screening", "Phone Interview", "Technical Assessment", "Manager Interview", "Partner Interview", "Final Interview"],
-    "Hardware Engineer": ["Applied", "Recruiter Screening", "Technical Phone Screen", "Circuit Design Round", "Lab Test", "Design Review", "Manager Interview", "Final Onsite"],
-    "Administrative Assistant": ["Applied", "Phone Screening", "Typing Test", "In-Person Interview", "Manager Meeting", "Final Interview"],
-    "Data Scientist": ["Applied", "Recruiter Call", "Technical Screen", "Take-Home Assignment", "Technical Interview", "Behavioral Round", "Final Interview"],
-    "Product Manager": ["Applied", "Recruiter Screen", "Phone Interview", "Case Study", "Product Sense Interview", "Cross-Functional Interview", "Executive Interview"],
-}
-
-async def initialize_default_templates():
-    """Initialize default templates if they don't exist"""
-    for job_family, stages in DEFAULT_TEMPLATES.items():
-        existing = await db.interview_stage_templates.find_one({"job_family": job_family, "is_default": True})
-        if not existing:
-            template = InterviewStageTemplate(
-                job_family=job_family,
-                stages=stages,
-                is_default=True,
-                user_id=None,
-                created_at=datetime.now(timezone.utc)
-            )
-            await db.interview_stage_templates.insert_one(template.model_dump())
-
-# ==================== BUSINESS DAYS CALCULATION ====================
-
-def calculate_business_days(start_date: datetime, end_date: datetime = None) -> int:
-    """Calculate business days between two dates (excluding weekends)"""
-    if end_date is None:
-        end_date = datetime.now(timezone.utc)
+    user_doc = await db.users.find_one(
+        {"user_id": session["user_id"]},
+        {"_id": 0}
+    )
     
-    # Ensure both dates are timezone-aware
-    if start_date.tzinfo is None:
-        start_date = start_date.replace(tzinfo=timezone.utc)
-    if end_date.tzinfo is None:
-        end_date = end_date.replace(tzinfo=timezone.utc)
+    if not user_doc:
+        raise HTTPException(status_code=404, detail="User not found")
     
-    business_days = 0
-    current = start_date.date()
-    end = end_date.date()
-    
-    while current <= end:
-        if current.weekday() < 5:  # Monday = 0, Sunday = 6
-            business_days += 1
-        current += timedelta(days=1)
-    
-    return business_days
+    return User(**user_doc)
 
-# ==================== AI CATEGORIZATION ====================
-
-async def categorize_job_with_ai(position: str, company: str, notes: str = "") -> AIInsights:
-    """Use AI to categorize job and suggest interview stages"""
-    try:
-        chat = LlmChat(
-            api_key=EMERGENT_LLM_KEY,
-            session_id=f"categorize_{uuid.uuid4().hex[:8]}",
-            system_message="You are an expert job categorization system. Categorize jobs into one of these families: Software Engineer, Hardware Engineer, Accountant, Administrative Assistant, Data Scientist, Product Manager, or Other. Respond in JSON format only."
-        ).with_model("openai", "gpt-5.2")
-        
-        prompt = f"""Analyze this job posting and categorize it:
-Position: {position}
-Company: {company}
-Notes: {notes}
-
-Respond with JSON only:
-{{
-    "job_family": "exact category name",
-    "confidence": 0.95,
-    "reasoning": "brief explanation"
-}}"""
-        
-        user_message = UserMessage(text=prompt)
-        response = await chat.send_message(user_message)
-        
-        # Parse response
-        import json
-        result = json.loads(response.strip())
-        
-        # Get suggested stages from templates
-        template = await db.interview_stage_templates.find_one(
-            {"job_family": result["job_family"], "is_default": True},
-            {"_id": 0}
-        )
-        suggested_stages = template["stages"] if template else DEFAULT_TEMPLATES.get(result["job_family"], ["Applied", "Screening", "Interview", "Final Round"])
-        
-        return AIInsights(
-            job_family=result["job_family"],
-            confidence=result.get("confidence", 0.8),
-            suggested_stages=suggested_stages,
-            analysis=result.get("reasoning", "")
-        )
-    except Exception as e:
-        logger.error(f"AI categorization error: {str(e)}")
-        # Fallback to simple keyword matching
-        position_lower = position.lower()
-        if any(word in position_lower for word in ["software", "developer", "engineer", "programmer"]):
-            job_family = "Software Engineer"
-        elif "hardware" in position_lower:
-            job_family = "Hardware Engineer"
-        elif "account" in position_lower:
-            job_family = "Accountant"
-        elif "admin" in position_lower or "assistant" in position_lower:
-            job_family = "Administrative Assistant"
-        elif "data" in position_lower or "scientist" in position_lower:
-            job_family = "Data Scientist"
-        elif "product" in position_lower or "manager" in position_lower:
-            job_family = "Product Manager"
-        else:
-            job_family = "Other"
-        
-        return AIInsights(
-            job_family=job_family,
-            confidence=0.6,
-            suggested_stages=DEFAULT_TEMPLATES.get(job_family, ["Applied", "Screening", "Interview", "Final Round"]),
-            analysis="Fallback categorization based on keywords"
-        )
-
-async def analyze_application_patterns(user_id: str) -> Dict[str, Any]:
-    """Analyze user's application patterns with AI"""
-    try:
-        # Get all user's jobs
-        jobs = await db.jobs.find({"user_id": user_id}, {"_id": 0}).to_list(1000)
-        
-        if not jobs:
-            return {"message": "No jobs found", "insights": []}
-        
-        # Prepare data summary
-        total_apps = len(jobs)
-        stage_distribution = {}
-        job_family_distribution = {}
-        
-        for job in jobs:
-            stage = job.get("current_stage", "Unknown")
-            stage_distribution[stage] = stage_distribution.get(stage, 0) + 1
-            
-            family = job.get("job_family", "Other")
-            job_family_distribution[family] = job_family_distribution.get(family, 0) + 1
-        
-        # Use AI to analyze patterns
-        chat = LlmChat(
-            api_key=EMERGENT_LLM_KEY,
-            session_id=f"pattern_{uuid.uuid4().hex[:8]}",
-            system_message="You are a career analytics expert. Analyze job application patterns and provide actionable insights."
-        ).with_model("openai", "gpt-5.2")
-        
-        prompt = f"""Analyze these job application patterns and provide insights:
-Total Applications: {total_apps}
-Stage Distribution: {stage_distribution}
-Job Family Distribution: {job_family_distribution}
-
-Provide 3-5 key insights in JSON format:
-{{
-    "insights": [
-        {{"category": "success_rate", "message": "insight text", "severity": "positive/neutral/warning"}},
-        ...
-    ],
-    "recommendations": ["recommendation 1", "recommendation 2", ...]
-}}"""
-        
-        user_message = UserMessage(text=prompt)
-        response = await chat.send_message(user_message)
-        
-        import json
-        result = json.loads(response.strip())
-        
-        return {
-            "total_applications": total_apps,
-            "stage_distribution": stage_distribution,
-            "job_family_distribution": job_family_distribution,
-            **result
-        }
-    except Exception as e:
-        logger.error(f"Pattern analysis error: {str(e)}")
-        return {
-            "error": "Failed to analyze patterns",
-            "message": str(e)
-        }
-
-# ==================== AUTH ENDPOINTS ====================
-
-@api_router.get("/auth/google")
-async def google_auth_redirect():
-    """Redirect to Emergent Google Auth"""
-    redirect_url = os.environ.get('EXPO_PUBLIC_BACKEND_URL', 'http://localhost:3000')
-    auth_url = f"https://auth.emergentagent.com/?redirect={redirect_url}"
-    return {"auth_url": auth_url}
-
-@api_router.post("/auth/session")
-async def create_session(session_id: str = Header(..., alias="X-Session-ID")):
-    """Exchange session_id for session_token"""
+@api_router.post("/auth/exchange-session")
+async def exchange_session(session_id: str):
     try:
         async with httpx.AsyncClient() as client:
             response = await client.get(
                 "https://demobackend.emergentagent.com/auth/v1/env/oauth/session-data",
-                headers={"X-Session-ID": session_id}
+                headers={"X-Session-ID": session_id},
+                timeout=10.0
             )
-            response.raise_for_status()
+            
+            if response.status_code != 200:
+                raise HTTPException(status_code=400, detail="Invalid session ID")
+            
             user_data = response.json()
-        
-        # Check if user exists
-        existing_user = await db.users.find_one({"email": user_data["email"]}, {"_id": 0})
-        
-        if not existing_user:
-            # Create new user
-            user_id = f"user_{uuid.uuid4().hex[:12]}"
-            user = User(
-                user_id=user_id,
-                email=user_data["email"],
-                name=user_data["name"],
-                picture=user_data.get("picture"),
-                created_at=datetime.now(timezone.utc)
+            
+            existing_user = await db.users.find_one(
+                {"email": user_data["email"]},
+                {"_id": 0}
             )
-            await db.users.insert_one(user.model_dump())
-        else:
-            user_id = existing_user["user_id"]
-            user = User(**existing_user)
-        
-        # Create session
-        session_token = user_data["session_token"]
-        expires_at = datetime.now(timezone.utc) + timedelta(days=7)
-        
-        session = UserSession(
-            user_id=user_id,
-            session_token=session_token,
-            expires_at=expires_at,
-            created_at=datetime.now(timezone.utc)
-        )
-        await db.user_sessions.insert_one(session.model_dump())
-        
-        return {
-            "user": user.model_dump(),
-            "session_token": session_token
-        }
-    except Exception as e:
-        logger.error(f"Session creation error: {str(e)}")
-        raise HTTPException(status_code=400, detail=str(e))
+            
+            user_id = None
+            if existing_user:
+                user_id = existing_user["user_id"]
+            else:
+                user_id = f"user_{uuid.uuid4().hex[:12]}"
+                new_user = {
+                    "user_id": user_id,
+                    "email": user_data["email"],
+                    "name": user_data["name"],
+                    "picture": user_data.get("picture"),
+                    "payment_status": "trial",
+                    "trial_end_date": datetime.now(timezone.utc) + timedelta(days=7),
+                    "applications_count": 0,
+                    "preferences": {"weekly_email": True, "monthly_email": True},
+                    "created_at": datetime.now(timezone.utc)
+                }
+                await db.users.insert_one(new_user)
+            
+            session_token = user_data["session_token"]
+            await db.user_sessions.insert_one({
+                "user_id": user_id,
+                "session_token": session_token,
+                "expires_at": datetime.now(timezone.utc) + timedelta(days=7),
+                "created_at": datetime.now(timezone.utc)
+            })
+            
+            return SessionDataResponse(**user_data)
+            
+    except httpx.RequestError as e:
+        raise HTTPException(status_code=500, detail=f"Authentication service error: {str(e)}")
 
-@api_router.get("/auth/me")
-async def get_me(current_user: User = Depends(require_auth)):
-    """Get current user"""
+@api_router.get("/auth/me", response_model=User)
+async def get_me(current_user: User = Depends(get_current_user)):
     return current_user
 
 @api_router.post("/auth/logout")
 async def logout(authorization: Optional[str] = Header(None)):
-    """Logout and delete session"""
-    if authorization:
-        session_token = authorization.replace("Bearer ", "")
-        await db.user_sessions.delete_one({"session_token": session_token})
+    if not authorization:
+        return {"message": "Logged out"}
+    
+    session_token = authorization.replace("Bearer ", "") if authorization.startswith("Bearer ") else authorization
+    await db.user_sessions.delete_one({"session_token": session_token})
+    
     return {"message": "Logged out successfully"}
 
-# ==================== JOB ENDPOINTS ====================
+class AppleAuthRequest(BaseModel):
+    identityToken: Optional[str] = None
+    email: Optional[str] = None
+    fullName: Optional[Dict[str, str]] = None
+    user: str
 
-@api_router.get("/jobs")
-async def get_jobs(
-    current_user: User = Depends(require_auth),
-    stage: Optional[str] = None,
-    job_family: Optional[str] = None,
-    work_type: Optional[str] = None
-):
-    """Get all jobs for current user with optional filters"""
-    query = {"user_id": current_user.user_id}
-    
-    if stage:
-        query["current_stage"] = stage
-    if job_family:
-        query["job_family"] = job_family
-    if work_type:
-        query["work_type"] = work_type
-    
-    jobs = await db.jobs.find(query, {"_id": 0}).sort("applied_date", -1).to_list(1000)
-    
-    # Update aging for each job
-    for job in jobs:
-        job["total_business_days_aging"] = calculate_business_days(job["applied_date"])
-        if job["stage_history"]:
-            last_stage = job["stage_history"][-1]
-            job["stage_business_days_aging"] = calculate_business_days(last_stage["start_date"])
-    
-    return jobs
+@api_router.post("/auth/apple")
+async def apple_auth(auth_data: AppleAuthRequest):
+    """Handle Apple Sign-In authentication"""
+    try:
+        # In production, you would verify the identityToken with Apple's servers
+        # For now, we'll create/update the user based on the provided data
+        
+        user_id = f"apple_{auth_data.user[:12]}"
+        
+        # Get name from fullName if provided
+        name = "Apple User"
+        if auth_data.fullName:
+            given_name = auth_data.fullName.get("givenName", "")
+            family_name = auth_data.fullName.get("familyName", "")
+            if given_name or family_name:
+                name = f"{given_name} {family_name}".strip()
+        
+        # Get email (may be None if user chose to hide it)
+        email = auth_data.email or f"{user_id}@privaterelay.appleid.com"
+        
+        # Check if user exists
+        existing_user = await db.users.find_one({"user_id": user_id})
+        
+        if not existing_user:
+            # Create new user with 7-day trial
+            trial_end = datetime.now(timezone.utc) + timedelta(days=7)
+            new_user = {
+                "user_id": user_id,
+                "email": email,
+                "name": name,
+                "picture": None,
+                "payment_status": "trial",
+                "trial_end_date": trial_end,
+                "applications_count": 0,
+                "preferences": {"weekly_email": True, "monthly_email": True},
+                "created_at": datetime.now(timezone.utc)
+            }
+            await db.users.insert_one(new_user)
+        else:
+            # Update name/email if provided (Apple only sends on first sign-in)
+            if auth_data.email or auth_data.fullName:
+                update_data = {}
+                if auth_data.email:
+                    update_data["email"] = email
+                if auth_data.fullName and name != "Apple User":
+                    update_data["name"] = name
+                if update_data:
+                    await db.users.update_one({"user_id": user_id}, {"$set": update_data})
+        
+        # Create session
+        session_token = str(uuid.uuid4())
+        await db.user_sessions.insert_one({
+            "user_id": user_id,
+            "session_token": session_token,
+            "expires_at": datetime.now(timezone.utc) + timedelta(days=7),
+            "created_at": datetime.now(timezone.utc)
+        })
+        
+        return {"session_token": session_token, "user_id": user_id}
+        
+    except Exception as e:
+        logging.error(f"Apple auth error: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Authentication failed: {str(e)}")
 
-@api_router.post("/jobs")
-async def create_job(job_data: JobCreate, current_user: User = Depends(require_auth)):
-    """Create a new job application"""
-    # AI categorization
-    ai_insights = await categorize_job_with_ai(
-        position=job_data.position,
-        company=job_data.company,
-        notes=job_data.notes or ""
-    )
+@api_router.get("/jobs", response_model=List[JobApplication])
+async def get_jobs(current_user: User = Depends(get_current_user)):
+    jobs = await db.job_applications.find(
+        {"user_id": current_user.user_id},
+        {"_id": 0}
+    ).sort("created_at", -1).to_list(1000)
     
-    # Create job
-    job = Job(
+    return [JobApplication(**job) for job in jobs]
+
+@api_router.post("/jobs", response_model=JobApplication)
+async def create_job(job_data: JobApplicationCreate, current_user: User = Depends(get_current_user)):
+    if current_user.payment_status == "trial":
+        if current_user.trial_end_date:
+            trial_end = current_user.trial_end_date
+            if trial_end.tzinfo is None:
+                trial_end = trial_end.replace(tzinfo=timezone.utc)
+            if datetime.now(timezone.utc) > trial_end:
+                raise HTTPException(status_code=403, detail="Trial period expired. Please upgrade to continue.")
+    
+    job_id = f"job_{uuid.uuid4().hex[:12]}"
+    now = datetime.now(timezone.utc)
+    
+    date_applied_dt = now
+    if job_data.date_applied:
+        try:
+            date_applied_dt = datetime.fromisoformat(job_data.date_applied.replace('Z', '+00:00'))
+        except:
+            date_applied_dt = now
+    
+    job = JobApplication(
+        job_id=job_id,
         user_id=current_user.user_id,
-        company=job_data.company,
+        company_name=job_data.company_name,
         position=job_data.position,
-        job_family=ai_insights.job_family,
         location=job_data.location,
         salary_range=job_data.salary_range,
-        work_type=job_data.work_type,
-        applied_date=job_data.applied_date,
-        current_stage=job_data.current_stage,
+        work_mode=job_data.work_mode,
+        job_url=job_data.job_url,
+        recruiter_email=job_data.recruiter_email,
+        resume_file=job_data.resume_file,
+        date_applied=date_applied_dt,
+        follow_up_days=job_data.follow_up_days,
+        status=job_data.status,
+        stages=[{"status": job_data.status, "timestamp": now.isoformat()}],
         custom_stages=job_data.custom_stages,
-        stage_history=[StageHistory(
-            stage=job_data.current_stage,
-            start_date=job_data.applied_date,
-            outcome="pending"
-        )],
-        url=job_data.url,
-        notes=job_data.notes,
-        ai_insights=ai_insights,
-        created_at=datetime.now(timezone.utc),
-        updated_at=datetime.now(timezone.utc)
+        reminders=[],
+        created_at=now,
+        updated_at=now
     )
     
-    await db.jobs.insert_one(job.model_dump())
-    return job
-
-@api_router.get("/jobs/{job_id}")
-async def get_job(job_id: str, current_user: User = Depends(require_auth)):
-    """Get job details"""
-    job = await db.jobs.find_one({"job_id": job_id, "user_id": current_user.user_id}, {"_id": 0})
-    if not job:
-        raise HTTPException(status_code=404, detail="Job not found")
+    await db.job_applications.insert_one(job.model_dump())
     
-    # Update aging
-    job["total_business_days_aging"] = calculate_business_days(job["applied_date"])
-    if job["stage_history"]:
-        last_stage = job["stage_history"][-1]
-        job["stage_business_days_aging"] = calculate_business_days(last_stage["start_date"])
+    await db.users.update_one(
+        {"user_id": current_user.user_id},
+        {"$inc": {"applications_count": 1}}
+    )
     
     return job
 
-@api_router.put("/jobs/{job_id}")
-async def update_job(job_id: str, job_data: JobUpdate, current_user: User = Depends(require_auth)):
-    """Update job details"""
-    job = await db.jobs.find_one({"job_id": job_id, "user_id": current_user.user_id}, {"_id": 0})
+@api_router.get("/jobs/{job_id}", response_model=JobApplication)
+async def get_job(job_id: str, current_user: User = Depends(get_current_user)):
+    job = await db.job_applications.find_one(
+        {"job_id": job_id, "user_id": current_user.user_id},
+        {"_id": 0}
+    )
+    
     if not job:
-        raise HTTPException(status_code=404, detail="Job not found")
+        raise HTTPException(status_code=404, detail="Job application not found")
+    
+    return JobApplication(**job)
+
+@api_router.put("/jobs/{job_id}", response_model=JobApplication)
+async def update_job(job_id: str, job_data: JobApplicationUpdate, current_user: User = Depends(get_current_user)):
+    job = await db.job_applications.find_one(
+        {"job_id": job_id, "user_id": current_user.user_id},
+        {"_id": 0}
+    )
+    
+    if not job:
+        raise HTTPException(status_code=404, detail="Job application not found")
     
     update_data = {k: v for k, v in job_data.model_dump().items() if v is not None}
+    
+    if "status" in update_data and update_data["status"] != job["status"]:
+        stages = job.get("stages", [])
+        stages.append({"status": update_data["status"], "timestamp": datetime.now(timezone.utc).isoformat()})
+        update_data["stages"] = stages
+    
     update_data["updated_at"] = datetime.now(timezone.utc)
     
-    await db.jobs.update_one({"job_id": job_id}, {"$set": update_data})
+    await db.job_applications.update_one(
+        {"job_id": job_id, "user_id": current_user.user_id},
+        {"$set": update_data}
+    )
     
-    updated_job = await db.jobs.find_one({"job_id": job_id}, {"_id": 0})
-    return updated_job
+    updated_job = await db.job_applications.find_one(
+        {"job_id": job_id},
+        {"_id": 0}
+    )
+    
+    return JobApplication(**updated_job)
 
 @api_router.delete("/jobs/{job_id}")
-async def delete_job(job_id: str, current_user: User = Depends(require_auth)):
-    """Delete job"""
-    result = await db.jobs.delete_one({"job_id": job_id, "user_id": current_user.user_id})
+async def delete_job(job_id: str, current_user: User = Depends(get_current_user)):
+    result = await db.job_applications.delete_one(
+        {"job_id": job_id, "user_id": current_user.user_id}
+    )
+    
     if result.deleted_count == 0:
-        raise HTTPException(status_code=404, detail="Job not found")
-    return {"message": "Job deleted successfully"}
-
-@api_router.post("/jobs/{job_id}/stage")
-async def update_job_stage(job_id: str, stage_data: StageUpdate, current_user: User = Depends(require_auth)):
-    """Update job stage"""
-    job = await db.jobs.find_one({"job_id": job_id, "user_id": current_user.user_id}, {"_id": 0})
-    if not job:
-        raise HTTPException(status_code=404, detail="Job not found")
+        raise HTTPException(status_code=404, detail="Job application not found")
     
-    # Close current stage
-    stage_history = job.get("stage_history", [])
-    if stage_history:
-        stage_history[-1]["end_date"] = datetime.now(timezone.utc)
-        stage_history[-1]["outcome"] = stage_data.outcome
-    
-    # Add new stage
-    new_stage = StageHistory(
-        stage=stage_data.stage,
-        start_date=datetime.now(timezone.utc),
-        outcome="pending",
-        notes=stage_data.notes
-    )
-    stage_history.append(new_stage.model_dump())
-    
-    await db.jobs.update_one(
-        {"job_id": job_id},
-        {"$set": {
-            "current_stage": stage_data.stage,
-            "stage_history": stage_history,
-            "updated_at": datetime.now(timezone.utc)
-        }}
+    await db.users.update_one(
+        {"user_id": current_user.user_id},
+        {"$inc": {"applications_count": -1}}
     )
     
-    return {"message": "Stage updated successfully"}
-
-@api_router.get("/jobs/export/csv")
-async def export_jobs_csv(current_user: User = Depends(require_auth)):
-    """Export jobs as CSV"""
-    jobs = await db.jobs.find({"user_id": current_user.user_id}, {"_id": 0}).to_list(1000)
-    
-    # Create CSV
-    output = io.StringIO()
-    writer = csv.writer(output)
-    
-    # Header
-    writer.writerow([
-        "Company", "Position", "Job Family", "Location", "Work Type",
-        "Applied Date", "Current Stage", "Total Business Days",
-        "Stage Business Days", "URL", "Notes"
-    ])
-    
-    # Data
-    for job in jobs:
-        total_aging = calculate_business_days(job["applied_date"])
-        stage_aging = 0
-        if job.get("stage_history"):
-            last_stage = job["stage_history"][-1]
-            stage_aging = calculate_business_days(last_stage["start_date"])
-        
-        writer.writerow([
-            job["company"],
-            job["position"],
-            job["job_family"],
-            job["location"],
-            job["work_type"],
-            job["applied_date"].strftime("%Y-%m-%d"),
-            job["current_stage"],
-            total_aging,
-            stage_aging,
-            job.get("url", ""),
-            job.get("notes", "")
-        ])
-    
-    output.seek(0)
-    return StreamingResponse(
-        iter([output.getvalue()]),
-        media_type="text/csv",
-        headers={"Content-Disposition": "attachment; filename=jobs.csv"}
-    )
-
-# ==================== DASHBOARD ENDPOINTS ====================
+    return {"message": "Job application deleted"}
 
 @api_router.get("/dashboard/stats")
-async def get_dashboard_stats(current_user: User = Depends(require_auth)):
-    """Get dashboard statistics"""
-    jobs = await db.jobs.find({"user_id": current_user.user_id}, {"_id": 0}).to_list(1000)
+async def get_dashboard_stats(current_user: User = Depends(get_current_user)):
+    jobs = await db.job_applications.find(
+        {"user_id": current_user.user_id},
+        {"_id": 0}
+    ).to_list(1000)
     
-    total_applications = len(jobs)
-    
-    # By stage
-    by_stage = {}
-    for job in jobs:
-        stage = job.get("current_stage", "Unknown")
-        by_stage[stage] = by_stage.get(stage, 0) + 1
-    
-    # By job family
-    by_job_family = {}
-    for job in jobs:
-        family = job.get("job_family", "Other")
-        by_job_family[family] = by_job_family.get(family, 0) + 1
-    
-    # By work type
-    by_work_type = {}
-    for job in jobs:
-        work_type = job.get("work_type", "Unknown")
-        by_work_type[work_type] = by_work_type.get(work_type, 0) + 1
-    
-    # Average aging
-    total_aging = sum(calculate_business_days(job["applied_date"]) for job in jobs)
-    avg_aging = total_aging / total_applications if total_applications > 0 else 0
-    
-    # Recent applications (last 7 days)
-    seven_days_ago = datetime.now(timezone.utc) - timedelta(days=7)
-    recent_apps = []
-    for job in jobs:
-        applied_date = job["applied_date"]
-        if applied_date.tzinfo is None:
-            applied_date = applied_date.replace(tzinfo=timezone.utc)
-        if applied_date >= seven_days_ago:
-            recent_apps.append(job)
-    
-    return {
-        "total_applications": total_applications,
-        "by_stage": by_stage,
-        "by_job_family": by_job_family,
-        "by_work_type": by_work_type,
-        "average_aging_days": round(avg_aging, 1),
-        "recent_applications": len(recent_apps),
-        "recent_jobs": recent_apps[:5]
+    stats = {
+        "total": len(jobs),
+        "applied": 0,
+        "recruiter_screening": 0,
+        "phone_screen": 0,
+        "coding_round_1": 0,
+        "coding_round_2": 0,
+        "system_design": 0,
+        "behavioural": 0,
+        "hiring_manager": 0,
+        "final_round": 0,
+        "offer": 0,
+        "rejected": 0,
+        "by_location": {},
+        "by_work_mode": {
+            "remote": 0,
+            "onsite": 0,
+            "hybrid": 0
+        }
     }
-
-# ==================== ANALYTICS ENDPOINTS ====================
-
-@api_router.get("/analytics")
-async def get_analytics(current_user: User = Depends(require_auth)):
-    """Get analytics data"""
-    jobs = await db.jobs.find({"user_id": current_user.user_id}, {"_id": 0}).to_list(1000)
     
-    # Time-based trends
+    # State abbreviation mapping
+    state_abbr = {
+        'Alabama': 'AL', 'Alaska': 'AK', 'Arizona': 'AZ', 'Arkansas': 'AR', 'California': 'CA',
+        'Colorado': 'CO', 'Connecticut': 'CT', 'Delaware': 'DE', 'Florida': 'FL', 'Georgia': 'GA',
+        'Hawaii': 'HI', 'Idaho': 'ID', 'Illinois': 'IL', 'Indiana': 'IN', 'Iowa': 'IA',
+        'Kansas': 'KS', 'Kentucky': 'KY', 'Louisiana': 'LA', 'Maine': 'ME', 'Maryland': 'MD',
+        'Massachusetts': 'MA', 'Michigan': 'MI', 'Minnesota': 'MN', 'Mississippi': 'MS', 'Missouri': 'MO',
+        'Montana': 'MT', 'Nebraska': 'NE', 'Nevada': 'NV', 'New Hampshire': 'NH', 'New Jersey': 'NJ',
+        'New Mexico': 'NM', 'New York': 'NY', 'North Carolina': 'NC', 'North Dakota': 'ND', 'Ohio': 'OH',
+        'Oklahoma': 'OK', 'Oregon': 'OR', 'Pennsylvania': 'PA', 'Rhode Island': 'RI', 'South Carolina': 'SC',
+        'South Dakota': 'SD', 'Tennessee': 'TN', 'Texas': 'TX', 'Utah': 'UT', 'Vermont': 'VT',
+        'Virginia': 'VA', 'Washington': 'WA', 'West Virginia': 'WV', 'Wisconsin': 'WI', 'Wyoming': 'WY'
+    }
+    
+    ten_days_ago = datetime.now(timezone.utc) - timedelta(days=10)
+    recent_count = 0
+    
+    for job in jobs:
+        status = job.get("status", "applied")
+        if status in stats:
+            stats[status] += 1
+        
+        # Location aggregation with state abbreviation
+        location = job.get("location", {})
+        state = location.get("state", "Unknown")
+        city = location.get("city", "Unknown")
+        # Convert state to abbreviation
+        state_short = state_abbr.get(state, state[:2].upper() if len(state) >= 2 else state)
+        loc_key = f"{city}, {state_short}"
+        
+        if loc_key not in stats["by_location"]:
+            stats["by_location"][loc_key] = 0
+        stats["by_location"][loc_key] += 1
+        
+        # Work mode aggregation
+        work_mode = job.get("work_mode", "").lower()
+        if work_mode in stats["by_work_mode"]:
+            stats["by_work_mode"][work_mode] += 1
+        
+        created_at = job.get("created_at")
+        if created_at:
+            if isinstance(created_at, str):
+                created_at = datetime.fromisoformat(created_at.replace('Z', '+00:00'))
+            if created_at.tzinfo is None:
+                created_at = created_at.replace(tzinfo=timezone.utc)
+            if created_at >= ten_days_ago:
+                recent_count += 1
+    
+    stats["last_10_days"] = recent_count
+    
+    return stats
+
+@api_router.get("/dashboard/ai-insights")
+async def get_ai_insights(current_user: User = Depends(get_current_user)):
+    # Get all jobs for detailed analysis
+    jobs = await db.job_applications.find(
+        {"user_id": current_user.user_id},
+        {"_id": 0}
+    ).to_list(1000)
+    
+    insights = []
+    
+    # Calculate time-based stats
     now = datetime.now(timezone.utc)
+    seven_days_ago = now - timedelta(days=7)
     thirty_days_ago = now - timedelta(days=30)
     
-    weekly_data = {}
-    for i in range(4):
-        week_start = now - timedelta(weeks=i+1)
-        week_end = now - timedelta(weeks=i)
-        week_jobs = []
-        for j in jobs:
-            applied_date = j["applied_date"]
-            if applied_date.tzinfo is None:
-                applied_date = applied_date.replace(tzinfo=timezone.utc)
-            if week_start <= applied_date <= week_end:
-                week_jobs.append(j)
-        weekly_data[f"Week {i+1}"] = len(week_jobs)
+    week_count = 0
+    month_count = 0
+    follow_ups_needed = []
     
-    return {
-        "total_applications": len(jobs),
-        "weekly_trends": weekly_data,
-        "success_rate": 0.15,  # Placeholder - would calculate from outcomes
-        "avg_response_time": 5,  # Placeholder - would calculate from stage history
+    # Stage counts for progress tracking
+    stage_counts = {
+        'applied': 0,
+        'recruiter_screening': 0,
+        'phone_screen': 0,
+        'coding_round_1': 0,
+        'coding_round_2': 0,
+        'system_design': 0,
+        'behavioural': 0,
+        'hiring_manager': 0,
+        'final_round': 0,
+        'offer': 0,
+        'rejected': 0
     }
-
-@api_router.get("/analytics/patterns")
-async def get_application_patterns(current_user: User = Depends(require_auth)):
-    """Get AI-powered pattern analysis"""
-    patterns = await analyze_application_patterns(current_user.user_id)
-    return patterns
-
-# ==================== TEMPLATE ENDPOINTS ====================
-
-@api_router.get("/templates")
-async def get_templates(current_user: User = Depends(require_auth)):
-    """Get all templates (default + user custom)"""
-    # Get default templates
-    default_templates = await db.interview_stage_templates.find(
-        {"is_default": True},
-        {"_id": 0}
-    ).to_list(100)
     
-    # Get user custom templates
-    custom_templates = await db.interview_stage_templates.find(
-        {"user_id": current_user.user_id, "is_default": False},
-        {"_id": 0}
-    ).to_list(100)
+    for job in jobs:
+        # Count stages
+        status = job.get("status", "applied")
+        if status in stage_counts:
+            stage_counts[status] += 1
+        
+        # Time-based counting
+        created_at = job.get("created_at")
+        if created_at:
+            if isinstance(created_at, str):
+                created_at = datetime.fromisoformat(created_at.replace('Z', '+00:00'))
+            if created_at.tzinfo is None:
+                created_at = created_at.replace(tzinfo=timezone.utc)
+            
+            if created_at >= seven_days_ago:
+                week_count += 1
+            if created_at >= thirty_days_ago:
+                month_count += 1
+        
+        # Check for follow-ups needed
+        follow_up_days = job.get("follow_up_days")
+        date_applied = job.get("date_applied")
+        if follow_up_days and date_applied and status not in ['offer', 'rejected']:
+            if isinstance(date_applied, str):
+                date_applied = datetime.fromisoformat(date_applied.replace('Z', '+00:00'))
+            if date_applied.tzinfo is None:
+                date_applied = date_applied.replace(tzinfo=timezone.utc)
+            
+            days_since = (now - date_applied).days
+            if days_since >= follow_up_days:
+                follow_ups_needed.append(job.get("company_name", "Unknown"))
     
-    return {
-        "default": default_templates,
-        "custom": custom_templates
-    }
+    total = len(jobs)
+    
+    # Weekly/Monthly application insights
+    if week_count > 0:
+        insights.append(f"📊 You applied to {week_count} job{'s' if week_count != 1 else ''} this week.")
+    if month_count > 0:
+        insights.append(f"📅 {month_count} application{'s' if month_count != 1 else ''} submitted this month.")
+    
+    # Follow-up reminders
+    if follow_ups_needed:
+        if len(follow_ups_needed) <= 3:
+            companies = ", ".join(follow_ups_needed)
+            insights.append(f"⏰ Follow-up needed: {companies}")
+        else:
+            insights.append(f"⏰ {len(follow_ups_needed)} applications need follow-up!")
+    
+    # Interview stage progress insights
+    advanced_stages = stage_counts['phone_screen'] + stage_counts['coding_round_1'] + stage_counts['coding_round_2'] + stage_counts['system_design'] + stage_counts['behavioural'] + stage_counts['hiring_manager'] + stage_counts['final_round']
+    
+    if stage_counts['offer'] > 0:
+        insights.append(f"🎉 Congratulations! You have {stage_counts['offer']} offer{'s' if stage_counts['offer'] != 1 else ''}!")
+    
+    if stage_counts['final_round'] > 0:
+        insights.append(f"🌟 {stage_counts['final_round']} application{'s are' if stage_counts['final_round'] != 1 else ' is'} in final round - great progress!")
+    
+    if stage_counts['hiring_manager'] > 0:
+        insights.append(f"💼 {stage_counts['hiring_manager']} at hiring manager stage - you're advancing well!")
+    
+    if advanced_stages > 0 and stage_counts['offer'] == 0 and stage_counts['final_round'] == 0:
+        insights.append(f"📈 {advanced_stages} application{'s have' if advanced_stages != 1 else ' has'} progressed past initial screening.")
+    
+    if stage_counts['recruiter_screening'] > 0:
+        insights.append(f"👀 {stage_counts['recruiter_screening']} application{'s' if stage_counts['recruiter_screening'] != 1 else ''} under recruiter review.")
+    
+    # Calculate success rate if there's enough data
+    if total >= 5:
+        progress_rate = ((total - stage_counts['applied'] - stage_counts['rejected']) / total) * 100
+        if progress_rate > 50:
+            insights.append(f"✨ {progress_rate:.0f}% of your applications are progressing - excellent conversion!")
+    
+    # Default insight if nothing else
+    if not insights:
+        insights.append("🚀 Start tracking your applications to get personalized insights!")
+    
+    return {"insights": insights}
 
-@api_router.post("/templates")
-async def create_template(template_data: TemplateCreate, current_user: User = Depends(require_auth)):
-    """Create custom template"""
-    template = InterviewStageTemplate(
-        job_family=template_data.job_family,
-        stages=template_data.stages,
-        is_default=False,
+@api_router.get("/positions", response_model=List[CustomPosition])
+async def get_positions(current_user: User = Depends(get_current_user)):
+    positions = await db.custom_positions.find(
+        {"user_id": current_user.user_id},
+        {"_id": 0}
+    ).to_list(1000)
+    
+    return [CustomPosition(**pos) for pos in positions]
+
+@api_router.post("/positions", response_model=CustomPosition)
+async def create_position(position_data: CustomPositionCreate, current_user: User = Depends(get_current_user)):
+    position = CustomPosition(
+        position_id=f"pos_{uuid.uuid4().hex[:12]}",
         user_id=current_user.user_id,
+        position_name=position_data.position_name,
         created_at=datetime.now(timezone.utc)
     )
     
-    await db.interview_stage_templates.insert_one(template.model_dump())
-    return template
+    await db.custom_positions.insert_one(position.model_dump())
+    
+    return position
 
-# ==================== SUBSCRIPTION ENDPOINTS ====================
-
-@api_router.post("/subscription/verify")
-async def verify_subscription(sub_data: SubscriptionVerify, current_user: User = Depends(require_auth)):
-    """Verify in-app purchase (placeholder)"""
-    # In production, this would verify receipt with Apple/Google
-    # For now, just return success
-    return {
-        "verified": True,
-        "subscription_type": "premium",
-        "expires_at": (datetime.now(timezone.utc) + timedelta(days=30)).isoformat()
+@api_router.post("/reminders")
+async def create_reminder(reminder_data: ReminderCreate, current_user: User = Depends(get_current_user)):
+    job = await db.job_applications.find_one(
+        {"job_id": reminder_data.job_id, "user_id": current_user.user_id},
+        {"_id": 0}
+    )
+    
+    if not job:
+        raise HTTPException(status_code=404, detail="Job application not found")
+    
+    reminder = {
+        "reminder_id": f"rem_{uuid.uuid4().hex[:12]}",
+        "date": reminder_data.reminder_date,
+        "message": reminder_data.message,
+        "completed": False
     }
+    
+    await db.job_applications.update_one(
+        {"job_id": reminder_data.job_id},
+        {"$push": {"reminders": reminder}}
+    )
+    
+    return reminder
 
-@api_router.get("/subscription/status")
-async def get_subscription_status(current_user: User = Depends(require_auth)):
-    """Get subscription status"""
-    return current_user.subscription
+@api_router.put("/preferences")
+async def update_preferences(preferences: UserPreferences, current_user: User = Depends(get_current_user)):
+    await db.users.update_one(
+        {"user_id": current_user.user_id},
+        {"$set": {"preferences": preferences.model_dump()}}
+    )
+    
+    return {"message": "Preferences updated"}
 
-# ==================== AI ENDPOINTS ====================
+@api_router.post("/payment/verify")
+async def verify_payment(payment: PaymentVerification, current_user: User = Depends(get_current_user)):
+    await db.users.update_one(
+        {"user_id": current_user.user_id},
+        {"$set": {"payment_status": "paid"}}
+    )
+    
+    return {"message": "Payment verified", "status": "paid"}
 
-@api_router.post("/ai/categorize")
-async def categorize_job(position: str, company: str, notes: str = "", current_user: User = Depends(require_auth)):
-    """Categorize job with AI"""
-    insights = await categorize_job_with_ai(position, company, notes)
-    return insights
+@api_router.get("/export/csv")
+async def export_csv(current_user: User = Depends(get_current_user)):
+    jobs = await db.job_applications.find(
+        {"user_id": current_user.user_id},
+        {"_id": 0}
+    ).sort("created_at", -1).to_list(1000)
+    
+    output = io.StringIO()
+    writer = csv.writer(output)
+    
+    writer.writerow([
+        "Company", "Position", "City", "State", "Work Mode",
+        "Min Salary", "Max Salary", "Status", "Date Applied", "Created Date", "Updated Date"
+    ])
+    
+    for job in jobs:
+        writer.writerow([
+            job.get("company_name", ""),
+            job.get("position", ""),
+            job.get("location", {}).get("city", ""),
+            job.get("location", {}).get("state", ""),
+            job.get("work_mode", ""),
+            job.get("salary_range", {}).get("min", ""),
+            job.get("salary_range", {}).get("max", ""),
+            job.get("status", ""),
+            job.get("date_applied", ""),
+            job.get("created_at", ""),
+            job.get("updated_at", "")
+        ])
+    
+    output.seek(0)
+    
+    return StreamingResponse(
+        iter([output.getvalue()]),
+        media_type="text/csv",
+        headers={"Content-Disposition": "attachment; filename=job_applications.csv"}
+    )
 
-# ==================== STARTUP ====================
-
-@app.on_event("startup")
-async def startup_event():
-    """Initialize default templates on startup"""
-    await initialize_default_templates()
-    logger.info("Default templates initialized")
-
-@app.on_event("shutdown")
-async def shutdown_db_client():
-    client.close()
-
-# Include router
 app.include_router(api_router)
 
-# CORS
 app.add_middleware(
     CORSMiddleware,
     allow_credentials=True,
@@ -776,3 +701,13 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
+logger = logging.getLogger(__name__)
+
+@app.on_event("shutdown")
+async def shutdown_db_client():
+    client.close()
