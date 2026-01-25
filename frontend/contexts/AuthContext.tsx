@@ -69,7 +69,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         const urlParams = new URLSearchParams(window.location.search);
         const testMode = urlParams.get('test_mode');
         if (testMode === 'true') {
-          const testToken = 'rtQfD78cpaeRI7pMIFnhkI5unPf9nEFZpVYLY5eZcf4';
+          const testToken = 'test_token_abc123';
           setSessionToken(testToken);
           await fetchUser(testToken);
           setLoading(false);
