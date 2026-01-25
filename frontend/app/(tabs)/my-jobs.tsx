@@ -1667,7 +1667,7 @@ const createStyles = (colors: any, isDark: boolean, isTablet: boolean = false) =
     marginRight: 8,
   },
   priorityIndicator: {
-    marginLeft: 6,
+    marginLeft: 4,
     padding: 2,
   },
   cardRow1: { 
