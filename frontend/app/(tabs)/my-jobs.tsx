@@ -1643,6 +1643,20 @@ const createStyles = (colors: any, isDark: boolean, isTablet: boolean = false) =
     shadowRadius: 3,
     elevation: 2,
   },
+  priorityJobCard: {
+    borderLeftWidth: 3,
+    borderLeftColor: '#F59E0B',
+  },
+  companyWithPriority: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+    marginRight: 8,
+  },
+  priorityIndicator: {
+    marginLeft: 6,
+    padding: 2,
+  },
   cardRow1: { 
     flexDirection: 'row', 
     justifyContent: 'space-between', 
@@ -1654,7 +1668,6 @@ const createStyles = (colors: any, isDark: boolean, isTablet: boolean = false) =
     fontWeight: 'bold',
     color: colors.text,
     flex: 1,
-    marginRight: 8,
   },
   daysCounter: {
     alignItems: 'center',
