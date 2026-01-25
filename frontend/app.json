@@ -1,31 +1,33 @@
 {
   "expo": {
-    "name": "Job Journey",
-    "slug": "jobjourney",
+    "name": "Job Tracker",
+    "slug": "job-application-tracker",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "jobjourney",
+    "scheme": "jobtracker",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.jobjourney.app",
+      "bundleIdentifier": "com.jobtracker.app",
       "infoPlist": {
-        "NSUserTrackingUsageDescription": "Get personalized job insights",
-        "NSCalendarsUsageDescription": "Schedule interview reminders"
+        "NSUserTrackingUsageDescription": "Track your job applications and progress",
+        "NSCalendarsUsageDescription": "Schedule reminders for job follow-ups"
       }
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
-        "backgroundColor": "#3B82F6"
+        "backgroundColor": "#007AFF"
       },
       "edgeToEdgeEnabled": true,
-      "package": "com.jobjourney.app",
+      "package": "com.jobtracker.app",
       "permissions": [
         "android.permission.INTERNET",
-        "android.permission.ACCESS_NETWORK_STATE"
+        "android.permission.ACCESS_NETWORK_STATE",
+        "android.permission.WRITE_EXTERNAL_STORAGE",
+        "android.permission.READ_EXTERNAL_STORAGE"
       ]
     },
     "web": {
@@ -35,22 +37,27 @@
     },
     "plugins": [
       "expo-router",
-      "expo-secure-store",
       [
         "expo-splash-screen",
         {
           "image": "./assets/images/splash-icon.png",
           "imageWidth": 200,
           "resizeMode": "contain",
-          "backgroundColor": "#3B82F6"
+          "backgroundColor": "#007AFF"
         }
-      ]
+      ],
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/images/notification-icon.png",
+          "color": "#007AFF",
+          "sounds": []
+        }
+      ],
+      "expo-font"
     ],
     "experiments": {
       "typedRoutes": true
-    },
-    "extra": {
-      "EXPO_PUBLIC_BACKEND_URL": "https://jobjourney-4.preview.emergentagent.com"
     }
   }
 }
