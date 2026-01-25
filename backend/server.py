@@ -61,6 +61,7 @@ class JobApplication(BaseModel):
     stages: List[Dict[str, Any]] = []
     custom_stages: List[str] = []
     reminders: List[Dict[str, Any]] = []
+    is_priority: bool = False
     created_at: datetime
     updated_at: datetime
 
@@ -77,6 +78,7 @@ class JobApplicationCreate(BaseModel):
     follow_up_days: Optional[int] = None
     status: str = "applied"
     custom_stages: List[str] = []
+    is_priority: bool = False
 
 class JobApplicationUpdate(BaseModel):
     company_name: Optional[str] = None
@@ -88,6 +90,7 @@ class JobApplicationUpdate(BaseModel):
     recruiter_email: Optional[str] = None
     resume_file: Optional[str] = None
     date_applied: Optional[str] = None
+    is_priority: Optional[bool] = None
     follow_up_days: Optional[int] = None
     status: Optional[str] = None
     custom_stages: Optional[List[str]] = None
