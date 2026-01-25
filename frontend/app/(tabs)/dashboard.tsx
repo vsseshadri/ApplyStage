@@ -733,13 +733,25 @@ const createStyles = (colors: any, isDark: boolean) => StyleSheet.create({
     color: colors.text,
   },
   followUpRow: {
-    marginBottom: 8,
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    marginBottom: 10,
+  },
+  followUpCheckbox: {
+    marginRight: 10,
+    marginTop: 1,
+  },
+  followUpContent: {
+    flex: 1,
   },
   followUpText: {
     fontSize: 13,
     lineHeight: 18,
     color: colors.text,
+  },
+  followUpDays: {
     fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace',
+    fontWeight: '600',
   },
   // Work Mode Chart Styles
   workModeContainer: {
