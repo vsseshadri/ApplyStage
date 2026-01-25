@@ -673,6 +673,15 @@ const createStyles = (colors: any, isDark: boolean) => StyleSheet.create({
     lineHeight: 20,
     color: colors.text,
   },
+  followUpRow: {
+    marginBottom: 8,
+  },
+  followUpText: {
+    fontSize: 13,
+    lineHeight: 18,
+    color: colors.text,
+    fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace',
+  },
   // Work Mode Chart Styles
   workModeContainer: {
     flexDirection: 'row',
