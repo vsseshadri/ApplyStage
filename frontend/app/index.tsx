@@ -39,7 +39,7 @@ export default function LoginScreen() {
     <View style={styles.container}>
       <View style={styles.content}>
         <Ionicons name="briefcase" size={80} color="#007AFF" />
-        <Text style={styles.title}>Job Application Tracker</Text>
+        <Text style={styles.title}>Job Applications Tracker</Text>
         <Text style={styles.subtitle}>Track your job applications with ease</Text>
         
         <View style={styles.features}>
