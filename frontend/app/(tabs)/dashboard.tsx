@@ -467,9 +467,27 @@ export default function DashboardScreen() {
                 </Text>
                 <View style={[dynamicStyles.insightsCard, { borderLeftWidth: 3, borderLeftColor: '#F59E0B' }]}>
                   {followUps.map((followUp, index) => (
-                    <View key={index} style={[dynamicStyles.followUpRow, index === followUps.length - 1 && { marginBottom: 0 }]}>
-                      <Text style={dynamicStyles.followUpText}>{followUp}</Text>
-                    </View>
+                    <TouchableOpacity 
+                      key={index} 
+                      style={[
+                        dynamicStyles.followUpRow, 
+                        index === followUps.length - 1 && { marginBottom: 0 },
+                        actionedFollowUps.has(index) && { opacity: 0.5 }
+                      ]}
+                      onPress={() => handleFollowUpAction(index)}
+                      activeOpacity={0.7}
+                    >
+                      <View style={dynamicStyles.followUpCheckbox}>
+                        <Ionicons 
+                          name={actionedFollowUps.has(index) ? "checkbox" : "square-outline"} 
+                          size={20} 
+                          color={actionedFollowUps.has(index) ? colors.primary : colors.textSecondary} 
+                        />
+                      </View>
+                      <View style={dynamicStyles.followUpContent}>
+                        {renderFollowUpText(followUp)}
+                      </View>
+                    </TouchableOpacity>
                   ))}
                 </View>
               </View>
