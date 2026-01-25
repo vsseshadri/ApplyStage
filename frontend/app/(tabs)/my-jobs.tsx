@@ -554,6 +554,19 @@ export default function MyJobsScreen() {
     return mode.charAt(0).toUpperCase() + mode.slice(1);
   };
 
+  const getWorkModeColor = (mode: string): { bg: string; text: string } => {
+    switch (mode?.toLowerCase()) {
+      case 'remote':
+        return { bg: '#10B98120', text: '#10B981' };
+      case 'onsite':
+        return { bg: '#3B82F620', text: '#3B82F6' };
+      case 'hybrid':
+        return { bg: '#8B5CF620', text: '#8B5CF6' };
+      default:
+        return { bg: '#6B728020', text: '#6B7280' };
+    }
+  };
+
   const getDaysAgo = (dateString: string): number => {
     try {
       return differenceInDays(new Date(), new Date(dateString));
