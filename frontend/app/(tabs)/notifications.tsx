@@ -413,11 +413,3 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
 });
-    textAlign: 'center',
-  },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-});
