@@ -74,13 +74,13 @@ export default function SettingsScreen() {
     setWeeklyEmail(value);
     // TODO: Update backend
     try {
-      await fetch(`${BACKEND_URL}/api/user/preferences`, {
+      await fetch(`${BACKEND_URL}/api/preferences`, {
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${sessionToken}`,
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ weekly_email: value }),
+        body: JSON.stringify({ weekly_email: value, monthly_email: monthlyEmail }),
       });
     } catch (error) {
       console.error('Error updating preference:', error);
@@ -91,13 +91,13 @@ export default function SettingsScreen() {
     setMonthlyEmail(value);
     // TODO: Update backend
     try {
-      await fetch(`${BACKEND_URL}/api/user/preferences`, {
+      await fetch(`${BACKEND_URL}/api/preferences`, {
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${sessionToken}`,
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ monthly_email: value }),
+        body: JSON.stringify({ weekly_email: weeklyEmail, monthly_email: value }),
       });
     } catch (error) {
       console.error('Error updating preference:', error);
