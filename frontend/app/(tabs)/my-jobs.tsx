@@ -1884,25 +1884,19 @@ const createStyles = (colors: any, isDark: boolean, isTablet: boolean = false) =
     color: colors.inputText,
     borderColor: colors.inputBorder,
   },
-  priorityToggle: {
+  priorityBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: colors.card,
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 20,
-    borderWidth: 2,
-    borderColor: 'transparent',
-    borderStyle: 'dashed',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 6,
+    backgroundColor: 'transparent',
   },
-  priorityText: {
-    fontSize: 16,
+  priorityBadgeText: {
+    fontSize: 12,
     fontWeight: '600',
     color: colors.textSecondary,
-    marginLeft: 12,
-  },
-  priorityTextActive: {
-    color: '#F59E0B',
+    marginLeft: 4,
   },
   customPositionRow: {
     flexDirection: 'row',
