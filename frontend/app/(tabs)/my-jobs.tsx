@@ -359,6 +359,7 @@ export default function MyJobsScreen() {
       recruiter_email: '',
       status: 'applied',
       follow_up_days: '',
+      is_priority: false,
     });
     setSelectedState('');
     setSelectedCity('');
