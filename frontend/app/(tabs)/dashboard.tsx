@@ -74,6 +74,47 @@ export default function DashboardScreen() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [followUps, setFollowUps] = useState<string[]>([]);
+  const [actionedFollowUps, setActionedFollowUps] = useState<Set<number>>(new Set());
+
+  // Function to handle marking a follow-up as actioned
+  const handleFollowUpAction = (index: number) => {
+    setActionedFollowUps(prev => {
+      const newSet = new Set(prev);
+      newSet.add(index);
+      return newSet;
+    });
+    
+    // Remove from list after a brief animation delay
+    setTimeout(() => {
+      setFollowUps(prev => prev.filter((_, i) => i !== index));
+      setActionedFollowUps(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(index);
+        return newSet;
+      });
+    }, 300);
+  };
+
+  // Function to render follow-up text with monospace for days
+  const renderFollowUpText = (text: string) => {
+    // Pattern to match numbers followed by 'd' or 'days'
+    const parts = text.split(/(\d+d|\d+ days)/g);
+    
+    return (
+      <Text style={dynamicStyles.followUpText}>
+        {parts.map((part, idx) => {
+          if (/^\d+d$/.test(part) || /^\d+ days$/.test(part)) {
+            return (
+              <Text key={idx} style={dynamicStyles.followUpDays}>
+                {part}
+              </Text>
+            );
+          }
+          return part;
+        })}
+      </Text>
+    );
+  };
 
   useFocusEffect(
     React.useCallback(() => {
