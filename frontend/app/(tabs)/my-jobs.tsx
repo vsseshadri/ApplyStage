@@ -1158,6 +1158,21 @@ export default function MyJobsScreen() {
                 />
               </View>
 
+              {/* Priority Toggle */}
+              <TouchableOpacity 
+                style={dynamicStyles.priorityToggle}
+                onPress={() => setFormData(prev => ({...prev, is_priority: !prev.is_priority}))}
+              >
+                <Ionicons 
+                  name={formData.is_priority ? "star" : "star-outline"} 
+                  size={28} 
+                  color={formData.is_priority ? "#F59E0B" : colors.textSecondary} 
+                />
+                <Text style={[dynamicStyles.priorityText, formData.is_priority && dynamicStyles.priorityTextActive]}>
+                  {formData.is_priority ? "Priority Job" : "Mark as Priority"}
+                </Text>
+              </TouchableOpacity>
+
               {/* Position with Dropdown + Custom Option */}
               <View style={dynamicStyles.formSection}>
                 <View style={dynamicStyles.labelRow}>
