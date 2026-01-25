@@ -805,7 +805,7 @@ export default function MyJobsScreen() {
                 key={pos}
                 style={[dynamicStyles.dropdownItem, formData.position === pos && dynamicStyles.dropdownItemSelected]}
                 onPress={() => {
-                  setFormData({ ...formData, position: pos });
+                  setFormData(prev => ({ ...prev, position: pos }));
                   setShowPositionDropdown(false);
                 }}
               >
