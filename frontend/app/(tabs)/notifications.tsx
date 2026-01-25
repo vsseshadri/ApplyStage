@@ -413,61 +413,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
 });
-    paddingVertical: 5,
-    borderRadius: 14,
-    gap: 5,
-  },
-  statusDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-  },
-  currentStatusText: {
-    fontSize: 11,
-    fontWeight: '600',
-  },
-  followUpButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 6,
-    paddingHorizontal: 12,
-    borderRadius: 8,
-    borderWidth: 1,
-    gap: 4,
-  },
-  followUpText: {
-    fontSize: 12,
-    fontWeight: '600',
-  },
-  deleteAction: {
-    backgroundColor: '#EF4444',
-    justifyContent: 'center',
-    alignItems: 'center',
-    width: 70,
-    marginBottom: 10,
-    borderRadius: 12,
-  },
-  deleteText: {
-    color: '#FFF',
-    fontSize: 11,
-    fontWeight: '600',
-    marginTop: 2,
-  },
-  emptyContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingTop: 80,
-    paddingHorizontal: 40,
-  },
-  emptyText: {
-    fontSize: 17,
-    fontWeight: '600',
-    marginTop: 12,
-    marginBottom: 6,
-  },
-  emptySubtext: {
-    fontSize: 13,
     textAlign: 'center',
   },
   loadingContainer: {
