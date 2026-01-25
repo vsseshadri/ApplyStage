@@ -123,10 +123,14 @@ async def get_current_user(authorization: Optional[str] = Header(None)) -> User:
     
     session_token = authorization.replace("Bearer ", "") if authorization.startswith("Bearer ") else authorization
     
+    logger.info(f"Looking for session_token: {session_token}")
+    
     session = await db.user_sessions.find_one(
         {"session_token": session_token},
         {"_id": 0}
     )
+    
+    logger.info(f"Session found: {session}")
     
     if not session:
         raise HTTPException(status_code=401, detail="Invalid session")
