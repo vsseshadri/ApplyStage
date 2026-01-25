@@ -238,12 +238,13 @@ export default function NotificationsScreen() {
             </Text>
           </View>
           
-          {/* Row 4: Follow-up Button */}
-          <View style={styles.row}>
+          {/* Row 4: Follow-up Button (right-aligned) */}
+          <View style={styles.rowRight}>
             <TouchableOpacity
               style={[styles.followUpButton, { backgroundColor: colors.primary + '12' }]}
               onPress={() => handleSendEmail(notification)}
             >
+              <Ionicons name="mail-outline" size={14} color={colors.primary} />
               <Text style={[styles.followUpText, { color: colors.primary }]}>Follow-up</Text>
             </TouchableOpacity>
           </View>
