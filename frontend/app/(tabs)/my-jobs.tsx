@@ -503,7 +503,8 @@ export default function MyJobsScreen() {
         resume_file: resumeFile?.base64 || null,
         date_applied: parsedDate.toISOString(),
         status: formData.status,
-        custom_stages: []
+        custom_stages: [],
+        is_priority: formData.is_priority
       };
 
       if (formData.follow_up_days.trim()) {
