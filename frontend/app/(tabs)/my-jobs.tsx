@@ -382,6 +382,7 @@ export default function MyJobsScreen() {
       recruiter_email: job.recruiter_email || '',
       status: job.status,
       follow_up_days: job.follow_up_days?.toString() || '',
+      is_priority: job.is_priority || false,
     });
     setSelectedState(job.location.state || '');
     setSelectedCity(job.location.city || '');
