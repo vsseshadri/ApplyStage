@@ -10,14 +10,12 @@ import {
   Linking,
   ActivityIndicator,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuth } from '../../contexts/AuthContext';
 import { useTheme } from '../../contexts/ThemeContext';
 import { Ionicons } from '@expo/vector-icons';
 import { differenceInDays, format } from 'date-fns';
 import { useFocusEffect } from '@react-navigation/native';
 import Constants from 'expo-constants';
-import { Swipeable } from 'react-native-gesture-handler';
 
 const BACKEND_URL = Constants.expoConfig?.extra?.EXPO_PUBLIC_BACKEND_URL || process.env.EXPO_PUBLIC_BACKEND_URL;
 
@@ -65,7 +63,7 @@ export default function NotificationsScreen() {
             const daysSinceApplied = differenceInDays(now, appliedDate);
             const followUpDays = parseInt(job.follow_up_days);
 
-            // If days since applied is greater than follow-up days, create notification
+            // If days since applied is greater than or equal to follow-up days, create notification
             if (daysSinceApplied >= followUpDays) {
               notifs.push({
                 id: job.job_id,
@@ -131,218 +129,212 @@ export default function NotificationsScreen() {
     );
   };
 
-  const renderRightActions = (notificationId: string) => {
-    return (
-      <TouchableOpacity
-        style={[styles.deleteButton, { backgroundColor: colors.error || '#EF4444' }]}
-        onPress={() => handleDismissNotification(notificationId)}
-      >
-        <Ionicons name="trash-outline" size={24} color="#FFF" />
-        <Text style={styles.deleteButtonText}>Delete</Text>
-      </TouchableOpacity>
-    );
+  const getUrgencyColor = (daysOverdue: number) => {
+    if (daysOverdue > 7) return '#EF4444'; // Red
+    if (daysOverdue > 3) return '#F59E0B'; // Orange
+    return '#3B82F6'; // Blue
   };
 
   const renderNotification = (notification: Notification) => {
-    const dynamicStyles = StyleSheet.create({
-      notificationCard: {
-        backgroundColor: colors.card,
-        borderRadius: 12,
-        padding: 16,
-        marginBottom: 12,
-        borderLeftWidth: 4,
-        borderLeftColor: notification.days_overdue > 7 ? '#EF4444' : notification.days_overdue > 3 ? '#F59E0B' : '#3B82F6',
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.1,
-        shadowRadius: 4,
-        elevation: 3,
-      },
-      companyName: {
-        fontSize: 18,
-        fontWeight: '700',
-        color: colors.text,
-        marginBottom: 4,
-      },
-      position: {
-        fontSize: 14,
-        color: colors.textSecondary,
-        marginBottom: 8,
-      },
-      overdueText: {
-        fontSize: 14,
-        fontWeight: '600',
-        color: notification.days_overdue > 7 ? '#EF4444' : notification.days_overdue > 3 ? '#F59E0B' : '#3B82F6',
-        marginBottom: 8,
-      },
-      dateText: {
-        fontSize: 12,
-        color: colors.textSecondary,
-        marginBottom: 12,
-      },
-      emailButton: {
-        backgroundColor: colors.primary,
-        paddingVertical: 12,
-        paddingHorizontal: 16,
-        borderRadius: 8,
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'center',
-      },
-      emailButtonText: {
-        color: '#FFF',
-        fontSize: 14,
-        fontWeight: '600',
-        marginLeft: 8,
-      },
-    });
+    const urgencyColor = getUrgencyColor(notification.days_overdue);
 
     return (
-      <Swipeable
+      <View
         key={notification.id}
-        renderRightActions={() => renderRightActions(notification.id)}
-        overshootRight={false}
+        style={[
+          styles.notificationCard,
+          { backgroundColor: colors.card, borderLeftColor: urgencyColor }
+        ]}
       >
-        <View style={dynamicStyles.notificationCard}>
-          <Text style={dynamicStyles.companyName}>{notification.company_name}</Text>
-          <Text style={dynamicStyles.position}>{notification.position}</Text>
+        <View style={styles.notificationContent}>
+          <View style={styles.notificationHeader}>
+            <View style={{ flex: 1 }}>
+              <Text style={[styles.companyName, { color: colors.text }]}>
+                {notification.company_name}
+              </Text>
+              <Text style={[styles.position, { color: colors.textSecondary }]}>
+                {notification.position}
+              </Text>
+            </View>
+            <TouchableOpacity
+              onPress={() => handleDismissNotification(notification.id)}
+              style={styles.deleteIcon}
+            >
+              <Ionicons name="close-circle" size={24} color={colors.textSecondary} />
+            </TouchableOpacity>
+          </View>
           
-          <Text style={dynamicStyles.overdueText}>
+          <Text style={[styles.overdueText, { color: urgencyColor }]}>
             {notification.days_overdue === 0
               ? `Follow-up reminder: Today is the day!`
               : `Follow-up overdue by ${notification.days_overdue} day${notification.days_overdue !== 1 ? 's' : ''}`}
           </Text>
           
-          <Text style={dynamicStyles.dateText}>
+          <Text style={[styles.dateText, { color: colors.textSecondary }]}>
             Applied: {format(new Date(notification.date_applied), 'MMM dd, yyyy')} • 
             Follow-up due: Every {notification.follow_up_days} days
           </Text>
 
           {notification.recruiter_email && (
-            <Text style={[dynamicStyles.dateText, { marginBottom: 12 }]}>
+            <Text style={[styles.dateText, { color: colors.textSecondary }]}>
               <Ionicons name="mail" size={12} /> {notification.recruiter_email}
             </Text>
           )}
 
           <TouchableOpacity
-            style={dynamicStyles.emailButton}
+            style={[styles.emailButton, { backgroundColor: colors.primary }]}
             onPress={() => handleSendEmail(notification)}
           >
             <Ionicons name="mail-outline" size={18} color="#FFF" />
-            <Text style={dynamicStyles.emailButtonText}>Send Follow-up Email</Text>
+            <Text style={styles.emailButtonText}>Send Follow-up Email</Text>
           </TouchableOpacity>
         </View>
-      </Swipeable>
+      </View>
     );
   };
 
-  const dynamicStyles = StyleSheet.create({
-    container: {
-      flex: 1,
-      backgroundColor: colors.background,
-    },
-    header: {
-      padding: 20,
-      paddingTop: Platform.OS === 'ios' ? 60 : 40,
-      backgroundColor: colors.card,
-      borderBottomWidth: 1,
-      borderBottomColor: colors.border,
-    },
-    headerTitle: {
-      fontSize: 28,
-      fontWeight: '700',
-      color: colors.text,
-    },
-    headerSubtitle: {
-      fontSize: 14,
-      color: colors.textSecondary,
-      marginTop: 4,
-    },
-    scrollContent: {
-      padding: 16,
-    },
-    emptyContainer: {
-      flex: 1,
-      justifyContent: 'center',
-      alignItems: 'center',
-      paddingTop: 100,
-    },
-    emptyIcon: {
-      marginBottom: 16,
-    },
-    emptyText: {
-      fontSize: 18,
-      fontWeight: '600',
-      color: colors.textSecondary,
-      marginBottom: 8,
-    },
-    emptySubtext: {
-      fontSize: 14,
-      color: colors.textSecondary,
-      textAlign: 'center',
-      paddingHorizontal: 40,
-    },
-    loadingContainer: {
-      flex: 1,
-      justifyContent: 'center',
-      alignItems: 'center',
-    },
-  });
-
   if (loading) {
     return (
-      <SafeAreaView style={dynamicStyles.container}>
-        <View style={dynamicStyles.loadingContainer}>
+      <View style={[styles.container, { backgroundColor: colors.background }]}>
+        <View style={styles.header}>
+          <Text style={[styles.headerTitle, { color: colors.text }]}>Notifications</Text>
+        </View>
+        <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color={colors.primary} />
         </View>
-      </SafeAreaView>
+      </View>
     );
   }
 
   return (
-    <SafeAreaView style={dynamicStyles.container} edges={['top']}>
-      <View style={dynamicStyles.header}>
-        <Text style={dynamicStyles.headerTitle}>Notifications</Text>
-        <Text style={dynamicStyles.headerSubtitle}>
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
+      <View style={[styles.header, { backgroundColor: colors.card, borderBottomColor: colors.border }]}>
+        <Text style={[styles.headerTitle, { color: colors.text }]}>Notifications</Text>
+        <Text style={[styles.headerSubtitle, { color: colors.textSecondary }]}>
           {notifications.length} follow-up reminder{notifications.length !== 1 ? 's' : ''}
         </Text>
       </View>
 
       {notifications.length === 0 ? (
-        <View style={dynamicStyles.emptyContainer}>
+        <View style={styles.emptyContainer}>
           <Ionicons
             name="notifications-off-outline"
             size={64}
             color={colors.textSecondary}
-            style={dynamicStyles.emptyIcon}
+            style={styles.emptyIcon}
           />
-          <Text style={dynamicStyles.emptyText}>No Notifications</Text>
-          <Text style={dynamicStyles.emptySubtext}>
+          <Text style={[styles.emptyText, { color: colors.textSecondary }]}>No Notifications</Text>
+          <Text style={[styles.emptySubtext, { color: colors.textSecondary }]}>
             You're all caught up! Follow-up reminders will appear here when it's time to reach out.
           </Text>
         </View>
       ) : (
-        <ScrollView style={dynamicStyles.scrollContent} showsVerticalScrollIndicator={false}>
+        <ScrollView style={styles.scrollContent} showsVerticalScrollIndicator={false}>
           {notifications.map(renderNotification)}
         </ScrollView>
       )}
-    </SafeAreaView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  deleteButton: {
+  container: {
+    flex: 1,
+  },
+  header: {
+    padding: 20,
+    paddingTop: Platform.OS === 'ios' ? 60 : 40,
+    borderBottomWidth: 1,
+  },
+  headerTitle: {
+    fontSize: 28,
+    fontWeight: '700',
+  },
+  headerSubtitle: {
+    fontSize: 14,
+    marginTop: 4,
+  },
+  scrollContent: {
+    padding: 16,
+  },
+  notificationCard: {
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 12,
+    borderLeftWidth: 4,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  notificationContent: {
+    flex: 1,
+  },
+  notificationHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginBottom: 8,
+  },
+  deleteIcon: {
+    padding: 4,
+  },
+  companyName: {
+    fontSize: 18,
+    fontWeight: '700',
+    marginBottom: 4,
+  },
+  position: {
+    fontSize: 14,
+    marginBottom: 8,
+  },
+  overdueText: {
+    fontSize: 14,
+    fontWeight: '600',
+    marginBottom: 8,
+  },
+  dateText: {
+    fontSize: 12,
+    marginBottom: 8,
+  },
+  emailButton: {
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 8,
+  },
+  emailButtonText: {
+    color: '#FFF',
+    fontSize: 14,
+    fontWeight: '600',
+    marginLeft: 8,
+  },
+  emptyContainer: {
+    flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    width: 80,
-    height: '100%',
-    marginBottom: 12,
-    borderRadius: 12,
+    paddingTop: 100,
+    paddingHorizontal: 40,
   },
-  deleteButtonText: {
-    color: '#FFF',
-    fontSize: 12,
+  emptyIcon: {
+    marginBottom: 16,
+  },
+  emptyText: {
+    fontSize: 18,
     fontWeight: '600',
-    marginTop: 4,
+    marginBottom: 8,
+  },
+  emptySubtext: {
+    fontSize: 14,
+    textAlign: 'center',
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
 });
