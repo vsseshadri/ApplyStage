@@ -224,27 +224,23 @@ export default function NotificationsScreen() {
             </View>
           </View>
           
-          {/* Row 2: Position */}
+          {/* Row 2: Position Applied */}
           <View style={styles.row}>
-            <Text style={[styles.position, { color: colors.textSecondary }]} numberOfLines={1}>
-              {notification.position}
+            <Text style={[styles.positionLabel, { color: colors.textSecondary }]}>
+              Position Applied: <Text style={[styles.positionValue, { color: colors.text }]}>{notification.position}</Text>
             </Text>
           </View>
           
-          {/* Row 3: Applied Date */}
-          <View style={styles.row}>
+          {/* Row 3: Applied Date + Follow-up Button (right-aligned) */}
+          <View style={styles.rowSpaceBetween}>
             <Text style={[styles.appliedText, { color: colors.textSecondary }]}>
               Applied: {appliedDate}
             </Text>
-          </View>
-          
-          {/* Row 4: Follow-up Button (right-aligned) */}
-          <View style={styles.rowRight}>
             <TouchableOpacity
               style={[styles.followUpButton, { backgroundColor: colors.primary + '12' }]}
               onPress={() => handleSendEmail(notification)}
             >
-              <Ionicons name="mail-outline" size={14} color={colors.primary} />
+              <Ionicons name="mail-outline" size={12} color={colors.primary} />
               <Text style={[styles.followUpText, { color: colors.primary }]}>Follow-up</Text>
             </TouchableOpacity>
           </View>
