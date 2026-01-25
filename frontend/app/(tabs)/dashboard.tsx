@@ -403,11 +403,12 @@ export default function DashboardScreen() {
           </View>
         )}
 
-        {/* Insights - At the bottom */}
-        {insights.length > 0 && (
+        {/* Insights - Split into Strategic and Follow-ups */}
+        {(insights.length > 0 || followUps.length > 0) && (
           <View style={dynamicStyles.section}>
+            {/* Strategic Insights */}
             <Text style={dynamicStyles.sectionTitle}>
-              <Ionicons name="sparkles" size={16} color={colors.primary} /> Insights
+              <Ionicons name="sparkles" size={16} color={colors.primary} /> Strategic Insights
             </Text>
             <View style={dynamicStyles.insightsCard}>
               {insights.map((insight, index) => (
@@ -416,6 +417,22 @@ export default function DashboardScreen() {
                 </View>
               ))}
             </View>
+            
+            {/* Follow-up Reminders */}
+            {followUps.length > 0 && (
+              <View style={{ marginTop: 16 }}>
+                <Text style={dynamicStyles.sectionTitle}>
+                  <Ionicons name="notifications" size={16} color="#F59E0B" /> Follow-up Reminders
+                </Text>
+                <View style={[dynamicStyles.insightsCard, { borderLeftWidth: 3, borderLeftColor: '#F59E0B' }]}>
+                  {followUps.map((followUp, index) => (
+                    <View key={index} style={[dynamicStyles.followUpRow, index === followUps.length - 1 && { marginBottom: 0 }]}>
+                      <Text style={dynamicStyles.followUpText}>{followUp}</Text>
+                    </View>
+                  ))}
+                </View>
+              </View>
+            )}
           </View>
         )}
 
