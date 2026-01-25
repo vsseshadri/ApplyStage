@@ -875,6 +875,7 @@ export default function MyJobsScreen() {
     const isSelected = selectedJobs.has(jobId);
     const daysAgo = getDaysAgo(job.date_applied || job.created_at);
     const appliedDate = job.date_applied ? format(new Date(job.date_applied), 'MMM d, yyyy') : '-';
+    const isPriority = job.is_priority || false;
     
     return (
       <TouchableOpacity
@@ -883,6 +884,7 @@ export default function MyJobsScreen() {
         style={[
           dynamicStyles.jobCard,
           selectMode && isSelected && dynamicStyles.jobCardSelected,
+          isPriority && dynamicStyles.priorityJobCard,
         ]}
         onPress={() => {
           if (selectMode) {
@@ -902,9 +904,16 @@ export default function MyJobsScreen() {
           </View>
         )}
         <View style={[dynamicStyles.cardContentWrapper, selectMode && { marginLeft: 8 }]}>
-          {/* Row 1: Company Name + Days Counter */}
+          {/* Row 1: Company Name + Priority Badge + Days Counter */}
           <View style={dynamicStyles.cardRow1}>
-            <Text style={dynamicStyles.companyName} numberOfLines={1}>{job.company_name}</Text>
+            <View style={dynamicStyles.companyWithPriority}>
+              <Text style={dynamicStyles.companyName} numberOfLines={1}>{job.company_name}</Text>
+              {isPriority && (
+                <View style={dynamicStyles.priorityIndicator}>
+                  <Ionicons name="star" size={12} color="#F59E0B" />
+                </View>
+              )}
+            </View>
             <View style={dynamicStyles.daysCounter}>
               <Text style={dynamicStyles.daysNumber}>{daysAgo}</Text>
               <Text style={dynamicStyles.daysLabel}>days</Text>
