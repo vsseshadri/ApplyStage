@@ -318,7 +318,7 @@ const styles = StyleSheet.create({
   },
   notificationCard: {
     borderRadius: 12,
-    padding: 14,
+    padding: 12,
     marginBottom: 10,
     borderLeftWidth: 4,
     shadowColor: '#000',
@@ -327,77 +327,92 @@ const styles = StyleSheet.create({
     shadowRadius: 2,
     elevation: 2,
   },
-  notificationHeader: {
+  notificationMainRow: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 4,
+  },
+  notificationInfo: {
+    flex: 1,
+    marginRight: 12,
   },
   companyName: {
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: '700',
-    flex: 1,
-    marginRight: 8,
-  },
-  overdueText: {
-    fontSize: 12,
-    fontWeight: '700',
-    fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace',
+    marginBottom: 2,
   },
   position: {
-    fontSize: 13,
-    marginBottom: 8,
+    fontSize: 12,
+    marginBottom: 4,
   },
-  infoRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 10,
-  },
-  infoItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-  },
-  infoText: {
+  appliedText: {
     fontSize: 11,
   },
-  stageProgressRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 6,
-    marginBottom: 10,
-  },
-  stageChip: {
-    flexDirection: 'row',
+  notificationRight: {
     alignItems: 'center',
-    backgroundColor: 'rgba(0,0,0,0.05)',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 12,
-    gap: 4,
+    gap: 8,
   },
-  stageDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-  },
-  stageText: {
-    fontSize: 10,
-    fontWeight: '500',
-  },
-  stageDays: {
-    fontSize: 10,
-    fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace',
-  },
-  actionRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  currentStatusBadge: {
-    flexDirection: 'row',
+  agingBadge: {
     alignItems: 'center',
     paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 10,
+    minWidth: 50,
+  },
+  agingNumber: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace',
+  },
+  agingLabel: {
+    fontSize: 9,
+    fontWeight: '600',
+  },
+  followUpButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 6,
+    paddingHorizontal: 10,
+    borderRadius: 8,
+    borderWidth: 1,
+  },
+  deleteAction: {
+    backgroundColor: '#EF4444',
+    justifyContent: 'center',
+    alignItems: 'center',
+    width: 70,
+    marginBottom: 10,
+    borderRadius: 12,
+  },
+  deleteText: {
+    color: '#FFF',
+    fontSize: 11,
+    fontWeight: '600',
+    marginTop: 2,
+  },
+  emptyContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingTop: 80,
+    paddingHorizontal: 40,
+  },
+  emptyText: {
+    fontSize: 17,
+    fontWeight: '600',
+    marginTop: 12,
+    marginBottom: 6,
+  },
+  emptySubtext: {
+    fontSize: 13,
+    textAlign: 'center',
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+});
     paddingVertical: 5,
     borderRadius: 14,
     gap: 5,
