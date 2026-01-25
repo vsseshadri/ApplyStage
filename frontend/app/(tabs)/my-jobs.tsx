@@ -297,24 +297,27 @@ export default function MyJobsScreen() {
   const handleAddCustomPosition = async () => {
     if (!newPosition.trim()) return;
     
+    const trimmedPosition = newPosition.trim();
+    
+    // Add to custom positions locally
+    setCustomPositions([...customPositions, trimmedPosition]);
+    setFormData({ ...formData, position: trimmedPosition });
+    setNewPosition('');
+    setShowPositionInput(false);
+    
+    // Try to sync with backend but don't block on failure
     try {
-      const response = await fetch(`${BACKEND_URL}/api/positions`, {
+      await fetch(`${BACKEND_URL}/api/positions`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${sessionToken}`,
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify({ position_name: newPosition.trim() })
+        body: JSON.stringify({ position_name: trimmedPosition })
       });
-
-      if (response.ok) {
-        setCustomPositions([...customPositions, newPosition.trim()]);
-        setFormData({ ...formData, position: newPosition.trim() });
-        setNewPosition('');
-        setShowPositionInput(false);
-      }
     } catch (error) {
-      console.error('Error adding custom position:', error);
+      console.error('Error syncing custom position:', error);
+      // Position is already added locally, so we can continue
     }
   };
 
