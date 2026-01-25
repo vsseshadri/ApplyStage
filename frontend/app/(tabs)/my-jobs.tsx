@@ -1146,9 +1146,24 @@ export default function MyJobsScreen() {
             </View>
 
             <ScrollView style={dynamicStyles.modalScroll} contentContainerStyle={dynamicStyles.modalScrollContent} keyboardShouldPersistTaps="handled">
-              {/* Company Name */}
+              {/* Company Name with Priority Badge */}
               <View style={dynamicStyles.formSection}>
-                <Text style={dynamicStyles.label}>Company Name *</Text>
+                <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <Text style={dynamicStyles.label}>Company Name *</Text>
+                  <TouchableOpacity 
+                    style={dynamicStyles.priorityBadge}
+                    onPress={() => setFormData(prev => ({...prev, is_priority: !prev.is_priority}))}
+                  >
+                    <Ionicons 
+                      name={formData.is_priority ? "star" : "star-outline"} 
+                      size={18} 
+                      color={formData.is_priority ? "#F59E0B" : colors.textSecondary} 
+                    />
+                    <Text style={[dynamicStyles.priorityBadgeText, formData.is_priority && { color: '#F59E0B' }]}>
+                      Priority
+                    </Text>
+                  </TouchableOpacity>
+                </View>
                 <TextInput
                   style={dynamicStyles.input}
                   value={formData.company_name}
@@ -1157,21 +1172,6 @@ export default function MyJobsScreen() {
                   placeholderTextColor={colors.textSecondary}
                 />
               </View>
-
-              {/* Priority Toggle */}
-              <TouchableOpacity 
-                style={dynamicStyles.priorityToggle}
-                onPress={() => setFormData(prev => ({...prev, is_priority: !prev.is_priority}))}
-              >
-                <Ionicons 
-                  name={formData.is_priority ? "star" : "star-outline"} 
-                  size={28} 
-                  color={formData.is_priority ? "#F59E0B" : colors.textSecondary} 
-                />
-                <Text style={[dynamicStyles.priorityText, formData.is_priority && dynamicStyles.priorityTextActive]}>
-                  {formData.is_priority ? "Priority Job" : "Mark as Priority"}
-                </Text>
-              </TouchableOpacity>
 
               {/* Position with Dropdown + Custom Option */}
               <View style={dynamicStyles.formSection}>
