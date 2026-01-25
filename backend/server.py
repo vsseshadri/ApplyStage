@@ -309,7 +309,7 @@ async def create_job(job_data: JobApplicationCreate, current_user: User = Depend
     if job_data.date_applied:
         try:
             date_applied_dt = datetime.fromisoformat(job_data.date_applied.replace('Z', '+00:00'))
-        except:
+        except ValueError:
             date_applied_dt = now
     
     job = JobApplication(
