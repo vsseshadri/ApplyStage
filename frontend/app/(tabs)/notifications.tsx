@@ -363,7 +363,11 @@ export default function NotificationsScreen() {
     return (
       <SafeAreaView style={[dynamicStyles.container]} edges={['top']}>
         <View style={dynamicStyles.header}>
-          <Text style={dynamicStyles.headerTitle}>Notifications</Text>
+          <View style={dynamicStyles.headerRow}>
+            <View>
+              <Text style={dynamicStyles.headerTitle}>Notifications</Text>
+            </View>
+          </View>
         </View>
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color={colors.primary} />
@@ -375,10 +379,49 @@ export default function NotificationsScreen() {
   return (
     <SafeAreaView style={[dynamicStyles.container]} edges={['top']}>
       <View style={dynamicStyles.header}>
-        <Text style={dynamicStyles.headerTitle}>Notifications</Text>
-        <Text style={dynamicStyles.headerSubtitle}>
-          {notifications.length} reminder{notifications.length !== 1 ? 's' : ''}
-        </Text>
+        <View style={dynamicStyles.headerRow}>
+          <View>
+            <Text style={dynamicStyles.headerTitle}>
+              {selectMode ? `${selectedNotifications.size} selected` : 'Notifications'}
+            </Text>
+            {!selectMode && (
+              <Text style={dynamicStyles.headerSubtitle}>
+                {notifications.length} reminder{notifications.length !== 1 ? 's' : ''}
+              </Text>
+            )}
+          </View>
+          
+          {/* Header buttons */}
+          <View style={dynamicStyles.headerButtons}>
+            {selectMode ? (
+              <>
+                <TouchableOpacity 
+                  style={dynamicStyles.cancelButton}
+                  onPress={toggleSelectMode}
+                >
+                  <Text style={dynamicStyles.cancelButtonText}>Cancel</Text>
+                </TouchableOpacity>
+                {selectedNotifications.size > 0 && (
+                  <TouchableOpacity 
+                    style={dynamicStyles.deleteButton}
+                    onPress={handleDeleteSelected}
+                  >
+                    <Text style={dynamicStyles.deleteButtonText}>Delete</Text>
+                  </TouchableOpacity>
+                )}
+              </>
+            ) : (
+              notifications.length > 0 && (
+                <TouchableOpacity 
+                  style={dynamicStyles.selectButton}
+                  onPress={toggleSelectMode}
+                >
+                  <Text style={dynamicStyles.selectButtonText}>Select</Text>
+                </TouchableOpacity>
+              )
+            )}
+          </View>
+        </View>
       </View>
 
       {notifications.length === 0 ? (
