@@ -240,18 +240,24 @@ async def apple_auth(auth_data: AppleAuthRequest):
         # Get email (may be None if user chose to hide it)
         email = auth_data.email or f"{user_id}@privaterelay.appleid.com"
         
-        # If no name provided, try to extract from email
-        if not name:
+        # Check if this is a private relay email
+        is_private_relay = "@privaterelay.appleid.com" in email
+        
+        # If no name provided and not private relay, try to extract from email
+        if not name and not is_private_relay:
             email_prefix = email.split('@')[0]
             # Clean up email prefix to make it more readable
             if email_prefix and not email_prefix.startswith('apple_'):
                 # Convert underscores/dots to spaces and capitalize
                 name = email_prefix.replace('_', ' ').replace('.', ' ').title()
-            else:
-                name = "User"  # Last resort fallback
+        
+        # For private relay emails without a name, leave name as None (will be handled by frontend)
+        if not name:
+            name = None
         
         # Check if user exists
         existing_user = await db.users.find_one({"user_id": user_id})
+        is_new_user = existing_user is None
         
         if not existing_user:
             # Create new user with 7-day trial
@@ -259,13 +265,14 @@ async def apple_auth(auth_data: AppleAuthRequest):
             new_user = {
                 "user_id": user_id,
                 "email": email,
-                "name": name,
+                "name": name,  # May be None for private relay users
                 "picture": None,
                 "payment_status": "trial",
                 "trial_end_date": trial_end,
                 "applications_count": 0,
                 "preferences": {"weekly_email": True, "monthly_email": True},
-                "created_at": datetime.now(timezone.utc)
+                "created_at": datetime.now(timezone.utc),
+                "is_private_relay": is_private_relay
             }
             await db.users.insert_one(new_user)
         else:
@@ -275,14 +282,13 @@ async def apple_auth(auth_data: AppleAuthRequest):
             if auth_data.email:
                 update_data["email"] = email
             
-            # Update name if: new name provided AND (existing name is generic OR no existing name)
-            existing_name = existing_user.get("name", "")
-            generic_names = ["Apple User", "User", "", None]
-            if auth_data.fullName and name and name not in generic_names:
+            # Update name if: new name provided AND existing name is empty/None
+            existing_name = existing_user.get("name")
+            if name and (not existing_name or existing_name in ["Apple User", "User"]):
                 update_data["name"] = name
-            elif existing_name in generic_names and name and name not in generic_names:
-                # Even if fullName not provided this time, update if we derived a better name
-                update_data["name"] = name
+            
+            # Update private relay flag
+            update_data["is_private_relay"] = is_private_relay
                 
             if update_data:
                 await db.users.update_one({"user_id": user_id}, {"$set": update_data})
@@ -296,7 +302,7 @@ async def apple_auth(auth_data: AppleAuthRequest):
             "created_at": datetime.now(timezone.utc)
         })
         
-        return {"session_token": session_token, "user_id": user_id}
+        return {"session_token": session_token, "user_id": user_id, "is_new_user": is_new_user}
         
     except Exception as e:
         logging.error(f"Apple auth error: {str(e)}")
