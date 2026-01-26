@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Switch, Image, Alert, Platform } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Switch, Image, Alert, Platform, TextInput } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../contexts/ThemeContext';
@@ -13,11 +13,12 @@ const BACKEND_URL = Constants.expoConfig?.extra?.EXPO_PUBLIC_BACKEND_URL || proc
 
 export default function SettingsScreen() {
   const { theme, setTheme, colors, isDark } = useTheme();
-  const { user, logout, sessionToken, biometricEnabled, biometricAvailable, enableBiometric, disableBiometric } = useAuth();
+  const { user, logout, sessionToken, biometricEnabled, biometricAvailable, enableBiometric, disableBiometric, refreshUser } = useAuth();
   const router = useRouter();
   
   // Profile state
   const [profilePhoto, setProfilePhoto] = useState(user?.picture || null);
+  const [preferredName, setPreferredName] = useState(user?.preferred_display_name || '');
   const [weeklyEmail, setWeeklyEmail] = useState(user?.preferences?.weekly_email ?? true);
   const [monthlyEmail, setMonthlyEmail] = useState(user?.preferences?.monthly_email ?? true);
   
