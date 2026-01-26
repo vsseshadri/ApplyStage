@@ -81,7 +81,7 @@ export default function LoginScreen() {
         {/* Show Apple button placeholder for non-iOS (won't work but shows UI) */}
         {Platform.OS !== 'ios' && (
           <TouchableOpacity style={styles.appleButtonFallback} onPress={() => Alert.alert('Apple Sign-In', 'Apple Sign-In is only available on iOS devices.')}>
-            <Ionicons name="logo-apple" size={24} color="white" style={styles.buttonIcon} />
+            <Ionicons name="logo-apple" size={20} color="white" style={styles.buttonIcon} />
             <Text style={styles.buttonText}>Sign in with Apple</Text>
           </TouchableOpacity>
         )}
@@ -125,47 +125,48 @@ const styles = StyleSheet.create({
   feature: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 12,
+    paddingVertical: 10,
   },
   featureText: {
-    fontSize: 16,
+    fontSize: 15,
     color: '#333',
-    marginLeft: 16,
+    marginLeft: 14,
+    flex: 1,
   },
   googleButton: {
     flexDirection: 'row',
     backgroundColor: '#4285F4',
-    paddingVertical: 16,
-    paddingHorizontal: 32,
-    borderRadius: 12,
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+    borderRadius: 10,
     alignItems: 'center',
     justifyContent: 'center',
     width: '100%',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 4,
-    elevation: 4,
-    marginBottom: 12,
+    shadowOpacity: 0.15,
+    shadowRadius: 3,
+    elevation: 3,
+    marginBottom: 10,
   },
   buttonIcon: {
-    marginRight: 12,
+    marginRight: 10,
   },
   buttonText: {
     color: 'white',
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: '600',
   },
   appleButton: {
     width: '100%',
-    height: 54,
+    height: 46,
   },
   appleButtonFallback: {
     flexDirection: 'row',
     backgroundColor: '#000',
-    paddingVertical: 16,
-    paddingHorizontal: 32,
-    borderRadius: 12,
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+    borderRadius: 10,
     alignItems: 'center',
     justifyContent: 'center',
     width: '100%',
