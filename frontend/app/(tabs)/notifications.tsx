@@ -524,6 +524,17 @@ const styles = StyleSheet.create({
     shadowRadius: 2,
     elevation: 2,
   },
+  cardWithCheckbox: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+  },
+  checkboxContainer: {
+    marginRight: 12,
+    marginTop: 2,
+  },
+  cardContent: {
+    flex: 1,
+  },
   row: {
     flexDirection: 'row',
     justifyContent: 'space-between',
