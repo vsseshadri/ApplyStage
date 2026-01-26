@@ -510,9 +510,9 @@ export default function DashboardScreen() {
         {/* Insights - Split into Strategic and Follow-ups */}
         {(insights.length > 0 || followUps.length > 0) && (
           <View style={dynamicStyles.section}>
-            {/* Strategic Insights */}
+            {/* Insights */}
             <Text style={dynamicStyles.sectionTitle}>
-              <Ionicons name="sparkles" size={16} color={colors.primary} /> Strategic Insights
+              <Ionicons name="sparkles" size={16} color={colors.primary} /> Insights
             </Text>
             <View style={dynamicStyles.insightsCard}>
               {insights.map((insight, index) => (
