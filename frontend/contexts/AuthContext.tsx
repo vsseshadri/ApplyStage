@@ -20,6 +20,7 @@ interface User {
   trial_end_date?: string;
   is_private_relay?: boolean;
   is_new_user?: boolean;
+  preferred_display_name?: string | null;
 }
 
 interface AuthContextType {
