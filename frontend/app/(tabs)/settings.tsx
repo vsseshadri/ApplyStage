@@ -419,18 +419,29 @@ export default function SettingsScreen() {
           {/* Preferred Display Name */}
           <View style={styles.displayNameContainer}>
             <Text style={styles.displayNameLabel}>Preferred Display Name</Text>
-            <View style={styles.displayNameInputRow}>
-              <TextInput
-                style={styles.displayNameInput}
-                value={preferredName}
-                onChangeText={handlePreferredNameChange}
-                placeholder="Enter your preferred name"
-                placeholderTextColor={colors.textSecondary}
-              />
-              <TouchableOpacity style={styles.saveButton} onPress={handlePreferredNameSave}>
-                <Text style={styles.saveButtonText}>Save</Text>
-              </TouchableOpacity>
-            </View>
+            {isEditingName ? (
+              <View style={styles.displayNameInputRow}>
+                <TextInput
+                  style={styles.displayNameInput}
+                  value={preferredName}
+                  onChangeText={handlePreferredNameChange}
+                  placeholder="Enter your preferred name"
+                  placeholderTextColor={colors.textSecondary}
+                />
+                <TouchableOpacity style={styles.saveButton} onPress={handlePreferredNameSave}>
+                  <Text style={styles.saveButtonText}>Save</Text>
+                </TouchableOpacity>
+              </View>
+            ) : (
+              <View style={styles.displayNameViewRow}>
+                <Text style={styles.displayNameValue}>
+                  {preferredName || 'No Input'}
+                </Text>
+                <TouchableOpacity style={styles.editButton} onPress={handleEditName}>
+                  <Text style={styles.editButtonText}>Edit</Text>
+                </TouchableOpacity>
+              </View>
+            )}
           </View>
           
           <Text style={styles.notificationPrefsLabel}>Email Summary Preferences</Text>
