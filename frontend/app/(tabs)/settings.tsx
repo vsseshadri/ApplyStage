@@ -105,6 +105,33 @@ export default function SettingsScreen() {
     }
   };
 
+  const handlePreferredNameChange = async (name: string) => {
+    setPreferredName(name);
+  };
+
+  const handlePreferredNameSave = async () => {
+    try {
+      const response = await fetch(`${BACKEND_URL}/api/user/display-name`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${sessionToken}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ preferred_display_name: preferredName.trim() }),
+      });
+      
+      if (response.ok) {
+        await refreshUser();
+        Alert.alert('Success', 'Display name updated successfully.');
+      } else {
+        Alert.alert('Error', 'Failed to update display name.');
+      }
+    } catch (error) {
+      console.error('Error updating display name:', error);
+      Alert.alert('Error', 'Failed to update display name.');
+    }
+  };
+
   const handleThemeChange = async (newTheme: 'light' | 'dark' | 'auto') => {
     await setTheme(newTheme);
   };
