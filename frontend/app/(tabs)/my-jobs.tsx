@@ -53,7 +53,7 @@ const getStateAbbreviation = (state: string): string => {
 export default function MyJobsScreen() {
   const { user, sessionToken, refreshUser } = useAuth();
   const { colors, isDark } = useTheme();
-  const { filter, filterTitle, clearFilter, setFilter } = useFilter();
+  const { filter, filterTitle, clearFilter, setFilter, workModeFilter: contextWorkModeFilter } = useFilter();
   const [jobs, setJobs] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
