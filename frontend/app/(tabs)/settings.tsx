@@ -19,6 +19,7 @@ export default function SettingsScreen() {
   // Profile state
   const [profilePhoto, setProfilePhoto] = useState(user?.picture || null);
   const [preferredName, setPreferredName] = useState(user?.preferred_display_name || '');
+  const [isEditingName, setIsEditingName] = useState(!user?.preferred_display_name); // Start in edit mode if no name set
   const [weeklyEmail, setWeeklyEmail] = useState(user?.preferences?.weekly_email ?? true);
   const [monthlyEmail, setMonthlyEmail] = useState(user?.preferences?.monthly_email ?? true);
   
@@ -29,6 +30,16 @@ export default function SettingsScreen() {
   React.useEffect(() => {
     checkBiometricType();
   }, []);
+
+  // Update editing state when user data loads
+  React.useEffect(() => {
+    if (user?.preferred_display_name) {
+      setPreferredName(user.preferred_display_name);
+      setIsEditingName(false);
+    } else {
+      setIsEditingName(true);
+    }
+  }, [user?.preferred_display_name]);
 
   const checkBiometricType = async () => {
     try {
