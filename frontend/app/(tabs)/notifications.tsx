@@ -197,6 +197,53 @@ export default function NotificationsScreen() {
     setNotifications(prev => prev.filter(n => n.id !== notificationId));
   };
 
+  // Toggle selection mode
+  const toggleSelectMode = () => {
+    setSelectMode(!selectMode);
+    setSelectedNotifications(new Set());
+  };
+
+  // Toggle notification selection
+  const toggleNotificationSelection = (notificationId: string) => {
+    setSelectedNotifications(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(notificationId)) {
+        newSet.delete(notificationId);
+      } else {
+        newSet.add(notificationId);
+      }
+      return newSet;
+    });
+  };
+
+  // Delete selected notifications
+  const handleDeleteSelected = () => {
+    if (selectedNotifications.size === 0) return;
+    
+    Alert.alert(
+      'Delete Reminders',
+      `Are you sure you want to delete ${selectedNotifications.size} reminder(s)?`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: () => {
+            // Add to dismissed and remove from notifications
+            setDismissedNotifications(prev => {
+              const newSet = new Set(prev);
+              selectedNotifications.forEach(id => newSet.add(id));
+              return newSet;
+            });
+            setNotifications(prev => prev.filter(n => !selectedNotifications.has(n.id)));
+            setSelectedNotifications(new Set());
+            setSelectMode(false);
+          }
+        }
+      ]
+    );
+  };
+
   const renderRightActions = (notificationId: string) => {
     return (
       <TouchableOpacity
