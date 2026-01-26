@@ -1311,7 +1311,7 @@ export default function MyJobsScreen() {
 
               {/* Date Applied - Auto-formatting Text Input */}
               <View style={dynamicStyles.formSection}>
-                <Text style={dynamicStyles.label}>Date Applied</Text>
+                <Text style={dynamicStyles.label}>Date Applied *</Text>
                 <TextInput
                   style={dynamicStyles.input}
                   value={dateAppliedText}
