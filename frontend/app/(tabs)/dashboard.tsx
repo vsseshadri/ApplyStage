@@ -418,7 +418,12 @@ export default function DashboardScreen() {
             {maxWorkModeValue > 0 ? (
               <View style={dynamicStyles.workModeContainer}>
                 {workModeBarData.map((item, index) => (
-                  <View key={index} style={dynamicStyles.workModeRow}>
+                  <TouchableOpacity 
+                    key={index} 
+                    style={dynamicStyles.workModeRow}
+                    onPress={() => handleWorkModePress(item.label.toLowerCase())}
+                    activeOpacity={0.7}
+                  >
                     <View style={dynamicStyles.workModeBarWrapper}>
                       <View 
                         style={[
@@ -432,7 +437,7 @@ export default function DashboardScreen() {
                     </View>
                     <Text style={dynamicStyles.workModeValue}>{item.value}</Text>
                     <Text style={dynamicStyles.workModeLabel}>{item.label}</Text>
-                  </View>
+                  </TouchableOpacity>
                 ))}
               </View>
             ) : (
