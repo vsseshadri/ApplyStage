@@ -567,6 +567,30 @@ export default function MyJobsScreen() {
     }
   };
 
+  // Auto-format text to Title Case (first letter of each word capitalized)
+  const formatToTitleCase = (text: string): string => {
+    if (!text) return '';
+    return text
+      .split(' ')
+      .map(word => {
+        if (word.length === 0) return '';
+        return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
+      })
+      .join(' ');
+  };
+
+  // Handle company name change with auto-formatting
+  const handleCompanyNameChange = (text: string) => {
+    const formattedText = formatToTitleCase(text);
+    setFormData(prev => ({ ...prev, company_name: formattedText }));
+  };
+
+  // Handle custom position change with auto-formatting
+  const handleCustomPositionChange = (text: string) => {
+    const formattedText = formatToTitleCase(text);
+    setCustomPosition(formattedText);
+  };
+
   const getDaysAgo = (dateString: string): number => {
     try {
       return differenceInDays(new Date(), new Date(dateString));
