@@ -62,6 +62,7 @@ interface Notification {
 export default function NotificationsScreen() {
   const { sessionToken } = useAuth();
   const { colors, isDark } = useTheme();
+  const navigation = useNavigation();
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [loading, setLoading] = useState(true);
   const [dismissedNotifications, setDismissedNotifications] = useState<Set<string>>(new Set());
@@ -74,13 +75,22 @@ export default function NotificationsScreen() {
     }, [])
   );
 
-  // Export notification count for tab badge
+  // Update tab badge with notification count
   React.useEffect(() => {
-    // Store notification count in global state for tab badge
-    if (typeof global !== 'undefined') {
-      (global as any).notificationCount = notifications.length;
-    }
-  }, [notifications.length]);
+    // Update the exported variable for tab badge
+    notificationCount = notifications.length;
+    
+    // Update tab bar badge using navigation
+    navigation.setOptions({
+      tabBarBadge: notifications.length > 0 ? notifications.length : undefined,
+      tabBarBadgeStyle: { 
+        backgroundColor: '#EF4444', 
+        fontSize: 10,
+        minWidth: 18,
+        height: 18,
+      },
+    });
+  }, [notifications.length, navigation]);
 
   const calculateBusinessDays = (startDate: Date, endDate: Date): number => {
     let count = 0;
