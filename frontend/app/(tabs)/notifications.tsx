@@ -273,6 +273,78 @@ export default function NotificationsScreen() {
   const renderNotification = (notification: Notification) => {
     const urgencyColor = getUrgencyColor(notification.days_overdue);
     const appliedDate = format(new Date(notification.date_applied), 'MMM d, yyyy');
+    const isSelected = selectedNotifications.has(notification.id);
+
+    const cardContent = (
+      <View style={[styles.notificationCard, { backgroundColor: colors.card, borderLeftColor: urgencyColor }]}>
+        <View style={styles.cardWithCheckbox}>
+          {/* Checkbox when in select mode */}
+          {selectMode && (
+            <TouchableOpacity 
+              style={styles.checkboxContainer}
+              onPress={() => toggleNotificationSelection(notification.id)}
+            >
+              <Ionicons 
+                name={isSelected ? 'checkbox' : 'square-outline'} 
+                size={22} 
+                color={isSelected ? colors.primary : colors.textSecondary} 
+              />
+            </TouchableOpacity>
+          )}
+          
+          <View style={[styles.cardContent, selectMode && { flex: 1 }]}>
+            {/* Row 1: Company Name + Aging Badge */}
+            <View style={styles.row}>
+              <Text style={[styles.companyName, { color: colors.text }]} numberOfLines={1}>
+                {notification.company_name}
+              </Text>
+              <View style={[styles.agingBadge, { backgroundColor: urgencyColor + '15' }]}>
+                <Text style={[styles.agingNumber, { color: urgencyColor }]}>
+                  {notification.total_aging}
+                </Text>
+                <Text style={[styles.agingLabel, { color: urgencyColor }]}>days</Text>
+              </View>
+            </View>
+            
+            {/* Row 2: Position Applied */}
+            <View style={styles.row}>
+              <Text style={[styles.positionLabel, { color: colors.textSecondary }]}>
+                Position Applied: <Text style={[styles.positionValue, { color: colors.text }]}>{notification.position}</Text>
+              </Text>
+            </View>
+            
+            {/* Row 3: Applied Date + Follow-up Button (right-aligned) */}
+            <View style={styles.rowSpaceBetween}>
+              <Text style={[styles.appliedText, { color: colors.textSecondary }]}>
+                Applied: {appliedDate}
+              </Text>
+              {!selectMode && (
+                <TouchableOpacity
+                  style={[styles.followUpButton, { backgroundColor: colors.primary + '12' }]}
+                  onPress={() => handleSendEmail(notification)}
+                >
+                  <Ionicons name="mail-outline" size={12} color={colors.primary} />
+                  <Text style={[styles.followUpText, { color: colors.primary }]}>Follow-up</Text>
+                </TouchableOpacity>
+              )}
+            </View>
+          </View>
+        </View>
+      </View>
+    );
+
+    // When in select mode, don't use Swipeable
+    if (selectMode) {
+      return (
+        <TouchableOpacity 
+          key={notification.id}
+          activeOpacity={0.7}
+          onPress={() => toggleNotificationSelection(notification.id)}
+        >
+          {cardContent}
+        </TouchableOpacity>
+      );
+    }
 
     return (
       <Swipeable
@@ -280,41 +352,7 @@ export default function NotificationsScreen() {
         renderRightActions={() => renderRightActions(notification.id)}
         overshootRight={false}
       >
-        <View style={[styles.notificationCard, { backgroundColor: colors.card, borderLeftColor: urgencyColor }]}>
-          {/* Row 1: Company Name + Aging Badge */}
-          <View style={styles.row}>
-            <Text style={[styles.companyName, { color: colors.text }]} numberOfLines={1}>
-              {notification.company_name}
-            </Text>
-            <View style={[styles.agingBadge, { backgroundColor: urgencyColor + '15' }]}>
-              <Text style={[styles.agingNumber, { color: urgencyColor }]}>
-                {notification.total_aging}
-              </Text>
-              <Text style={[styles.agingLabel, { color: urgencyColor }]}>days</Text>
-            </View>
-          </View>
-          
-          {/* Row 2: Position Applied */}
-          <View style={styles.row}>
-            <Text style={[styles.positionLabel, { color: colors.textSecondary }]}>
-              Position Applied: <Text style={[styles.positionValue, { color: colors.text }]}>{notification.position}</Text>
-            </Text>
-          </View>
-          
-          {/* Row 3: Applied Date + Follow-up Button (right-aligned) */}
-          <View style={styles.rowSpaceBetween}>
-            <Text style={[styles.appliedText, { color: colors.textSecondary }]}>
-              Applied: {appliedDate}
-            </Text>
-            <TouchableOpacity
-              style={[styles.followUpButton, { backgroundColor: colors.primary + '12' }]}
-              onPress={() => handleSendEmail(notification)}
-            >
-              <Ionicons name="mail-outline" size={12} color={colors.primary} />
-              <Text style={[styles.followUpText, { color: colors.primary }]}>Follow-up</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
+        {cardContent}
       </Swipeable>
     );
   };
