@@ -62,12 +62,22 @@ export default function NotificationsScreen() {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [loading, setLoading] = useState(true);
   const [dismissedNotifications, setDismissedNotifications] = useState<Set<string>>(new Set());
+  const [selectMode, setSelectMode] = useState(false);
+  const [selectedNotifications, setSelectedNotifications] = useState<Set<string>>(new Set());
 
   useFocusEffect(
     React.useCallback(() => {
       fetchNotifications();
     }, [])
   );
+
+  // Export notification count for tab badge
+  React.useEffect(() => {
+    // Store notification count in global state for tab badge
+    if (typeof global !== 'undefined') {
+      (global as any).notificationCount = notifications.length;
+    }
+  }, [notifications.length]);
 
   const calculateBusinessDays = (startDate: Date, endDate: Date): number => {
     let count = 0;
