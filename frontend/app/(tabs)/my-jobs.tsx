@@ -189,6 +189,9 @@ export default function MyJobsScreen() {
       result = result.filter(job => job.status === 'final_round');
     } else if (filter === 'offers') {
       result = result.filter(job => job.status === 'offer');
+    } else if (filter === 'work_mode' && contextWorkModeFilter !== 'all') {
+      // Apply work mode filter from context (when navigating from Dashboard chart)
+      result = result.filter(job => job.work_mode?.toLowerCase() === contextWorkModeFilter.toLowerCase());
     }
     
     // Apply local "Last 10 Days" filter (only if global filter is 'all')
@@ -199,8 +202,8 @@ export default function MyJobsScreen() {
       });
     }
     
-    // Apply work mode filter
-    if (workModeFilter !== 'all') {
+    // Apply work mode filter (local filter, only when not using context work mode filter)
+    if (filter !== 'work_mode' && workModeFilter !== 'all') {
       result = result.filter(job => job.work_mode?.toLowerCase() === workModeFilter.toLowerCase());
     }
     
