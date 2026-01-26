@@ -240,6 +240,42 @@ export default function SettingsScreen() {
       marginBottom: 20,
       textAlign: 'center',
     },
+    displayNameContainer: {
+      width: '100%',
+      marginBottom: 16,
+    },
+    displayNameLabel: {
+      fontSize: 13,
+      color: colors.textSecondary,
+      marginBottom: 6,
+    },
+    displayNameInputRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 8,
+    },
+    displayNameInput: {
+      flex: 1,
+      backgroundColor: colors.inputBackground,
+      borderRadius: 8,
+      paddingHorizontal: 12,
+      paddingVertical: 10,
+      fontSize: 14,
+      color: colors.text,
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+    saveButton: {
+      backgroundColor: colors.primary,
+      borderRadius: 8,
+      paddingHorizontal: 14,
+      paddingVertical: 10,
+    },
+    saveButtonText: {
+      color: '#fff',
+      fontSize: 13,
+      fontWeight: '600',
+    },
     notificationPrefsLabel: {
       fontSize: 14,
       fontWeight: '600',
