@@ -588,7 +588,7 @@ export default function MyJobsScreen() {
   // Handle custom position change with auto-formatting
   const handleCustomPositionChange = (text: string) => {
     const formattedText = formatToTitleCase(text);
-    setCustomPosition(formattedText);
+    setNewPosition(formattedText);
   };
 
   const getDaysAgo = (dateString: string): number => {
