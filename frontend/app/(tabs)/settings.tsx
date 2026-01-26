@@ -133,7 +133,7 @@ export default function SettingsScreen() {
       
       if (response.ok) {
         await refreshUser();
-        Alert.alert('Success', 'Display name updated successfully.');
+        setIsEditingName(false); // Switch to view mode after save
       } else {
         Alert.alert('Error', 'Failed to update display name.');
       }
@@ -141,6 +141,10 @@ export default function SettingsScreen() {
       console.error('Error updating display name:', error);
       Alert.alert('Error', 'Failed to update display name.');
     }
+  };
+
+  const handleEditName = () => {
+    setIsEditingName(true);
   };
 
   const handleThemeChange = async (newTheme: 'light' | 'dark' | 'auto') => {
