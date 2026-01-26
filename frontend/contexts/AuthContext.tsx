@@ -201,9 +201,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (response.ok) {
         const data = await response.json();
         const token = data.session_token;
+        const newUser = data.is_new_user || false;
         
         await AsyncStorage.setItem('session_token', token);
         setSessionToken(token);
+        setIsNewUser(newUser);
         await fetchUser(token);
         
         // Prompt for biometric after successful login
