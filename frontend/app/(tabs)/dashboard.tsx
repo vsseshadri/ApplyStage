@@ -224,6 +224,12 @@ export default function DashboardScreen() {
     router.push('/(tabs)/my-jobs');
   };
 
+  // Handle work mode bar press - navigate to My Jobs with filter
+  const handleWorkModePress = (workMode: string) => {
+    setFilter('work_mode', workMode);
+    router.push('/(tabs)/my-jobs');
+  };
+
   const dynamicStyles = createStyles(colors, isDark);
 
   if (loading) {
