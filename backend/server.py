@@ -735,6 +735,16 @@ async def update_preferences(preferences: UserPreferences, current_user: User = 
     
     return {"message": "Preferences updated"}
 
+@api_router.put("/user/display-name")
+async def update_display_name(data: DisplayNameUpdate, current_user: User = Depends(get_current_user)):
+    """Update the user's preferred display name"""
+    await db.users.update_one(
+        {"user_id": current_user.user_id},
+        {"$set": {"preferred_display_name": data.preferred_display_name}}
+    )
+    
+    return {"message": "Display name updated", "preferred_display_name": data.preferred_display_name}
+
 @api_router.post("/payment/verify")
 async def verify_payment(payment: PaymentVerification, current_user: User = Depends(get_current_user)):
     await db.users.update_one(
