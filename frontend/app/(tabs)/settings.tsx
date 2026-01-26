@@ -269,6 +269,22 @@ export default function SettingsScreen() {
       alignItems: 'center',
       gap: 8,
     },
+    displayNameViewRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      backgroundColor: colors.inputBackground,
+      borderRadius: 8,
+      paddingHorizontal: 12,
+      paddingVertical: 10,
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+    displayNameValue: {
+      fontSize: 14,
+      color: colors.text,
+      flex: 1,
+    },
     displayNameInput: {
       flex: 1,
       backgroundColor: colors.inputBackground,
@@ -288,6 +304,17 @@ export default function SettingsScreen() {
     },
     saveButtonText: {
       color: '#fff',
+      fontSize: 13,
+      fontWeight: '600',
+    },
+    editButton: {
+      backgroundColor: colors.primary + '15',
+      borderRadius: 8,
+      paddingHorizontal: 14,
+      paddingVertical: 6,
+    },
+    editButtonText: {
+      color: colors.primary,
       fontSize: 13,
       fontWeight: '600',
     },
