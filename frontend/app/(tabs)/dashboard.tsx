@@ -65,7 +65,7 @@ const formatLocationWithAbbr = (location: string): string => {
 };
 
 export default function DashboardScreen() {
-  const { user, sessionToken } = useAuth();
+  const { user, sessionToken, isNewUser } = useAuth();
   const { colors, isDark } = useTheme();
   const { setFilter } = useFilter();
   const router = useRouter();
