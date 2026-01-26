@@ -1213,7 +1213,7 @@ export default function MyJobsScreen() {
                 <TextInput
                   style={dynamicStyles.input}
                   value={formData.company_name}
-                  onChangeText={(text) => setFormData({ ...formData, company_name: text })}
+                  onChangeText={handleCompanyNameChange}
                   placeholder="e.g., Google, Microsoft"
                   placeholderTextColor={colors.textSecondary}
                 />
