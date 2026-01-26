@@ -401,6 +401,23 @@ export default function SettingsScreen() {
           
           <Text style={styles.userEmail}>{user?.email || 'user@example.com'}</Text>
           
+          {/* Preferred Display Name */}
+          <View style={styles.displayNameContainer}>
+            <Text style={styles.displayNameLabel}>Preferred Display Name</Text>
+            <View style={styles.displayNameInputRow}>
+              <TextInput
+                style={styles.displayNameInput}
+                value={preferredName}
+                onChangeText={handlePreferredNameChange}
+                placeholder="Enter your preferred name"
+                placeholderTextColor={colors.textSecondary}
+              />
+              <TouchableOpacity style={styles.saveButton} onPress={handlePreferredNameSave}>
+                <Text style={styles.saveButtonText}>Save</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+          
           <Text style={styles.notificationPrefsLabel}>Email Summary Preferences</Text>
           
           <View style={styles.notificationRow}>
