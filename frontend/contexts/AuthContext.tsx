@@ -12,12 +12,14 @@ WebBrowser.maybeCompleteAuthSession();
 interface User {
   user_id: string;
   email: string;
-  name: string;
+  name?: string | null;
   picture?: string;
   payment_status: string;
   applications_count: number;
   preferences: any;
   trial_end_date?: string;
+  is_private_relay?: boolean;
+  is_new_user?: boolean;
 }
 
 interface AuthContextType {
@@ -26,6 +28,7 @@ interface AuthContextType {
   loading: boolean;
   biometricEnabled: boolean;
   biometricAvailable: boolean;
+  isNewUser: boolean;
   login: () => Promise<void>;
   loginWithApple: () => Promise<void>;
   loginWithBiometric: () => Promise<boolean>;
@@ -45,6 +48,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true);
   const [biometricEnabled, setBiometricEnabled] = useState(false);
   const [biometricAvailable, setBiometricAvailable] = useState(false);
+  const [isNewUser, setIsNewUser] = useState(false);
 
   useEffect(() => {
     checkBiometricAvailability();
