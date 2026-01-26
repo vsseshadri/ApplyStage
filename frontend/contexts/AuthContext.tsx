@@ -418,6 +418,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       loading, 
       biometricEnabled,
       biometricAvailable,
+      isNewUser,
       login, 
       loginWithApple,
       loginWithBiometric,
