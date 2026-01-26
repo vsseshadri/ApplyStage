@@ -134,7 +134,12 @@ export default function DashboardScreen() {
 
   // Function to get a proper display name, handling generic names
   const getDisplayName = (): string | null => {
-    // For private relay users, don't show any name
+    // First priority: use preferred_display_name if set
+    if (user?.preferred_display_name && user.preferred_display_name.trim()) {
+      return user.preferred_display_name.trim();
+    }
+    
+    // For private relay users without preferred name, don't show any name
     if (isPrivateRelayUser()) {
       return null;
     }
