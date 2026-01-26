@@ -452,6 +452,11 @@ const createDynamicStyles = (colors: any, isDark: boolean) => StyleSheet.create(
     paddingHorizontal: 20,
     paddingVertical: 16,
   },
+  headerRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
   headerTitle: {
     fontSize: 24,
     fontWeight: '700',
@@ -462,6 +467,44 @@ const createDynamicStyles = (colors: any, isDark: boolean) => StyleSheet.create(
     marginTop: 2,
     color: colors.headerText,
     opacity: 0.8,
+  },
+  headerButtons: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  selectButton: {
+    paddingHorizontal: 14,
+    paddingVertical: 6,
+    borderRadius: 6,
+    backgroundColor: 'rgba(255,255,255,0.2)',
+  },
+  selectButtonText: {
+    color: colors.headerText,
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  cancelButton: {
+    paddingHorizontal: 14,
+    paddingVertical: 6,
+    borderRadius: 6,
+    backgroundColor: 'rgba(255,255,255,0.15)',
+  },
+  cancelButtonText: {
+    color: colors.headerText,
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  deleteButton: {
+    paddingHorizontal: 14,
+    paddingVertical: 6,
+    borderRadius: 6,
+    backgroundColor: '#EF4444',
+  },
+  deleteButtonText: {
+    color: '#fff',
+    fontSize: 14,
+    fontWeight: '600',
   },
 });
 
