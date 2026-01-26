@@ -247,7 +247,7 @@ export default function DashboardScreen() {
         <View style={dynamicStyles.headerContent}>
           <View style={dynamicStyles.headerLeft}>
             <Text style={dynamicStyles.greeting}>Welcome back,</Text>
-            <Text style={dynamicStyles.userName}>{user?.name?.split(' ')[0] || 'User'}</Text>
+            <Text style={dynamicStyles.userName}>{getDisplayName()}</Text>
           </View>
           <Text style={dynamicStyles.dateText}>{format(new Date(), 'EEE, MMM d, yyyy')}</Text>
         </View>
