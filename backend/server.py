@@ -37,6 +37,10 @@ class User(BaseModel):
     preferences: Dict[str, Any] = {"weekly_email": True, "monthly_email": True}
     created_at: datetime
     is_private_relay: bool = False
+    preferred_display_name: Optional[str] = None
+
+class DisplayNameUpdate(BaseModel):
+    preferred_display_name: str
 
 class SessionDataResponse(BaseModel):
     id: str
