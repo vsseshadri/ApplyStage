@@ -229,15 +229,26 @@ async def apple_auth(auth_data: AppleAuthRequest):
         user_id = f"apple_{auth_data.user[:12]}"
         
         # Get name from fullName if provided
-        name = "Apple User"
+        name = None
         if auth_data.fullName:
-            given_name = auth_data.fullName.get("givenName", "")
-            family_name = auth_data.fullName.get("familyName", "")
-            if given_name or family_name:
-                name = f"{given_name} {family_name}".strip()
+            given_name = auth_data.fullName.get("givenName", "") or ""
+            family_name = auth_data.fullName.get("familyName", "") or ""
+            full_name = f"{given_name} {family_name}".strip()
+            if full_name:
+                name = full_name
         
         # Get email (may be None if user chose to hide it)
         email = auth_data.email or f"{user_id}@privaterelay.appleid.com"
+        
+        # If no name provided, try to extract from email
+        if not name:
+            email_prefix = email.split('@')[0]
+            # Clean up email prefix to make it more readable
+            if email_prefix and not email_prefix.startswith('apple_'):
+                # Convert underscores/dots to spaces and capitalize
+                name = email_prefix.replace('_', ' ').replace('.', ' ').title()
+            else:
+                name = "User"  # Last resort fallback
         
         # Check if user exists
         existing_user = await db.users.find_one({"user_id": user_id})
@@ -259,14 +270,22 @@ async def apple_auth(auth_data: AppleAuthRequest):
             await db.users.insert_one(new_user)
         else:
             # Update name/email if provided (Apple only sends on first sign-in)
-            if auth_data.email or auth_data.fullName:
-                update_data = {}
-                if auth_data.email:
-                    update_data["email"] = email
-                if auth_data.fullName and name != "Apple User":
-                    update_data["name"] = name
-                if update_data:
-                    await db.users.update_one({"user_id": user_id}, {"$set": update_data})
+            # or if the existing name is a generic placeholder
+            update_data = {}
+            if auth_data.email:
+                update_data["email"] = email
+            
+            # Update name if: new name provided AND (existing name is generic OR no existing name)
+            existing_name = existing_user.get("name", "")
+            generic_names = ["Apple User", "User", "", None]
+            if auth_data.fullName and name and name not in generic_names:
+                update_data["name"] = name
+            elif existing_name in generic_names and name and name not in generic_names:
+                # Even if fullName not provided this time, update if we derived a better name
+                update_data["name"] = name
+                
+            if update_data:
+                await db.users.update_one({"user_id": user_id}, {"$set": update_data})
         
         # Create session
         session_token = str(uuid.uuid4())
