@@ -50,7 +50,7 @@
       "typedRoutes": true
     },
     "extra": {
-      "EXPO_PUBLIC_BACKEND_URL": "https://jobtrackr-10.preview.emergentagent.com"
+      "EXPO_PUBLIC_BACKEND_URL": "https://careercompass-31.preview.emergentagent.com"
     }
   }
 }
