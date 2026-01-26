@@ -116,6 +116,41 @@ export default function DashboardScreen() {
     );
   };
 
+  // Function to get a proper display name, handling generic names
+  const getDisplayName = (): string => {
+    const name = user?.name;
+    const email = user?.email;
+    
+    // List of generic/placeholder names to avoid
+    const genericNames = ['Apple User', 'User', 'Apple', ''];
+    
+    // If we have a valid name (not generic), use the first part
+    if (name && !genericNames.includes(name) && !genericNames.includes(name.split(' ')[0])) {
+      return name.split(' ')[0];
+    }
+    
+    // Try to extract a name from email
+    if (email) {
+      const emailPrefix = email.split('@')[0];
+      // Skip if it looks like an Apple private relay or generic
+      if (emailPrefix && !emailPrefix.startsWith('apple_') && emailPrefix.length > 2) {
+        // Clean up email prefix: replace dots/underscores with spaces, capitalize
+        const cleanName = emailPrefix
+          .replace(/[._]/g, ' ')
+          .split(' ')
+          .map(part => part.charAt(0).toUpperCase() + part.slice(1).toLowerCase())
+          .join(' ')
+          .split(' ')[0]; // Take first word
+        
+        if (cleanName && cleanName.length > 1) {
+          return cleanName;
+        }
+      }
+    }
+    
+    return 'User';
+  };
+
   useFocusEffect(
     React.useCallback(() => {
       fetchData();
