@@ -53,17 +53,17 @@ export default function LoginScreen() {
           </View>
           <View style={styles.feature}>
             <Ionicons name="notifications" size={24} color="#007AFF" />
-            <Text style={styles.featureText}>Set Reminders</Text>
+            <Text style={styles.featureText}>Set Reminders and Send Follow-Up's</Text>
           </View>
           <View style={styles.feature}>
             <Ionicons name="shield-checkmark" size={24} color="#007AFF" />
-            <Text style={styles.featureText}>Face ID / Biometric Login</Text>
+            <Text style={styles.featureText}>Secure Face ID / Biometric Login</Text>
           </View>
         </View>
 
         {/* Google Sign In */}
         <TouchableOpacity style={styles.googleButton} onPress={login}>
-          <Ionicons name="logo-google" size={24} color="white" style={styles.buttonIcon} />
+          <Ionicons name="logo-google" size={20} color="white" style={styles.buttonIcon} />
           <Text style={styles.buttonText}>Sign in with Google</Text>
         </TouchableOpacity>
 
@@ -72,7 +72,7 @@ export default function LoginScreen() {
           <AppleAuthentication.AppleAuthenticationButton
             buttonType={AppleAuthentication.AppleAuthenticationButtonType.SIGN_IN}
             buttonStyle={AppleAuthentication.AppleAuthenticationButtonStyle.BLACK}
-            cornerRadius={12}
+            cornerRadius={10}
             style={styles.appleButton}
             onPress={loginWithApple}
           />
