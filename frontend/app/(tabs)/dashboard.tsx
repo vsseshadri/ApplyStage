@@ -116,13 +116,34 @@ export default function DashboardScreen() {
     );
   };
 
+  // Check if user has a private relay email
+  const isPrivateRelayUser = (): boolean => {
+    const email = user?.email || '';
+    return email.includes('@privaterelay.appleid.com') || user?.is_private_relay === true;
+  };
+
+  // Function to get the greeting text
+  const getGreeting = (): string => {
+    // For private relay users, show "Welcome" for new users, "Welcome back" for returning users
+    if (isPrivateRelayUser()) {
+      return isNewUser ? 'Welcome' : 'Welcome back';
+    }
+    // For all other users, always show "Welcome back" with their name
+    return 'Welcome back,';
+  };
+
   // Function to get a proper display name, handling generic names
-  const getDisplayName = (): string => {
+  const getDisplayName = (): string | null => {
+    // For private relay users, don't show any name
+    if (isPrivateRelayUser()) {
+      return null;
+    }
+    
     const name = user?.name;
     const email = user?.email;
     
     // List of generic/placeholder names to avoid
-    const genericNames = ['Apple User', 'User', 'Apple', ''];
+    const genericNames = ['Apple User', 'User', 'Apple', '', null, undefined];
     
     // If we have a valid name (not generic), use the first part
     if (name && !genericNames.includes(name) && !genericNames.includes(name.split(' ')[0])) {
