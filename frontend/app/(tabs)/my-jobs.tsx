@@ -1233,7 +1233,7 @@ export default function MyJobsScreen() {
                     <TextInput
                       style={[dynamicStyles.input, dynamicStyles.customPositionInput]}
                       value={newPosition}
-                      onChangeText={setNewPosition}
+                      onChangeText={handleCustomPositionChange}
                       placeholder="Enter custom position"
                       placeholderTextColor={colors.textSecondary}
                     />
