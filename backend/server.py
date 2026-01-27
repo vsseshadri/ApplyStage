@@ -825,13 +825,24 @@ async def get_weekly_email_summary(current_user: User = Depends(get_current_user
     to_date = today.strftime("%b-%d-%Y")
     
     # Get jobs applied in the last week
-    jobs = await db.job_applications.find({
-        "user_id": current_user.user_id,
-        "date_applied": {"$gte": week_start.isoformat(), "$lte": today.isoformat()}
-    }).to_list(1000)
+    jobs = await db.job_applications.find({"user_id": current_user.user_id}).to_list(1000)
+    
+    # Filter jobs applied in the last week
+    weekly_jobs = []
+    for job in jobs:
+        date_applied = job.get("date_applied")
+        if date_applied:
+            if isinstance(date_applied, str):
+                date_applied = datetime.fromisoformat(date_applied.replace("Z", "+00:00"))
+            elif isinstance(date_applied, datetime):
+                if date_applied.tzinfo is None:
+                    date_applied = date_applied.replace(tzinfo=timezone.utc)
+            
+            if week_start <= date_applied <= today:
+                weekly_jobs.append(job)
     
     # Get all jobs for overall stats
-    all_jobs = await db.job_applications.find({"user_id": current_user.user_id}).to_list(1000)
+    all_jobs = jobs
     
     # Calculate weekly stats
     weekly_applications = len(jobs)
