@@ -481,7 +481,7 @@ export default function MyJobsScreen() {
     console.log('Form Data on Submit:', formData);
     console.log('Position Value:', formData.position);
     
-    // Only Company Name, Position, Location (State & City), and Date Applied are mandatory
+    // Only Company Name, Position, Location (State & City), Date Applied, and Job Type are mandatory
     if (!formData.company_name.trim()) {
       Alert.alert('Error', 'Company Name is required');
       return;
@@ -499,6 +499,12 @@ export default function MyJobsScreen() {
     // Date Applied is mandatory
     if (!dateAppliedText.trim()) {
       Alert.alert('Error', 'Date Applied is required');
+      return;
+    }
+
+    // Job Type is mandatory
+    if (!formData.job_type) {
+      Alert.alert('Error', 'Job Type is required');
       return;
     }
 
@@ -543,11 +549,15 @@ export default function MyJobsScreen() {
         location: { state: selectedState, city: selectedCity },
         salary_range: { min: minSal, max: maxSal },
         work_mode: formData.work_mode,
+        job_type: formData.job_type,
         job_url: formData.job_url.trim() || null,
         recruiter_email: formData.recruiter_email.trim() || null,
         resume_file: resumeFile?.base64 || null,
         date_applied: parsedDate.toISOString(),
         status: formData.status,
+        upcoming_stage: formData.upcoming_stage || null,
+        upcoming_schedule: formData.upcoming_schedule || null,
+        notes: formData.notes.trim() || null,
         custom_stages: [],
         is_priority: formData.is_priority
       };
