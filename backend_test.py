@@ -694,6 +694,7 @@ class JobTrackerAPITester:
             await self.test_dashboard_endpoints()
             await self.test_analytics_endpoints()
             await self.test_template_endpoints()
+            await self.test_email_summary_endpoints()  # Add email summary tests
             await self.test_other_endpoints()
             await self.test_error_cases()
             await self.cleanup_test_job()
