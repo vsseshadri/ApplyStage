@@ -1150,6 +1150,242 @@ For questions or feedback, please contact support.
         }
     }
 
+
+# Report endpoints
+@api_router.get("/reports")
+async def get_reports(current_user: User = Depends(get_current_user)):
+    """Get all reports for the current user"""
+    reports = await db.reports.find(
+        {"user_id": current_user.user_id}
+    ).sort("created_at", -1).to_list(100)
+    
+    return [
+        {
+            "report_id": str(report.get("_id", report.get("report_id"))),
+            "report_type": report.get("report_type"),
+            "title": report.get("title"),
+            "date_range": report.get("date_range"),
+            "created_at": report.get("created_at"),
+            "is_read": report.get("is_read", False)
+        }
+        for report in reports
+    ]
+
+@api_router.get("/reports/{report_id}")
+async def get_report_detail(report_id: str, current_user: User = Depends(get_current_user)):
+    """Get detailed report content"""
+    from bson import ObjectId
+    
+    try:
+        report = await db.reports.find_one({
+            "_id": ObjectId(report_id),
+            "user_id": current_user.user_id
+        })
+    except:
+        report = await db.reports.find_one({
+            "report_id": report_id,
+            "user_id": current_user.user_id
+        })
+    
+    if not report:
+        raise HTTPException(status_code=404, detail="Report not found")
+    
+    # Mark as read
+    await db.reports.update_one(
+        {"_id": report.get("_id")},
+        {"$set": {"is_read": True}}
+    )
+    
+    return {
+        "report_id": str(report.get("_id", report.get("report_id"))),
+        "report_type": report.get("report_type"),
+        "title": report.get("title"),
+        "date_range": report.get("date_range"),
+        "content": report.get("content"),
+        "stats": report.get("stats"),
+        "created_at": report.get("created_at"),
+        "is_read": True
+    }
+
+@api_router.delete("/reports/{report_id}")
+async def delete_report(report_id: str, current_user: User = Depends(get_current_user)):
+    """Delete a report"""
+    from bson import ObjectId
+    
+    try:
+        result = await db.reports.delete_one({
+            "_id": ObjectId(report_id),
+            "user_id": current_user.user_id
+        })
+    except:
+        result = await db.reports.delete_one({
+            "report_id": report_id,
+            "user_id": current_user.user_id
+        })
+    
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Report not found")
+    
+    return {"message": "Report deleted"}
+
+@api_router.post("/reports/generate/{report_type}")
+async def generate_report(report_type: str, current_user: User = Depends(get_current_user)):
+    """Generate a weekly or monthly report"""
+    import calendar
+    import uuid
+    
+    today = datetime.now(timezone.utc)
+    
+    # Get all jobs
+    all_jobs = await db.job_applications.find({"user_id": current_user.user_id}).to_list(1000)
+    
+    if report_type == "weekly":
+        week_start = today - timedelta(days=7)
+        from_date = week_start.strftime("%b-%d-%Y")
+        to_date = today.strftime("%b-%d-%Y")
+        title = f"Weekly Summary for the week {from_date} - {to_date}"
+        date_range = f"{from_date} - {to_date}"
+        
+        weekly_jobs = []
+        for j in all_jobs:
+            if j.get("date_applied"):
+                date_applied = j.get("date_applied")
+                if isinstance(date_applied, str):
+                    try:
+                        date_applied = datetime.fromisoformat(date_applied.replace("Z", "+00:00"))
+                    except:
+                        continue
+                elif isinstance(date_applied, datetime) and date_applied.tzinfo is None:
+                    date_applied = date_applied.replace(tzinfo=timezone.utc)
+                if date_applied >= week_start:
+                    weekly_jobs.append(j)
+        
+        status_counts = {}
+        for job in weekly_jobs:
+            status = job.get("status", "applied")
+            status_counts[status] = status_counts.get(status, 0) + 1
+        
+        follow_ups = []
+        for j in all_jobs:
+            if j.get("status") == "applied" and j.get("date_applied"):
+                date_applied = j.get("date_applied")
+                if isinstance(date_applied, str):
+                    try:
+                        date_applied = datetime.fromisoformat(date_applied.replace("Z", "+00:00"))
+                    except:
+                        continue
+                elif isinstance(date_applied, datetime) and date_applied.tzinfo is None:
+                    date_applied = date_applied.replace(tzinfo=timezone.utc)
+                if (today - date_applied).days > 7:
+                    follow_ups.append(j)
+        
+        user_name = current_user.preferred_display_name or current_user.name or "Job Seeker"
+        weekly_applications = len(weekly_jobs)
+        
+        content = f'''<div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+<h1 style="color: #2563EB;">📊 Weekly Job Search Summary</h1>
+<p>Hi {user_name}, here's your weekly summary for {from_date} - {to_date}.</p>
+<div style="background: #F3F4F6; border-radius: 12px; padding: 20px; margin: 20px 0;">
+<h2>📈 Weekly Metrics</h2>
+<div style="display: flex; gap: 15px; flex-wrap: wrap;">
+<div style="background: white; padding: 15px; border-radius: 8px; flex: 1; min-width: 120px; text-align: center;"><div style="font-size: 28px; font-weight: bold; color: #2563EB;">{weekly_applications}</div><div>Applications</div></div>
+<div style="background: white; padding: 15px; border-radius: 8px; flex: 1; min-width: 120px; text-align: center;"><div style="font-size: 28px; font-weight: bold; color: #10B981;">{status_counts.get('interviewing', 0)}</div><div>Interviews</div></div>
+<div style="background: white; padding: 15px; border-radius: 8px; flex: 1; min-width: 120px; text-align: center;"><div style="font-size: 28px; font-weight: bold; color: #22C55E;">{status_counts.get('offer', 0)}</div><div>Offers</div></div>
+</div></div>
+<div style="background: white; border: 1px solid #E5E7EB; border-radius: 12px; padding: 20px; margin: 20px 0;">
+<h2>📋 Applications This Week</h2>'''
+        
+        for job in weekly_jobs[:10]:
+            content += f'<div style="padding: 10px 0; border-bottom: 1px solid #F3F4F6;"><strong>{job.get("company_name", "N/A")}</strong> - {job.get("position", "N/A")} <span style="color: #6B7280;">({job.get("status", "applied")})</span></div>'
+        
+        content += f'''</div>
+<div style="background: #FEF3C7; border-radius: 12px; padding: 20px; margin: 20px 0;">
+<h2>⏰ Follow-up Reminders ({len(follow_ups)})</h2>'''
+        
+        for r in follow_ups[:5]:
+            content += f'<div style="background: white; padding: 10px; border-radius: 8px; margin: 5px 0;"><strong>{r.get("company_name")}</strong> - {r.get("position")}</div>'
+        
+        content += '</div><p style="color: #6B7280;">— JobTracker Team</p></div>'
+        
+        stats = {"weekly_applications": weekly_applications, "status_counts": status_counts, "follow_ups_count": len(follow_ups)}
+        
+    else:
+        first_day = today.replace(day=1)
+        month_year = today.strftime("%b-%Y")
+        title = f"Monthly Summary for {month_year}"
+        date_range = month_year
+        
+        total_applications = len(all_jobs)
+        status_counts = {}
+        work_mode_counts = {}
+        for job in all_jobs:
+            status_counts[job.get("status", "applied")] = status_counts.get(job.get("status", "applied"), 0) + 1
+            work_mode_counts[job.get("work_mode", "unknown")] = work_mode_counts.get(job.get("work_mode", "unknown"), 0) + 1
+        
+        salaries = [j.get("salary_range", {}) for j in all_jobs if j.get("salary_range")]
+        avg_min = sum(s.get("min", 0) for s in salaries) / len(salaries) if salaries else 0
+        avg_max = sum(s.get("max", 0) for s in salaries) / len(salaries) if salaries else 0
+        
+        follow_ups = [j for j in all_jobs if j.get("status") == "applied"]
+        response_rate = round((len([j for j in all_jobs if j.get("status") != "applied"]) / total_applications * 100) if total_applications else 0, 1)
+        
+        user_name = current_user.preferred_display_name or current_user.name or "Job Seeker"
+        
+        content = f'''<div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+<h1 style="color: #2563EB;">📊 Monthly Job Search Report - {month_year}</h1>
+<p>Hi {user_name}, here's your comprehensive monthly report.</p>
+<div style="background: linear-gradient(135deg, #2563EB, #7C3AED); border-radius: 16px; padding: 25px; color: white; margin: 20px 0;">
+<h2 style="color: white;">📈 Monthly Overview</h2>
+<div style="display: flex; gap: 20px; flex-wrap: wrap;">
+<div style="flex: 1; text-align: center;"><div style="font-size: 36px; font-weight: bold;">{total_applications}</div><div>Total Applications</div></div>
+<div style="flex: 1; text-align: center;"><div style="font-size: 36px; font-weight: bold;">{response_rate}%</div><div>Response Rate</div></div>
+</div></div>
+<div style="background: white; border: 1px solid #E5E7EB; border-radius: 12px; padding: 20px; margin: 20px 0;">
+<h2>📊 Status Breakdown</h2>'''
+        
+        for status, count in status_counts.items():
+            pct = round(count / total_applications * 100) if total_applications else 0
+            content += f'<div style="margin: 10px 0;"><div style="display: flex; justify-content: space-between;"><span>{status.replace("_", " ").title()}</span><span>{count} ({pct}%)</span></div><div style="background: #F3F4F6; border-radius: 10px; height: 10px;"><div style="background: #2563EB; height: 100%; width: {pct}%; border-radius: 10px;"></div></div></div>'
+        
+        content += f'''</div>
+<div style="background: white; border: 1px solid #E5E7EB; border-radius: 12px; padding: 20px; margin: 20px 0;">
+<h2>🏢 Work Mode Distribution</h2>
+<div style="display: flex; gap: 20px; flex-wrap: wrap;">'''
+        
+        for mode, count in work_mode_counts.items():
+            content += f'<div style="flex: 1; text-align: center; padding: 15px;"><div style="font-size: 24px; font-weight: bold; color: #2563EB;">{count}</div><div>{mode.title()}</div></div>'
+        
+        content += f'''</div></div>
+<div style="background: #F0FDF4; border-radius: 12px; padding: 20px; margin: 20px 0;">
+<h2>💰 Salary Insights</h2>
+<p>Average Range: <strong>${avg_min:,.0f} - ${avg_max:,.0f}</strong></p>
+</div>
+<div style="background: #FEF3C7; border-radius: 12px; padding: 20px; margin: 20px 0;">
+<h2>⏰ Follow-up Reminders ({len(follow_ups)})</h2>'''
+        
+        for r in follow_ups[:5]:
+            content += f'<div style="background: white; padding: 10px; border-radius: 8px; margin: 5px 0;"><strong>{r.get("company_name")}</strong> - {r.get("position")}</div>'
+        
+        content += '</div><p style="color: #6B7280;">Keep up the great work! — JobTracker Team</p></div>'
+        
+        stats = {"total_applications": total_applications, "status_counts": status_counts, "work_mode_counts": work_mode_counts, "response_rate": response_rate}
+    
+    report_doc = {
+        "report_id": str(uuid.uuid4()),
+        "user_id": current_user.user_id,
+        "report_type": report_type,
+        "title": title,
+        "date_range": date_range,
+        "content": content,
+        "stats": stats,
+        "created_at": today,
+        "is_read": False
+    }
+    
+    await db.reports.insert_one(report_doc)
+    return {"message": f"{report_type.title()} report generated", "report_id": report_doc["report_id"], "title": title}
+
+
 app.include_router(api_router)
 
 app.add_middleware(
