@@ -104,6 +104,82 @@ export default function SettingsScreen() {
     }
   };
 
+  // Send Weekly Summary Email
+  const handleSendWeeklySummary = async () => {
+    if (!communicationEmail) {
+      Alert.alert('Email Required', 'Please set a communication email first.');
+      return;
+    }
+    
+    setSendingWeekly(true);
+    try {
+      const response = await fetch(`${BACKEND_URL}/api/email-summary/weekly`, {
+        headers: {
+          'Authorization': `Bearer ${sessionToken}`,
+        },
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        const subject = encodeURIComponent(data.subject);
+        const body = encodeURIComponent(data.body);
+        const emailUrl = `mailto:${communicationEmail}?subject=${subject}&body=${body}`;
+        
+        const canOpen = await Linking.canOpenURL(emailUrl);
+        if (canOpen) {
+          await Linking.openURL(emailUrl);
+        } else {
+          Alert.alert('Error', 'Unable to open email app.');
+        }
+      } else {
+        Alert.alert('Error', 'Failed to generate weekly summary.');
+      }
+    } catch (error) {
+      console.error('Error sending weekly summary:', error);
+      Alert.alert('Error', 'Failed to send weekly summary.');
+    } finally {
+      setSendingWeekly(false);
+    }
+  };
+
+  // Send Monthly Summary Email
+  const handleSendMonthlySummary = async () => {
+    if (!communicationEmail) {
+      Alert.alert('Email Required', 'Please set a communication email first.');
+      return;
+    }
+    
+    setSendingMonthly(true);
+    try {
+      const response = await fetch(`${BACKEND_URL}/api/email-summary/monthly`, {
+        headers: {
+          'Authorization': `Bearer ${sessionToken}`,
+        },
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        const subject = encodeURIComponent(data.subject);
+        const body = encodeURIComponent(data.body);
+        const emailUrl = `mailto:${communicationEmail}?subject=${subject}&body=${body}`;
+        
+        const canOpen = await Linking.canOpenURL(emailUrl);
+        if (canOpen) {
+          await Linking.openURL(emailUrl);
+        } else {
+          Alert.alert('Error', 'Unable to open email app.');
+        }
+      } else {
+        Alert.alert('Error', 'Failed to generate monthly summary.');
+      }
+    } catch (error) {
+      console.error('Error sending monthly summary:', error);
+      Alert.alert('Error', 'Failed to send monthly summary.');
+    } finally {
+      setSendingMonthly(false);
+    }
+  };
+
   const checkBiometricType = async () => {
     try {
       const types = await LocalAuthentication.supportedAuthenticationTypesAsync();
