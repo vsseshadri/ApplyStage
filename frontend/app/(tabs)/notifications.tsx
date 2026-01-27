@@ -587,34 +587,47 @@ export default function NotificationsScreen() {
             <ScrollView style={styles.reportContentContainer}>
               <View style={styles.htmlContent}>
                 {/* Render HTML content using a simplified approach */}
-                <WebView
-                  originWhitelist={['*']}
-                  source={{ 
-                    html: `
-                      <!DOCTYPE html>
-                      <html>
-                        <head>
-                          <meta name="viewport" content="width=device-width, initial-scale=1.0">
-                          <style>
-                            body {
-                              font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-                              padding: 16px;
-                              margin: 0;
-                              background-color: ${isDark ? '#1F2937' : '#FFFFFF'};
-                              color: ${isDark ? '#F3F4F6' : '#1F2937'};
-                            }
-                            h1, h2 { color: ${isDark ? '#60A5FA' : '#2563EB'}; }
-                            * { box-sizing: border-box; }
-                          </style>
-                        </head>
-                        <body>${selectedReport.content}</body>
-                      </html>
-                    `
-                  }}
-                  style={styles.webView}
-                  scrollEnabled={true}
-                  showsVerticalScrollIndicator={false}
-                />
+                {Platform.OS === 'web' ? (
+                  <View style={[styles.htmlContentWeb, { backgroundColor: isDark ? '#1F2937' : '#FFFFFF' }]}>
+                    <div 
+                      dangerouslySetInnerHTML={{ __html: selectedReport.content }}
+                      style={{ 
+                        fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
+                        padding: 16,
+                        color: isDark ? '#F3F4F6' : '#1F2937'
+                      }}
+                    />
+                  </View>
+                ) : (
+                  <WebView
+                    originWhitelist={['*']}
+                    source={{ 
+                      html: `
+                        <!DOCTYPE html>
+                        <html>
+                          <head>
+                            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                            <style>
+                              body {
+                                font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+                                padding: 16px;
+                                margin: 0;
+                                background-color: ${isDark ? '#1F2937' : '#FFFFFF'};
+                                color: ${isDark ? '#F3F4F6' : '#1F2937'};
+                              }
+                              h1, h2 { color: ${isDark ? '#60A5FA' : '#2563EB'}; }
+                              * { box-sizing: border-box; }
+                            </style>
+                          </head>
+                          <body>${selectedReport.content}</body>
+                        </html>
+                      `
+                    }}
+                    style={styles.webView}
+                    scrollEnabled={true}
+                    showsVerticalScrollIndicator={false}
+                  />
+                )}
               </View>
             </ScrollView>
           ) : null}
