@@ -185,15 +185,13 @@ export default function SettingsScreen() {
       flex: 1,
       backgroundColor: colors.background,
     },
-    header: {
-      backgroundColor: colors.headerBackground,
-      paddingHorizontal: 20,
-      paddingVertical: 16,
+    pageTitleRow: {
+      paddingBottom: 12,
     },
-    headerTitle: {
-      fontSize: 24,
-      fontWeight: 'bold',
-      color: colors.headerText,
+    pageTitle: {
+      fontSize: 28,
+      fontWeight: '700',
+      color: colors.text,
     },
     scrollContent: {
       padding: 16,
