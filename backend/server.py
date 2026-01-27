@@ -811,6 +811,281 @@ async def export_csv(current_user: User = Depends(get_current_user)):
         headers={"Content-Disposition": "attachment; filename=job_applications.csv"}
     )
 
+@api_router.get("/email-summary/weekly")
+async def get_weekly_email_summary(current_user: User = Depends(get_current_user)):
+    """Generate weekly email summary data for the user to send via email client"""
+    from datetime import datetime, timedelta
+    
+    # Calculate the date range for the week (last 7 days)
+    today = datetime.now(timezone.utc)
+    week_start = today - timedelta(days=7)
+    
+    # Format dates for subject line
+    from_date = week_start.strftime("%b-%d-%Y")
+    to_date = today.strftime("%b-%d-%Y")
+    
+    # Get jobs applied in the last week
+    jobs = await db.job_applications.find({
+        "user_id": current_user.user_id,
+        "date_applied": {"$gte": week_start.isoformat(), "$lte": today.isoformat()}
+    }).to_list(1000)
+    
+    # Get all jobs for overall stats
+    all_jobs = await db.job_applications.find({"user_id": current_user.user_id}).to_list(1000)
+    
+    # Calculate weekly stats
+    weekly_applications = len(jobs)
+    status_counts = {}
+    for job in jobs:
+        status = job.get("status", "applied")
+        status_counts[status] = status_counts.get(status, 0) + 1
+    
+    # Get follow-up reminders (jobs applied > 7 days ago without response)
+    follow_ups = [j for j in all_jobs if j.get("status") == "applied" and 
+                  j.get("date_applied") and 
+                  (today - datetime.fromisoformat(j["date_applied"].replace("Z", "+00:00"))).days > 7]
+    
+    # Build email content
+    user_name = current_user.preferred_display_name or current_user.name or "Job Seeker"
+    subject = f"Weekly Summary for the week {from_date} - {to_date}"
+    
+    # Professional email body
+    body = f"""Hi {user_name},
+
+Hope you're having a great week! Here's your weekly job search summary.
+
+📊 WEEKLY METRICS ({from_date} - {to_date})
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+• Applications Submitted: {weekly_applications}
+• Interviews Scheduled: {status_counts.get('interviewing', 0)}
+• Final Rounds: {status_counts.get('final_round', 0)}
+• Offers Received: {status_counts.get('offer', 0)}
+• Rejections: {status_counts.get('rejected', 0)}
+
+📋 APPLICATIONS THIS WEEK
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+"""
+    
+    for job in jobs[:10]:  # Limit to 10 for email readability
+        body += f"• {job.get('company_name', 'N/A')} - {job.get('position', 'N/A')} ({job.get('status', 'applied').replace('_', ' ').title()})\n"
+    
+    if len(jobs) > 10:
+        body += f"...and {len(jobs) - 10} more\n"
+    
+    body += f"""
+⏰ FOLLOW-UP REMINDERS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+You have {len(follow_ups)} application(s) that may need follow-up.
+"""
+    
+    for reminder in follow_ups[:5]:
+        days_ago = (today - datetime.fromisoformat(reminder["date_applied"].replace("Z", "+00:00"))).days
+        body += f"• {reminder.get('company_name', 'N/A')} - {reminder.get('position', 'N/A')} ({days_ago} days ago)\n"
+    
+    body += f"""
+💡 KEY INSIGHTS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+• Total Active Applications: {len([j for j in all_jobs if j.get('status') not in ['rejected', 'withdrawn']])}
+• Response Rate: {round((len([j for j in all_jobs if j.get('status') != 'applied']) / len(all_jobs) * 100) if all_jobs else 0, 1)}%
+• Keep up the momentum!
+
+Best of luck with your job search!
+
+Best regards,
+JobTracker Team
+
+---
+This summary was generated automatically based on your JobTracker data.
+"""
+    
+    return {
+        "subject": subject,
+        "body": body,
+        "to_email": current_user.communication_email or current_user.email,
+        "from_date": from_date,
+        "to_date": to_date,
+        "stats": {
+            "weekly_applications": weekly_applications,
+            "status_counts": status_counts,
+            "follow_ups_count": len(follow_ups)
+        }
+    }
+
+@api_router.get("/email-summary/monthly")
+async def get_monthly_email_summary(current_user: User = Depends(get_current_user)):
+    """Generate monthly email summary data for the user to send via email client"""
+    from datetime import datetime
+    import calendar
+    
+    today = datetime.now(timezone.utc)
+    
+    # Get first and last day of current month
+    first_day = today.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+    last_day_num = calendar.monthrange(today.year, today.month)[1]
+    last_day = today.replace(day=last_day_num, hour=23, minute=59, second=59)
+    
+    # Format for subject
+    month_year = today.strftime("%b-%Y")
+    
+    # Get all jobs
+    all_jobs = await db.job_applications.find({"user_id": current_user.user_id}).to_list(1000)
+    
+    # Get jobs applied this month
+    monthly_jobs = [j for j in all_jobs if j.get("date_applied") and 
+                    datetime.fromisoformat(j["date_applied"].replace("Z", "+00:00")) >= first_day]
+    
+    # Calculate comprehensive stats
+    total_applications = len(all_jobs)
+    monthly_applications = len(monthly_jobs)
+    
+    # Status breakdown
+    status_counts = {}
+    for job in all_jobs:
+        status = job.get("status", "applied")
+        status_counts[status] = status_counts.get(status, 0) + 1
+    
+    # Work mode breakdown
+    work_mode_counts = {}
+    for job in all_jobs:
+        mode = job.get("work_mode", "unknown")
+        work_mode_counts[mode] = work_mode_counts.get(mode, 0) + 1
+    
+    # Salary stats
+    salaries = [j.get("salary_range", {}) for j in all_jobs if j.get("salary_range")]
+    avg_min_salary = sum(s.get("min", 0) for s in salaries) / len(salaries) if salaries else 0
+    avg_max_salary = sum(s.get("max", 0) for s in salaries) / len(salaries) if salaries else 0
+    
+    # Top companies applied to
+    company_counts = {}
+    for job in all_jobs:
+        company = job.get("company_name", "Unknown")
+        company_counts[company] = company_counts.get(company, 0) + 1
+    top_companies = sorted(company_counts.items(), key=lambda x: x[1], reverse=True)[:5]
+    
+    # Follow-ups
+    follow_ups = [j for j in all_jobs if j.get("status") == "applied" and 
+                  j.get("date_applied") and 
+                  (today - datetime.fromisoformat(j["date_applied"].replace("Z", "+00:00"))).days > 7]
+    
+    user_name = current_user.preferred_display_name or current_user.name or "Job Seeker"
+    subject = f"Monthly Summary for {month_year}"
+    
+    # Professional email body with visual elements (using ASCII art for email compatibility)
+    body = f"""Hi {user_name},
+
+Here's your comprehensive monthly job search report for {month_year}. Let's review your progress!
+
+╔══════════════════════════════════════════════════════════════════╗
+║                    📊 MONTHLY OVERVIEW                           ║
+╠══════════════════════════════════════════════════════════════════╣
+║  Total Applications (All Time): {total_applications:<30}║
+║  Applications This Month:       {monthly_applications:<30}║
+║  Active Applications:           {status_counts.get('applied', 0) + status_counts.get('interviewing', 0) + status_counts.get('final_round', 0):<30}║
+╚══════════════════════════════════════════════════════════════════╝
+
+📈 APPLICATION STATUS BREAKDOWN
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+"""
+    
+    status_labels = {
+        'applied': '📝 Applied',
+        'interviewing': '🎯 Interviewing', 
+        'final_round': '🏆 Final Round',
+        'offer': '✅ Offers',
+        'rejected': '❌ Rejected',
+        'withdrawn': '🚫 Withdrawn'
+    }
+    
+    for status, label in status_labels.items():
+        count = status_counts.get(status, 0)
+        bar = "█" * min(count, 20)
+        body += f"{label:<20} {bar} {count}\n"
+    
+    body += f"""
+🏢 WORK MODE DISTRIBUTION
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+"""
+    
+    mode_labels = {'remote': '🏠 Remote', 'hybrid': '🔄 Hybrid', 'onsite': '🏢 On-site'}
+    for mode, label in mode_labels.items():
+        count = work_mode_counts.get(mode, 0)
+        percentage = round(count / total_applications * 100, 1) if total_applications else 0
+        bar = "▓" * int(percentage / 5)
+        body += f"{label:<15} {bar} {count} ({percentage}%)\n"
+    
+    body += f"""
+💰 SALARY INSIGHTS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+• Average Min Salary: ${avg_min_salary:,.0f}
+• Average Max Salary: ${avg_max_salary:,.0f}
+• Salary Range: ${avg_min_salary:,.0f} - ${avg_max_salary:,.0f}
+
+🏆 TOP COMPANIES APPLIED TO
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+"""
+    
+    for i, (company, count) in enumerate(top_companies, 1):
+        body += f"{i}. {company} ({count} application{'s' if count > 1 else ''})\n"
+    
+    body += f"""
+⏰ FOLLOW-UP REMINDERS ({len(follow_ups)} pending)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+"""
+    
+    for reminder in follow_ups[:5]:
+        days_ago = (today - datetime.fromisoformat(reminder["date_applied"].replace("Z", "+00:00"))).days
+        body += f"• {reminder.get('company_name', 'N/A')} - {reminder.get('position', 'N/A')} ({days_ago} days)\n"
+    
+    if len(follow_ups) > 5:
+        body += f"...and {len(follow_ups) - 5} more applications need follow-up\n"
+    
+    # Calculate response rate and add insights
+    responded = len([j for j in all_jobs if j.get('status') != 'applied'])
+    response_rate = round(responded / total_applications * 100, 1) if total_applications else 0
+    
+    body += f"""
+💡 KEY INSIGHTS & RECOMMENDATIONS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+• Response Rate: {response_rate}%
+• Interview Conversion: {round(status_counts.get('interviewing', 0) / total_applications * 100, 1) if total_applications else 0}%
+• Offer Rate: {round(status_counts.get('offer', 0) / total_applications * 100, 1) if total_applications else 0}%
+
+"""
+    
+    if response_rate < 20:
+        body += "💡 Consider optimizing your resume and cover letters to improve response rates.\n"
+    if status_counts.get('interviewing', 0) > 0 and status_counts.get('offer', 0) == 0:
+        body += "💡 Practice interview skills to convert more interviews to offers.\n"
+    if len(follow_ups) > 5:
+        body += "💡 Many applications are awaiting response - consider sending follow-up emails.\n"
+    
+    body += f"""
+Keep up the great work! Every application brings you closer to your goal.
+
+Best regards,
+JobTracker Team
+
+---
+This monthly summary was generated automatically based on your JobTracker data.
+For questions or feedback, please contact support.
+"""
+    
+    return {
+        "subject": subject,
+        "body": body,
+        "to_email": current_user.communication_email or current_user.email,
+        "month_year": month_year,
+        "stats": {
+            "total_applications": total_applications,
+            "monthly_applications": monthly_applications,
+            "status_counts": status_counts,
+            "work_mode_counts": work_mode_counts,
+            "avg_salary_range": {"min": avg_min_salary, "max": avg_max_salary},
+            "response_rate": response_rate,
+            "follow_ups_count": len(follow_ups)
+        }
+    }
+
 app.include_router(api_router)
 
 app.add_middleware(
