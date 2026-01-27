@@ -749,6 +749,21 @@ async def update_display_name(data: DisplayNameUpdate, current_user: User = Depe
     
     return {"message": "Display name updated", "preferred_display_name": data.preferred_display_name}
 
+@api_router.put("/user/communication-email")
+async def update_communication_email(data: CommunicationEmailUpdate, current_user: User = Depends(get_current_user)):
+    """Update the user's communication email for weekly/monthly summaries"""
+    import re
+    email_regex = r'^[^\s@]+@[^\s@]+\.[^\s@]+$'
+    if not re.match(email_regex, data.communication_email):
+        raise HTTPException(status_code=400, detail="Invalid email format")
+    
+    await db.users.update_one(
+        {"user_id": current_user.user_id},
+        {"$set": {"communication_email": data.communication_email}}
+    )
+    
+    return {"message": "Communication email updated", "communication_email": data.communication_email}
+
 @api_router.post("/payment/verify")
 async def verify_payment(payment: PaymentVerification, current_user: User = Depends(get_current_user)):
     await db.users.update_one(
