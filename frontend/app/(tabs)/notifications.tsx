@@ -432,26 +432,18 @@ const createDynamicStyles = (colors: any, isDark: boolean) => StyleSheet.create(
     flex: 1,
     backgroundColor: colors.background,
   },
-  header: {
-    backgroundColor: colors.headerBackground,
-    paddingHorizontal: 20,
-    paddingVertical: 16,
-  },
-  headerRow: {
+  actionBar: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    backgroundColor: colors.background,
   },
-  headerTitle: {
-    fontSize: 24,
-    fontWeight: '700',
-    color: colors.headerText,
-  },
-  headerSubtitle: {
-    fontSize: 13,
-    marginTop: 2,
-    color: colors.headerText,
-    opacity: 0.8,
+  selectedCount: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: colors.text,
   },
   headerButtons: {
     flexDirection: 'row',
@@ -462,10 +454,10 @@ const createDynamicStyles = (colors: any, isDark: boolean) => StyleSheet.create(
     paddingHorizontal: 14,
     paddingVertical: 6,
     borderRadius: 6,
-    backgroundColor: 'rgba(255,255,255,0.2)',
+    backgroundColor: colors.primary,
   },
   selectButtonText: {
-    color: colors.headerText,
+    color: '#fff',
     fontSize: 14,
     fontWeight: '600',
   },
@@ -473,10 +465,12 @@ const createDynamicStyles = (colors: any, isDark: boolean) => StyleSheet.create(
     paddingHorizontal: 14,
     paddingVertical: 6,
     borderRadius: 6,
-    backgroundColor: 'rgba(255,255,255,0.15)',
+    backgroundColor: colors.card,
+    borderWidth: 1,
+    borderColor: colors.border,
   },
   cancelButtonText: {
-    color: colors.headerText,
+    color: colors.text,
     fontSize: 14,
     fontWeight: '600',
   },
