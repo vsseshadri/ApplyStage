@@ -429,7 +429,7 @@ const createDynamicStyles = (colors: any, isDark: boolean) => StyleSheet.create(
     flex: 1,
     backgroundColor: colors.background,
   },
-  actionBar: {
+  titleRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
@@ -437,49 +437,24 @@ const createDynamicStyles = (colors: any, isDark: boolean) => StyleSheet.create(
     paddingVertical: 12,
     backgroundColor: colors.background,
   },
-  selectedCount: {
-    fontSize: 16,
-    fontWeight: '600',
+  pageTitle: {
+    fontSize: 28,
+    fontWeight: '700',
     color: colors.text,
   },
   headerButtons: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 10,
+    gap: 16,
   },
-  selectButton: {
-    paddingHorizontal: 14,
-    paddingVertical: 6,
-    borderRadius: 6,
-    backgroundColor: colors.primary,
-  },
-  selectButtonText: {
-    color: '#fff',
-    fontSize: 14,
+  actionText: {
+    color: colors.primary,
+    fontSize: 16,
     fontWeight: '600',
   },
-  cancelButton: {
-    paddingHorizontal: 14,
-    paddingVertical: 6,
-    borderRadius: 6,
-    backgroundColor: colors.card,
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-  cancelButtonText: {
-    color: colors.text,
-    fontSize: 14,
-    fontWeight: '600',
-  },
-  deleteButton: {
-    paddingHorizontal: 14,
-    paddingVertical: 6,
-    borderRadius: 6,
-    backgroundColor: '#EF4444',
-  },
-  deleteButtonText: {
-    color: '#fff',
-    fontSize: 14,
+  deleteText: {
+    color: '#EF4444',
+    fontSize: 16,
     fontWeight: '600',
   },
 });
