@@ -1468,6 +1468,17 @@ const createStyles = (colors: any, isDark: boolean, isTablet: boolean = false) =
   loader: { 
     flex: 1 
   },
+  // Page Title
+  pageTitleRow: {
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    backgroundColor: colors.background,
+  },
+  pageTitle: {
+    fontSize: 28,
+    fontWeight: '700',
+    color: colors.text,
+  },
   // Filter bar styles
   filterContainer: {
     flexDirection: 'row',
