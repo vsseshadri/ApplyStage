@@ -931,8 +931,18 @@ async def get_monthly_email_summary(current_user: User = Depends(get_current_use
     all_jobs = await db.job_applications.find({"user_id": current_user.user_id}).to_list(1000)
     
     # Get jobs applied this month
-    monthly_jobs = [j for j in all_jobs if j.get("date_applied") and 
-                    datetime.fromisoformat(j["date_applied"].replace("Z", "+00:00")) >= first_day]
+    monthly_jobs = []
+    for j in all_jobs:
+        date_applied = j.get("date_applied")
+        if date_applied:
+            if isinstance(date_applied, str):
+                date_applied = datetime.fromisoformat(date_applied.replace("Z", "+00:00"))
+            elif isinstance(date_applied, datetime):
+                if date_applied.tzinfo is None:
+                    date_applied = date_applied.replace(tzinfo=timezone.utc)
+            
+            if date_applied >= first_day:
+                monthly_jobs.append(j)
     
     # Calculate comprehensive stats
     total_applications = len(all_jobs)
