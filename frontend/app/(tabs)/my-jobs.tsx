@@ -1405,6 +1405,20 @@ export default function MyJobsScreen() {
                 )}
               </View>
 
+              {/* Position Type Dropdown - Mandatory (moved after Position) */}
+              <View style={dynamicStyles.formSection}>
+                <Text style={dynamicStyles.label}>Position Type *</Text>
+                <TouchableOpacity 
+                  style={dynamicStyles.dropdownButton}
+                  onPress={() => setShowJobTypeDropdown(true)}
+                >
+                  <Text style={[dynamicStyles.dropdownButtonText, !formData.job_type && dynamicStyles.dropdownPlaceholder]}>
+                    {formData.job_type || 'Select Position Type'}
+                  </Text>
+                  <Ionicons name="chevron-down" size={20} color={colors.textSecondary} />
+                </TouchableOpacity>
+              </View>
+
               {/* State and City - Custom Dropdowns */}
               <View style={dynamicStyles.formSection}>
                 <Text style={dynamicStyles.label}>Location *</Text>
