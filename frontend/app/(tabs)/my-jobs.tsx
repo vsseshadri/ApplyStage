@@ -361,25 +361,25 @@ export default function MyJobsScreen() {
     setDateAppliedText(formatted);
   };
 
-  // Handle upcoming schedule date input
+  // Handle upcoming schedule date input (same format as Date Applied: MM/DD/YYYY)
   const handleUpcomingScheduleChange = (text: string) => {
-    // Remove any non-numeric characters except dashes
-    const cleaned = text.replace(/[^\d-]/g, '');
+    // Remove any non-numeric characters except /
+    let cleaned = text.replace(/[^0-9]/g, '');
     
-    // Auto-format as MM-DD-YY
-    let formatted = cleaned;
-    if (cleaned.length >= 2 && !cleaned.includes('-')) {
-      formatted = cleaned.slice(0, 2) + '-' + cleaned.slice(2);
+    // Auto-add slashes
+    let formatted = '';
+    if (cleaned.length > 0) {
+      formatted = cleaned.substring(0, 2);
     }
-    if (cleaned.length >= 4 && cleaned.split('-').length < 3) {
-      const parts = formatted.split('-');
-      if (parts.length === 2 && parts[1].length >= 2) {
-        formatted = parts[0] + '-' + parts[1].slice(0, 2) + '-' + parts[1].slice(2);
-      }
+    if (cleaned.length > 2) {
+      formatted += '/' + cleaned.substring(2, 4);
+    }
+    if (cleaned.length > 4) {
+      formatted += '/' + cleaned.substring(4, 8);
     }
     
-    setUpcomingScheduleDate(formatted.slice(0, 8));
-    setFormData({ ...formData, upcoming_schedule: formatted.slice(0, 8) });
+    setUpcomingScheduleDate(formatted);
+    setFormData({ ...formData, upcoming_schedule: formatted });
   };
 
   const openAddModal = () => {
