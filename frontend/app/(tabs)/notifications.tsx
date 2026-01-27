@@ -9,6 +9,7 @@ import {
   Platform,
   Linking,
   ActivityIndicator,
+  Modal,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuth } from '../../contexts/AuthContext';
@@ -18,11 +19,23 @@ import { differenceInDays, format, differenceInBusinessDays } from 'date-fns';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import Constants from 'expo-constants';
 import { Swipeable } from 'react-native-gesture-handler';
+import { WebView } from 'react-native-webview';
 
 // Export notification count for tab badge - will be set from component
 export let notificationCount = 0;
 
 const BACKEND_URL = Constants.expoConfig?.extra?.EXPO_PUBLIC_BACKEND_URL || process.env.EXPO_PUBLIC_BACKEND_URL;
+
+// Report interface
+interface Report {
+  report_id: string;
+  report_type: string;
+  title: string;
+  date_range: string;
+  created_at: string;
+  is_read: boolean;
+  content?: string;
+}
 
 // Status colors
 const STATUS_COLORS: {[key: string]: string} = {
