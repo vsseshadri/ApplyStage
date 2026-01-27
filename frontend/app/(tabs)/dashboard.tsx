@@ -70,12 +70,24 @@ export default function DashboardScreen() {
   const { setFilter } = useFilter();
   const router = useRouter();
   const [stats, setStats] = useState<any>(null);
-  const [insights, setInsights] = useState<string[]>([]);
+  const [insights, setInsights] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [followUps, setFollowUps] = useState<string[]>([]);
+  const [followUps, setFollowUps] = useState<any[]>([]);
   const [actionedFollowUps, setActionedFollowUps] = useState<Set<number>>(new Set());
   const [upcomingInterviews, setUpcomingInterviews] = useState<any[]>([]);
+  const [screenWidth, setScreenWidth] = useState(Dimensions.get('window').width);
+  
+  // Detect tablet (width > 768)
+  const isTablet = screenWidth >= 768;
+  
+  // Listen for screen size changes
+  React.useEffect(() => {
+    const subscription = Dimensions.addEventListener('change', ({ window }) => {
+      setScreenWidth(window.width);
+    });
+    return () => subscription?.remove();
+  }, []);
 
   // Function to handle marking a follow-up as actioned
   const handleFollowUpAction = (index: number) => {
