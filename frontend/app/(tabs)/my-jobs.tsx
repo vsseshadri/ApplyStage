@@ -961,6 +961,91 @@ export default function MyJobsScreen() {
     </Modal>
   );
 
+  // Job Type Dropdown
+  const renderJobTypeDropdown = () => (
+    <Modal visible={showJobTypeDropdown} transparent animationType="fade" onRequestClose={() => setShowJobTypeDropdown(false)}>
+      <View style={dynamicStyles.dropdownOverlay}>
+        <TouchableOpacity style={dynamicStyles.dropdownBackdrop} activeOpacity={1} onPress={() => setShowJobTypeDropdown(false)} />
+        <View style={dynamicStyles.dropdownContainer}>
+          <View style={dynamicStyles.dropdownHeader}>
+            <Text style={dynamicStyles.dropdownTitle}>Select Job Type</Text>
+            <TouchableOpacity onPress={() => setShowJobTypeDropdown(false)}>
+              <Ionicons name="close" size={24} color={colors.text} />
+            </TouchableOpacity>
+          </View>
+          <ScrollView style={dynamicStyles.dropdownScroll} nestedScrollEnabled={true}>
+            {JOB_TYPES.map((jobType) => (
+              <TouchableOpacity
+                key={jobType}
+                style={[dynamicStyles.dropdownItem, formData.job_type === jobType && dynamicStyles.dropdownItemSelected]}
+                onPress={() => {
+                  setFormData({ ...formData, job_type: jobType });
+                  setShowJobTypeDropdown(false);
+                }}
+              >
+                <Text style={[dynamicStyles.dropdownItemText, formData.job_type === jobType && dynamicStyles.dropdownItemTextSelected]}>
+                  {jobType}
+                </Text>
+                {formData.job_type === jobType && (
+                  <Ionicons name="checkmark" size={20} color={colors.primary} />
+                )}
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
+        </View>
+      </View>
+    </Modal>
+  );
+
+  // Upcoming Stage Dropdown
+  const renderUpcomingStageDropdown = () => (
+    <Modal visible={showUpcomingStageDropdown} transparent animationType="fade" onRequestClose={() => setShowUpcomingStageDropdown(false)}>
+      <View style={dynamicStyles.dropdownOverlay}>
+        <TouchableOpacity style={dynamicStyles.dropdownBackdrop} activeOpacity={1} onPress={() => setShowUpcomingStageDropdown(false)} />
+        <View style={dynamicStyles.dropdownContainer}>
+          <View style={dynamicStyles.dropdownHeader}>
+            <Text style={dynamicStyles.dropdownTitle}>Select Upcoming Stage</Text>
+            <TouchableOpacity onPress={() => setShowUpcomingStageDropdown(false)}>
+              <Ionicons name="close" size={24} color={colors.text} />
+            </TouchableOpacity>
+          </View>
+          <ScrollView style={dynamicStyles.dropdownScroll} nestedScrollEnabled={true}>
+            <TouchableOpacity
+              style={[dynamicStyles.dropdownItem, !formData.upcoming_stage && dynamicStyles.dropdownItemSelected]}
+              onPress={() => {
+                setFormData({ ...formData, upcoming_stage: '', upcoming_schedule: '' });
+                setUpcomingScheduleDate('');
+                setShowUpcomingStageDropdown(false);
+              }}
+            >
+              <Text style={[dynamicStyles.dropdownItemText, { color: colors.textSecondary }]}>
+                None
+              </Text>
+            </TouchableOpacity>
+            {allStatuses.map((status) => (
+              <TouchableOpacity
+                key={status}
+                style={[dynamicStyles.dropdownItem, formData.upcoming_stage === status && dynamicStyles.dropdownItemSelected]}
+                onPress={() => {
+                  setFormData({ ...formData, upcoming_stage: status });
+                  setShowUpcomingStageDropdown(false);
+                }}
+              >
+                <View style={[dynamicStyles.statusDot, { backgroundColor: getStatusColor(status) }]} />
+                <Text style={[dynamicStyles.dropdownItemText, { flex: 1 }, formData.upcoming_stage === status && dynamicStyles.dropdownItemTextSelected]}>
+                  {formatStatus(status)}
+                </Text>
+                {formData.upcoming_stage === status && (
+                  <Ionicons name="checkmark" size={20} color={colors.primary} />
+                )}
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
+        </View>
+      </View>
+    </Modal>
+  );
+
   // Job card render with select mode support (no swipe)
   const renderSelectableJobCard = (job: any) => {
     const jobId = job.job_id;
