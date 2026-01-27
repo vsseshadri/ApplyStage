@@ -886,11 +886,11 @@ Hope you're having a great week! Here's your weekly job search summary.
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 """
     
-    for job in jobs[:10]:  # Limit to 10 for email readability
+    for job in weekly_jobs[:10]:  # Limit to 10 for email readability
         body += f"• {job.get('company_name', 'N/A')} - {job.get('position', 'N/A')} ({job.get('status', 'applied').replace('_', ' ').title()})\n"
     
-    if len(jobs) > 10:
-        body += f"...and {len(jobs) - 10} more\n"
+    if len(weekly_jobs) > 10:
+        body += f"...and {len(weekly_jobs) - 10} more\n"
     
     body += f"""
 ⏰ FOLLOW-UP REMINDERS
