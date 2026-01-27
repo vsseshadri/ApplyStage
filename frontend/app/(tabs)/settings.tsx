@@ -753,11 +753,24 @@ export default function SettingsScreen() {
               <Text style={styles.notificationLabel}>Monthly Summary</Text>
               <Text style={styles.notificationSubtext}>Last day of month at 9 AM</Text>
             </View>
-            <Switch
-              value={monthlyEmail}
-              onValueChange={handleMonthlyEmailToggle}
-              trackColor={{ false: colors.border, true: colors.primary }}
-            />
+            <View style={styles.summaryActions}>
+              <TouchableOpacity 
+                style={styles.sendNowButton} 
+                onPress={handleSendMonthlySummary}
+                disabled={sendingMonthly}
+              >
+                {sendingMonthly ? (
+                  <ActivityIndicator size="small" color={colors.primary} />
+                ) : (
+                  <Text style={styles.sendNowButtonText}>Send Now</Text>
+                )}
+              </TouchableOpacity>
+              <Switch
+                value={monthlyEmail}
+                onValueChange={handleMonthlyEmailToggle}
+                trackColor={{ false: colors.border, true: colors.primary }}
+              />
+            </View>
           </View>
         </View>
 
