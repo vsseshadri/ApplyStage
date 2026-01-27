@@ -700,70 +700,18 @@ export default function SettingsScreen() {
             )}
           </View>
           
-          <Text style={styles.notificationPrefsLabel}>Email Summary Preferences</Text>
-          
-          {/* Communication Email Field */}
-          <View style={styles.emailFieldContainer}>
-            <Text style={styles.emailFieldLabel}>Send summaries to:</Text>
-            {isEditingEmail ? (
-              <View style={styles.emailInputRow}>
-                <TextInput
-                  style={[styles.emailInput, emailError ? styles.emailInputError : null]}
-                  value={communicationEmail}
-                  onChangeText={handleEmailChange}
-                  placeholder="Enter email address"
-                  placeholderTextColor={colors.textSecondary}
-                  keyboardType="email-address"
-                  autoCapitalize="none"
-                  autoCorrect={false}
-                />
-                <TouchableOpacity style={styles.saveEmailButton} onPress={handleEmailSave}>
-                  <Text style={styles.saveEmailButtonText}>Save</Text>
-                </TouchableOpacity>
-                <TouchableOpacity style={styles.cancelEmailButton} onPress={() => {
-                  setIsEditingEmail(false);
-                  setCommunicationEmail(user?.communication_email || user?.email || '');
-                  setEmailError('');
-                }}>
-                  <Text style={styles.cancelEmailButtonText}>Cancel</Text>
-                </TouchableOpacity>
-              </View>
-            ) : (
-              <View style={styles.emailDisplayRow}>
-                <Text style={styles.emailDisplayValue} numberOfLines={1}>
-                  {communicationEmail || 'No email set'}
-                </Text>
-                <TouchableOpacity style={styles.editButton} onPress={() => setIsEditingEmail(true)}>
-                  <Text style={styles.editButtonText}>Edit</Text>
-                </TouchableOpacity>
-              </View>
-            )}
-            {emailError ? <Text style={styles.emailErrorText}>{emailError}</Text> : null}
-          </View>
+          <Text style={styles.notificationPrefsLabel}>Preferences</Text>
           
           <View style={styles.notificationRow}>
             <View style={{ flex: 1 }}>
               <Text style={styles.notificationLabel}>Weekly Summary</Text>
               <Text style={styles.notificationSubtext}>Every Sunday at 1 AM</Text>
             </View>
-            <View style={styles.summaryActions}>
-              <TouchableOpacity 
-                style={styles.sendNowButton} 
-                onPress={handleSendWeeklySummary}
-                disabled={sendingWeekly}
-              >
-                {sendingWeekly ? (
-                  <ActivityIndicator size="small" color={colors.primary} />
-                ) : (
-                  <Text style={styles.sendNowButtonText}>Send Now</Text>
-                )}
-              </TouchableOpacity>
-              <Switch
-                value={weeklyEmail}
-                onValueChange={handleWeeklyEmailToggle}
-                trackColor={{ false: colors.border, true: colors.primary }}
-              />
-            </View>
+            <Switch
+              value={weeklyEmail}
+              onValueChange={handleWeeklyEmailToggle}
+              trackColor={{ false: colors.border, true: colors.primary }}
+            />
           </View>
           
           <View style={styles.notificationRow}>
@@ -771,24 +719,11 @@ export default function SettingsScreen() {
               <Text style={styles.notificationLabel}>Monthly Summary</Text>
               <Text style={styles.notificationSubtext}>Last day of month at 9 AM</Text>
             </View>
-            <View style={styles.summaryActions}>
-              <TouchableOpacity 
-                style={styles.sendNowButton} 
-                onPress={handleSendMonthlySummary}
-                disabled={sendingMonthly}
-              >
-                {sendingMonthly ? (
-                  <ActivityIndicator size="small" color={colors.primary} />
-                ) : (
-                  <Text style={styles.sendNowButtonText}>Send Now</Text>
-                )}
-              </TouchableOpacity>
-              <Switch
-                value={monthlyEmail}
-                onValueChange={handleMonthlyEmailToggle}
-                trackColor={{ false: colors.border, true: colors.primary }}
-              />
-            </View>
+            <Switch
+              value={monthlyEmail}
+              onValueChange={handleMonthlyEmailToggle}
+              trackColor={{ false: colors.border, true: colors.primary }}
+            />
           </View>
         </View>
 
