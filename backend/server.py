@@ -1072,7 +1072,14 @@ Here's your comprehensive monthly job search report for {month_year}. Let's revi
 """
     
     for reminder in follow_ups[:5]:
-        days_ago = (today - datetime.fromisoformat(reminder["date_applied"].replace("Z", "+00:00"))).days
+        date_applied = reminder.get("date_applied")
+        if isinstance(date_applied, str):
+            date_applied = datetime.fromisoformat(date_applied.replace("Z", "+00:00"))
+        elif isinstance(date_applied, datetime):
+            if date_applied.tzinfo is None:
+                date_applied = date_applied.replace(tzinfo=timezone.utc)
+        
+        days_ago = (today - date_applied).days
         body += f"• {reminder.get('company_name', 'N/A')} - {reminder.get('position', 'N/A')} ({days_ago} days)\n"
     
     if len(follow_ups) > 5:
