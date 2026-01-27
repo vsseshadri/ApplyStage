@@ -646,8 +646,8 @@ async def get_upcoming_interviews(current_user: User = Depends(get_current_user)
         schedule_str = job.get("upcoming_schedule", "")
         if schedule_str:
             try:
-                # Parse MM-DD-YY format
-                parts = schedule_str.split("-")
+                # Parse both MM/DD/YYYY and MM-DD-YY formats
+                parts = schedule_str.replace('/', '-').split("-")
                 if len(parts) == 3:
                     month, day, year = int(parts[0]), int(parts[1]), int(parts[2])
                     # Handle 2-digit year
