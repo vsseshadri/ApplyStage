@@ -75,6 +75,7 @@ export default function DashboardScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [followUps, setFollowUps] = useState<string[]>([]);
   const [actionedFollowUps, setActionedFollowUps] = useState<Set<number>>(new Set());
+  const [upcomingInterviews, setUpcomingInterviews] = useState<any[]>([]);
 
   // Function to handle marking a follow-up as actioned
   const handleFollowUpAction = (index: number) => {
