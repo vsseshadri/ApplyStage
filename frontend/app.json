@@ -56,7 +56,13 @@
           "sounds": []
         }
       ],
-      "expo-font"
+      "expo-font",
+      [
+        "expo-calendar",
+        {
+          "calendarPermission": "Allow Job Tracker to access your calendar to add interview events"
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true
