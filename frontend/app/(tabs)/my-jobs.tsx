@@ -738,7 +738,23 @@ export default function MyJobsScreen() {
         await refreshUser();
         await fetchJobs();
         setModalVisible(false);
-        Alert.alert('Success', editingJob ? 'Job updated successfully' : 'Job added successfully');
+        
+        // Check if Scheduled On has a valid date - prompt to add to calendar
+        if (formData.upcoming_stage && formData.upcoming_schedule) {
+          // Small delay to ensure the success message shows first
+          setTimeout(() => {
+            promptAddToCalendar(
+              formData.company_name.trim(),
+              formData.upcoming_stage,
+              formData.upcoming_schedule,
+              formData.position.trim(),
+              { state: selectedState, city: selectedCity },
+              formData.notes.trim()
+            );
+          }, 500);
+        } else {
+          Alert.alert('Success', editingJob ? 'Job updated successfully' : 'Job added successfully');
+        }
       } else if (response.status === 403) {
         Alert.alert('Trial Expired', 'Your 7-day trial has ended. Please upgrade to continue adding jobs.');
       } else {
