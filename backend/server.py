@@ -627,6 +627,53 @@ async def get_dashboard_stats(current_user: User = Depends(get_current_user)):
     
     return stats
 
+@api_router.get("/dashboard/upcoming-interviews")
+async def get_upcoming_interviews(current_user: User = Depends(get_current_user)):
+    """Get upcoming interview stages that are scheduled for today or future dates"""
+    jobs = await db.job_applications.find(
+        {
+            "user_id": current_user.user_id,
+            "upcoming_stage": {"$exists": True, "$ne": None, "$ne": ""},
+            "upcoming_schedule": {"$exists": True, "$ne": None, "$ne": ""}
+        },
+        {"_id": 0, "job_id": 1, "company_name": 1, "position": 1, "upcoming_stage": 1, "upcoming_schedule": 1}
+    ).to_list(100)
+    
+    today = datetime.now(timezone.utc).date()
+    upcoming = []
+    
+    for job in jobs:
+        schedule_str = job.get("upcoming_schedule", "")
+        if schedule_str:
+            try:
+                # Parse MM-DD-YY format
+                parts = schedule_str.split("-")
+                if len(parts) == 3:
+                    month, day, year = int(parts[0]), int(parts[1]), int(parts[2])
+                    # Handle 2-digit year
+                    if year < 100:
+                        year += 2000
+                    schedule_date = datetime(year, month, day).date()
+                    
+                    # Only include if date is today or in the future
+                    if schedule_date >= today:
+                        upcoming.append({
+                            "job_id": job.get("job_id"),
+                            "company_name": job.get("company_name"),
+                            "position": job.get("position"),
+                            "stage": job.get("upcoming_stage"),
+                            "schedule_date": schedule_date.strftime("%b %d, %Y"),
+                            "schedule_raw": schedule_str,
+                            "days_until": (schedule_date - today).days
+                        })
+            except (ValueError, IndexError):
+                continue
+    
+    # Sort by date (soonest first)
+    upcoming.sort(key=lambda x: x.get("days_until", 0))
+    
+    return upcoming
+
 @api_router.get("/dashboard/ai-insights")
 async def get_ai_insights(current_user: User = Depends(get_current_user)):
     """
