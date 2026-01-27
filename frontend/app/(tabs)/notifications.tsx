@@ -68,21 +68,26 @@ export default function NotificationsScreen() {
   const [dismissedNotifications, setDismissedNotifications] = useState<Set<string>>(new Set());
   const [selectMode, setSelectMode] = useState(false);
   const [selectedNotifications, setSelectedNotifications] = useState<Set<string>>(new Set());
+  const [hasViewedTab, setHasViewedTab] = useState(false);
 
   useFocusEffect(
     React.useCallback(() => {
       fetchNotifications();
-    }, [])
+      // Mark tab as viewed - badge will disappear
+      if (!hasViewedTab) {
+        setHasViewedTab(true);
+      }
+    }, [hasViewedTab])
   );
 
-  // Update tab badge with notification count
+  // Update tab badge with notification count - only show if not viewed yet
   React.useEffect(() => {
     // Update the exported variable for tab badge
-    notificationCount = notifications.length;
+    notificationCount = hasViewedTab ? 0 : notifications.length;
     
-    // Update tab bar badge using navigation
+    // Update tab bar badge using navigation - hide if viewed
     navigation.setOptions({
-      tabBarBadge: notifications.length > 0 ? notifications.length : undefined,
+      tabBarBadge: (!hasViewedTab && notifications.length > 0) ? notifications.length : undefined,
       tabBarBadgeStyle: { 
         backgroundColor: '#EF4444', 
         fontSize: 10,
@@ -90,7 +95,7 @@ export default function NotificationsScreen() {
         height: 18,
       },
     });
-  }, [notifications.length, navigation]);
+  }, [notifications.length, navigation, hasViewedTab]);
 
   const calculateBusinessDays = (startDate: Date, endDate: Date): number => {
     let count = 0;
