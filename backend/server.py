@@ -26,6 +26,35 @@ db = client[os.environ['DB_NAME']]
 app = FastAPI()
 api_router = APIRouter(prefix="/api")
 
+# Create database indexes on startup
+@app.on_event("startup")
+async def create_indexes():
+    """Create compound indexes for better query performance"""
+    try:
+        # Job applications indexes
+        await db.job_applications.create_index([("user_id", 1), ("created_at", -1)])
+        await db.job_applications.create_index([("user_id", 1), ("status", 1)])
+        await db.job_applications.create_index([("user_id", 1), ("date_applied", -1)])
+        await db.job_applications.create_index([("user_id", 1), ("is_priority", -1)])
+        await db.job_applications.create_index([("user_id", 1), ("work_mode", 1)])
+        
+        # Users indexes
+        await db.users.create_index([("user_id", 1)], unique=True)
+        await db.users.create_index([("email", 1)], unique=True)
+        
+        # Sessions indexes
+        await db.user_sessions.create_index([("session_token", 1)], unique=True)
+        await db.user_sessions.create_index([("user_id", 1)])
+        await db.user_sessions.create_index([("expires_at", 1)])
+        
+        # Reports indexes
+        await db.reports.create_index([("user_id", 1), ("created_at", -1)])
+        await db.reports.create_index([("user_id", 1), ("report_type", 1)])
+        
+        logging.info("Database indexes created successfully")
+    except Exception as e:
+        logging.warning(f"Index creation warning (may already exist): {e}")
+
 class User(BaseModel):
     user_id: str
     email: str
