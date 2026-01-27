@@ -1436,10 +1436,10 @@ export default function MyJobsScreen() {
                 </View>
               </View>
 
-              {/* Status with Dropdown + Custom Option */}
+              {/* Application Status with Dropdown + Custom Option */}
               <View style={dynamicStyles.formSection}>
                 <View style={dynamicStyles.labelRow}>
-                  <Text style={dynamicStyles.label}>Current Status *</Text>
+                  <Text style={dynamicStyles.label}>Application Status *</Text>
                   <TouchableOpacity onPress={() => setShowStatusInput(!showStatusInput)}>
                     <Text style={dynamicStyles.addCustomText}>{showStatusInput ? 'Select from list' : '+ Add custom'}</Text>
                   </TouchableOpacity>
@@ -1483,6 +1483,71 @@ export default function MyJobsScreen() {
                 )}
               </View>
 
+              {/* Job Type Dropdown - Mandatory */}
+              <View style={dynamicStyles.formSection}>
+                <Text style={dynamicStyles.label}>Job Type *</Text>
+                <TouchableOpacity 
+                  style={dynamicStyles.dropdownButton}
+                  onPress={() => setShowJobTypeDropdown(true)}
+                >
+                  <Text style={[dynamicStyles.dropdownButtonText, !formData.job_type && dynamicStyles.dropdownPlaceholder]}>
+                    {formData.job_type || 'Select Job Type'}
+                  </Text>
+                  <Ionicons name="chevron-down" size={20} color={colors.textSecondary} />
+                </TouchableOpacity>
+              </View>
+
+              {/* Upcoming Stage Dropdown */}
+              <View style={dynamicStyles.formSection}>
+                <Text style={dynamicStyles.label}>Upcoming Stage</Text>
+                <TouchableOpacity 
+                  style={dynamicStyles.dropdownButton}
+                  onPress={() => setShowUpcomingStageDropdown(true)}
+                >
+                  <Text style={[dynamicStyles.dropdownButtonText, !formData.upcoming_stage && dynamicStyles.dropdownPlaceholder]}>
+                    {formData.upcoming_stage ? formatStatus(formData.upcoming_stage) : 'Select Upcoming Stage'}
+                  </Text>
+                  <Ionicons name="chevron-down" size={20} color={colors.textSecondary} />
+                </TouchableOpacity>
+              </View>
+
+              {/* Schedule On - Only visible when Upcoming Stage is selected */}
+              {formData.upcoming_stage ? (
+                <View style={dynamicStyles.formSection}>
+                  <Text style={dynamicStyles.label}>Schedule On</Text>
+                  <TextInput
+                    style={dynamicStyles.input}
+                    value={upcomingScheduleDate}
+                    onChangeText={handleUpcomingScheduleChange}
+                    placeholder="MM-DD-YY"
+                    placeholderTextColor={colors.textSecondary}
+                    keyboardType="numeric"
+                    maxLength={8}
+                  />
+                </View>
+              ) : null}
+
+              {/* Notes Field */}
+              <View style={dynamicStyles.formSection}>
+                <Text style={dynamicStyles.label}>Notes</Text>
+                <View>
+                  <TextInput
+                    style={[dynamicStyles.input, dynamicStyles.notesInput]}
+                    value={formData.notes}
+                    onChangeText={(text) => setFormData({ ...formData, notes: text.slice(0, 300) })}
+                    placeholder="Add any notes about this application..."
+                    placeholderTextColor={colors.textSecondary}
+                    multiline
+                    numberOfLines={4}
+                    textAlignVertical="top"
+                    maxLength={300}
+                  />
+                  <Text style={dynamicStyles.characterCount}>
+                    {formData.notes.length}/300
+                  </Text>
+                </View>
+              </View>
+
               <View style={{ height: 40 }} />
             </ScrollView>
           </KeyboardAvoidingView>
@@ -1492,6 +1557,8 @@ export default function MyJobsScreen() {
           {renderCityDropdown()}
           {renderPositionDropdown()}
           {renderStatusDropdown()}
+          {renderJobTypeDropdown()}
+          {renderUpcomingStageDropdown()}
         </SafeAreaView>
       </Modal>
     </SafeAreaView>
