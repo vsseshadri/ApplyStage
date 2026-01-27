@@ -143,6 +143,7 @@ class JobApplicationUpdate(BaseModel):
     location: Optional[Dict[str, str]] = None
     salary_range: Optional[Dict[str, float]] = None
     work_mode: Optional[str] = None
+    job_type: Optional[str] = None
     job_url: Optional[str] = None
     recruiter_email: Optional[str] = None
     resume_file: Optional[str] = None
@@ -150,6 +151,9 @@ class JobApplicationUpdate(BaseModel):
     is_priority: Optional[bool] = None
     follow_up_days: Optional[int] = None
     status: Optional[str] = None
+    upcoming_stage: Optional[str] = None
+    upcoming_schedule: Optional[str] = None
+    notes: Optional[str] = None
     custom_stages: Optional[List[str]] = None
 
 class CustomPosition(BaseModel):
