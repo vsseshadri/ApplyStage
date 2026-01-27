@@ -1237,11 +1237,20 @@ For questions or feedback, please contact support.
 
 # Report endpoints
 @api_router.get("/reports")
-async def get_reports(current_user: User = Depends(get_current_user)):
-    """Get all reports for the current user"""
+async def get_reports(
+    current_user: User = Depends(get_current_user),
+    page: int = 1,
+    limit: int = 20
+):
+    """Get reports with pagination"""
+    skip = (page - 1) * limit
+    
+    query = {"user_id": current_user.user_id}
+    total_count = await db.reports.count_documents(query)
+    
     reports = await db.reports.find(
-        {"user_id": current_user.user_id}
-    ).sort("created_at", -1).to_list(100)
+        query
+    ).sort("created_at", -1).skip(skip).limit(limit).to_list(limit)
     
     return [
         {
