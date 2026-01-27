@@ -1123,4 +1123,125 @@ const createStyles = (colors: any, isDark: boolean) => StyleSheet.create({
     color: colors.textSecondary,
     fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace',
   },
+  // Section Header
+  sectionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 12,
+    gap: 8,
+  },
+  // Enhanced Insights Grid
+  insightsGrid: {
+    gap: 10,
+  },
+  insightCard: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    backgroundColor: colors.card,
+    borderRadius: 12,
+    padding: 14,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.08,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  insightCardUrgent: {
+    backgroundColor: isDark ? '#3F1B1B' : '#FEE2E2',
+    borderLeftWidth: 3,
+    borderLeftColor: '#EF4444',
+  },
+  insightCardSuccess: {
+    backgroundColor: isDark ? '#1B3F2D' : '#D1FAE5',
+    borderLeftWidth: 3,
+    borderLeftColor: '#10B981',
+  },
+  insightCardEncouragement: {
+    backgroundColor: isDark ? '#3F1B3F' : '#FCE7F3',
+    borderLeftWidth: 3,
+    borderLeftColor: '#EC4899',
+  },
+  insightIconContainer: {
+    width: 36,
+    height: 36,
+    borderRadius: 10,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12,
+  },
+  insightCardText: {
+    flex: 1,
+    fontSize: 14,
+    lineHeight: 20,
+    color: colors.text,
+  },
+  // Enhanced Follow-ups
+  followUpsContainer: {
+    gap: 10,
+  },
+  followUpCard: {
+    backgroundColor: colors.card,
+    borderRadius: 12,
+    padding: 14,
+    borderLeftWidth: 4,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.08,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  followUpCardHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  followUpCardLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+  },
+  followUpCompany: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: colors.text,
+  },
+  followUpStatus: {
+    fontSize: 12,
+    color: colors.textSecondary,
+    marginTop: 2,
+  },
+  followUpBadge: {
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 12,
+  },
+  followUpBadgeText: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: '#FFF',
+  },
+  followUpCardFooter: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 10,
+    paddingTop: 10,
+    borderTopWidth: 1,
+    borderTopColor: isDark ? '#333' : '#F3F4F6',
+    gap: 6,
+  },
+  followUpHint: {
+    fontSize: 13,
+    color: colors.textSecondary,
+    fontStyle: 'italic',
+  },
+  followUpSummary: {
+    backgroundColor: colors.card,
+    borderRadius: 12,
+    padding: 12,
+    alignItems: 'center',
+  },
+  followUpSummaryText: {
+    fontSize: 13,
+    color: colors.textSecondary,
+  },
 });
