@@ -1352,20 +1352,6 @@ export default function MyJobsScreen() {
                 </TouchableOpacity>
               </View>
 
-              {/* Job URL */}
-              <View style={dynamicStyles.formSection}>
-                <Text style={dynamicStyles.label}>Job URL</Text>
-                <TextInput
-                  style={dynamicStyles.input}
-                  value={formData.job_url}
-                  onChangeText={(text) => setFormData({ ...formData, job_url: text })}
-                  placeholder="https://linkedin.com/jobs/..."
-                  placeholderTextColor={colors.textSecondary}
-                  autoCapitalize="none"
-                  keyboardType="url"
-                />
-              </View>
-
               {/* Recruiter Email */}
               <View style={dynamicStyles.formSection}>
                 <Text style={dynamicStyles.label}>Recruiter Email</Text>
