@@ -132,12 +132,14 @@ export default function NotificationsScreen() {
   const fetchNotifications = async () => {
     setLoading(true);
     try {
-      const response = await fetch(`${BACKEND_URL}/api/jobs`, {
+      const response = await fetch(`${BACKEND_URL}/api/jobs?limit=100`, {
         headers: { 'Authorization': `Bearer ${sessionToken}` },
       });
 
       if (response.ok) {
-        const jobs = await response.json();
+        const data = await response.json();
+        // Handle both old array format and new paginated format
+        const jobs = Array.isArray(data) ? data : data.jobs || [];
         
         const now = new Date();
         const notifs: Notification[] = [];
