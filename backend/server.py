@@ -680,6 +680,7 @@ async def get_ai_insights(current_user: User = Depends(get_current_user)):
     Generate strategic AI-powered insights split into:
     - Strategic Insights (trends, patterns, recommendations)
     - Follow-up Reminders (urgent actions with aging stats)
+    - Incorporates upcoming interview data for more contextual advice
     """
     jobs = await db.job_applications.find(
         {"user_id": current_user.user_id},
@@ -689,6 +690,7 @@ async def get_ai_insights(current_user: User = Depends(get_current_user)):
     strategic_insights = []
     follow_up_reminders = []
     now = datetime.now(timezone.utc)
+    today = now.date()
     
     # Data structures
     follow_ups_needed = []
@@ -696,6 +698,7 @@ async def get_ai_insights(current_user: User = Depends(get_current_user)):
     no_movement_jobs = []  # Jobs with no status change for extended periods
     stage_counts = {}
     stage_progression = {'advanced': 0, 'stalled': 0}
+    upcoming_interviews = []  # Track scheduled interviews
     
     all_stages = ['applied', 'recruiter_screening', 'phone_screen', 'coding_round_1', 
                   'coding_round_2', 'system_design', 'behavioural', 'hiring_manager', 
@@ -723,6 +726,30 @@ async def get_ai_insights(current_user: User = Depends(get_current_user)):
         else:
             days_old = 0
             biz_days = 0
+        
+        # Track upcoming interviews
+        upcoming_stage = job.get("upcoming_stage")
+        upcoming_schedule = job.get("upcoming_schedule")
+        if upcoming_stage and upcoming_schedule:
+            try:
+                # Parse MM/DD/YYYY or MM-DD-YY format
+                parts = upcoming_schedule.replace('/', '-').split("-")
+                if len(parts) == 3:
+                    month, day, year = int(parts[0]), int(parts[1]), int(parts[2])
+                    if year < 100:
+                        year += 2000
+                    schedule_date = datetime(year, month, day).date()
+                    
+                    if schedule_date >= today:
+                        days_until = (schedule_date - today).days
+                        upcoming_interviews.append({
+                            "company": company,
+                            "stage": upcoming_stage,
+                            "days_until": days_until,
+                            "is_priority": is_priority
+                        })
+            except (ValueError, IndexError):
+                pass
         
         # Track priority jobs
         if is_priority:
@@ -760,6 +787,36 @@ async def get_ai_insights(current_user: User = Depends(get_current_user)):
     active_jobs = total - stage_counts['offer'] - stage_counts['rejected']
     
     # === STRATEGIC INSIGHTS ===
+    
+    # 0. Upcoming Interviews (highest priority - actionable items)
+    if upcoming_interviews:
+        upcoming_interviews.sort(key=lambda x: (x['days_until'], -x['is_priority']))
+        
+        # Today's interviews
+        todays_interviews = [i for i in upcoming_interviews if i['days_until'] == 0]
+        if todays_interviews:
+            companies = ', '.join([i['company'] for i in todays_interviews[:2]])
+            if len(todays_interviews) > 2:
+                companies += f" (+{len(todays_interviews) - 2} more)"
+            strategic_insights.append(f"🔴 TODAY: Interview{'s' if len(todays_interviews) > 1 else ''} at {companies}—good luck!")
+        
+        # This week's interviews (excluding today)
+        this_week = [i for i in upcoming_interviews if 0 < i['days_until'] <= 7]
+        if this_week:
+            stage_summary = {}
+            for interview in this_week:
+                stage = interview['stage'].replace('_', ' ').title()
+                stage_summary[stage] = stage_summary.get(stage, 0) + 1
+            
+            stage_text = ', '.join([f"{count} {stage}" for stage, count in stage_summary.items()])
+            strategic_insights.append(f"📅 This week: {len(this_week)} interview{'s' if len(this_week) > 1 else ''} scheduled ({stage_text})")
+        
+        # Prepare tip based on upcoming stages
+        interview_stages = [i['stage'] for i in upcoming_interviews[:5]]
+        if any(s in ['system_design', 'coding_round_1', 'coding_round_2'] for s in interview_stages):
+            strategic_insights.append(f"💡 Technical interviews coming up—review data structures and system design patterns")
+        elif any(s in ['behavioural', 'hiring_manager'] for s in interview_stages):
+            strategic_insights.append(f"💡 Behavioral interviews ahead—prepare STAR stories and research company values")
     
     # 1. "No status change" insights
     if no_movement_jobs:
