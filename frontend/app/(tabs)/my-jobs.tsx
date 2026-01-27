@@ -2152,6 +2152,18 @@ const createStyles = (colors: any, isDark: boolean, isTablet: boolean = false) =
     color: colors.inputText,
     borderColor: colors.inputBorder,
   },
+  notesInput: {
+    minHeight: 100,
+    textAlignVertical: 'top',
+    paddingTop: 12,
+  },
+  characterCount: {
+    position: 'absolute',
+    bottom: 8,
+    right: 12,
+    fontSize: 11,
+    color: colors.textSecondary,
+  },
   priorityBadge: {
     flexDirection: 'row',
     alignItems: 'center',
