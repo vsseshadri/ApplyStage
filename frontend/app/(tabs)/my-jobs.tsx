@@ -996,6 +996,11 @@ export default function MyJobsScreen() {
 
   return (
     <SafeAreaView style={dynamicStyles.container} edges={['top']}>
+      {/* Page Title */}
+      <View style={dynamicStyles.pageTitleRow}>
+        <Text style={dynamicStyles.pageTitle}>My Jobs</Text>
+      </View>
+      
       {/* Horizontal Filters */}
       <View style={dynamicStyles.filterContainer}>
         <ScrollView 
