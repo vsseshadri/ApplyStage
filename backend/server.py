@@ -993,9 +993,18 @@ async def get_monthly_email_summary(current_user: User = Depends(get_current_use
     top_companies = sorted(company_counts.items(), key=lambda x: x[1], reverse=True)[:5]
     
     # Follow-ups
-    follow_ups = [j for j in all_jobs if j.get("status") == "applied" and 
-                  j.get("date_applied") and 
-                  (today - datetime.fromisoformat(j["date_applied"].replace("Z", "+00:00"))).days > 7]
+    follow_ups = []
+    for j in all_jobs:
+        if j.get("status") == "applied" and j.get("date_applied"):
+            date_applied = j.get("date_applied")
+            if isinstance(date_applied, str):
+                date_applied = datetime.fromisoformat(date_applied.replace("Z", "+00:00"))
+            elif isinstance(date_applied, datetime):
+                if date_applied.tzinfo is None:
+                    date_applied = date_applied.replace(tzinfo=timezone.utc)
+            
+            if (today - date_applied).days > 7:
+                follow_ups.append(j)
     
     user_name = current_user.preferred_display_name or current_user.name or "Job Seeker"
     subject = f"Monthly Summary for {month_year}"
