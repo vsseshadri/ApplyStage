@@ -197,6 +197,65 @@ export default function NotificationsScreen() {
     }
   };
 
+  const fetchReports = async () => {
+    try {
+      const response = await fetch(`${BACKEND_URL}/api/reports`, {
+        headers: { 'Authorization': `Bearer ${sessionToken}` },
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setReports(data);
+      }
+    } catch (error) {
+      console.error('Error fetching reports:', error);
+    }
+  };
+
+  const handleViewReport = async (reportId: string) => {
+    setLoadingReport(true);
+    try {
+      const response = await fetch(`${BACKEND_URL}/api/reports/${reportId}`, {
+        headers: { 'Authorization': `Bearer ${sessionToken}` },
+      });
+
+      if (response.ok) {
+        const report = await response.json();
+        setSelectedReport(report);
+        setReportModalVisible(true);
+        // Update local state to mark as read
+        setReports(prev => prev.map(r => 
+          r.report_id === reportId ? { ...r, is_read: true } : r
+        ));
+      } else {
+        Alert.alert('Error', 'Failed to load report.');
+      }
+    } catch (error) {
+      console.error('Error loading report:', error);
+      Alert.alert('Error', 'Failed to load report.');
+    } finally {
+      setLoadingReport(false);
+    }
+  };
+
+  const handleDeleteReport = async (reportId: string) => {
+    try {
+      const response = await fetch(`${BACKEND_URL}/api/reports/${reportId}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${sessionToken}` },
+      });
+
+      if (response.ok) {
+        setReports(prev => prev.filter(r => r.report_id !== reportId));
+      } else {
+        Alert.alert('Error', 'Failed to delete report.');
+      }
+    } catch (error) {
+      console.error('Error deleting report:', error);
+      Alert.alert('Error', 'Failed to delete report.');
+    }
+  };
+
   const handleSendEmail = async (notification: Notification) => {
     const subject = encodeURIComponent(`Follow-up: ${notification.position} at ${notification.company_name}`);
     const body = encodeURIComponent(
