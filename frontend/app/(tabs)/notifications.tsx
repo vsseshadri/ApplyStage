@@ -77,15 +77,22 @@ export default function NotificationsScreen() {
   const { colors, isDark } = useTheme();
   const navigation = useNavigation();
   const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [reports, setReports] = useState<Report[]>([]);
   const [loading, setLoading] = useState(true);
   const [dismissedNotifications, setDismissedNotifications] = useState<Set<string>>(new Set());
   const [selectMode, setSelectMode] = useState(false);
   const [selectedNotifications, setSelectedNotifications] = useState<Set<string>>(new Set());
   const [hasViewedTab, setHasViewedTab] = useState(false);
+  
+  // Report viewer state
+  const [reportModalVisible, setReportModalVisible] = useState(false);
+  const [selectedReport, setSelectedReport] = useState<Report | null>(null);
+  const [loadingReport, setLoadingReport] = useState(false);
 
   useFocusEffect(
     React.useCallback(() => {
       fetchNotifications();
+      fetchReports();
       // Mark tab as viewed - badge will disappear
       if (!hasViewedTab) {
         setHasViewedTab(true);
@@ -95,12 +102,13 @@ export default function NotificationsScreen() {
 
   // Update tab badge with notification count - only show if not viewed yet
   React.useEffect(() => {
+    const totalCount = notifications.length + reports.filter(r => !r.is_read).length;
     // Update the exported variable for tab badge
-    notificationCount = hasViewedTab ? 0 : notifications.length;
+    notificationCount = hasViewedTab ? 0 : totalCount;
     
     // Update tab bar badge using navigation - hide if viewed
     navigation.setOptions({
-      tabBarBadge: (!hasViewedTab && notifications.length > 0) ? notifications.length : undefined,
+      tabBarBadge: (!hasViewedTab && totalCount > 0) ? totalCount : undefined,
       tabBarBadgeStyle: { 
         backgroundColor: '#EF4444', 
         fontSize: 10,
