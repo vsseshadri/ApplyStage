@@ -542,48 +542,104 @@ export default function DashboardScreen() {
         {/* Insights - Split into Strategic and Follow-ups */}
         {(insights.length > 0 || followUps.length > 0) && (
           <View style={dynamicStyles.section}>
-            {/* Insights */}
-            <Text style={dynamicStyles.sectionTitle}>
-              <Ionicons name="sparkles" size={16} color={colors.primary} /> Insights
-            </Text>
-            <View style={dynamicStyles.insightsCard}>
-              {insights.map((insight, index) => (
-                <View key={index} style={[dynamicStyles.insightRow, index === insights.length - 1 && { marginBottom: 0 }]}>
-                  <Text style={dynamicStyles.insightText}>{insight}</Text>
+            {/* Insights - Beautiful Card Layout */}
+            <View style={dynamicStyles.sectionHeader}>
+              <Ionicons name="sparkles" size={18} color={colors.primary} />
+              <Text style={dynamicStyles.sectionTitle}>Insights</Text>
+            </View>
+            <View style={dynamicStyles.insightsGrid}>
+              {insights.slice(0, isTablet ? 6 : 4).map((insight: any, index: number) => (
+                <View 
+                  key={index} 
+                  style={[
+                    dynamicStyles.insightCard,
+                    insight.type === 'urgent' && dynamicStyles.insightCardUrgent,
+                    insight.type === 'celebration' && dynamicStyles.insightCardSuccess,
+                    insight.type === 'encouragement' && dynamicStyles.insightCardEncouragement,
+                  ]}
+                >
+                  <View style={[dynamicStyles.insightIconContainer, { backgroundColor: `${insight.color}20` }]}>
+                    <Ionicons 
+                      name={insight.icon || 'information-circle'} 
+                      size={20} 
+                      color={insight.color || colors.primary} 
+                    />
+                  </View>
+                  <Text style={dynamicStyles.insightCardText} numberOfLines={3}>
+                    {insight.text || insight}
+                  </Text>
                 </View>
               ))}
             </View>
             
-            {/* Follow-up Reminders */}
+            {/* Follow-up Reminders - Enhanced UI */}
             {followUps.length > 0 && (
-              <View style={{ marginTop: 16 }}>
-                <Text style={dynamicStyles.sectionTitle}>
-                  <Ionicons name="notifications" size={16} color="#F59E0B" /> Follow-up Reminders
-                </Text>
-                <View style={[dynamicStyles.insightsCard, { borderLeftWidth: 3, borderLeftColor: '#F59E0B' }]}>
-                  {followUps.map((followUp, index) => (
-                    <TouchableOpacity 
-                      key={index} 
-                      style={[
-                        dynamicStyles.followUpRow, 
-                        index === followUps.length - 1 && { marginBottom: 0 },
-                        actionedFollowUps.has(index) && { opacity: 0.5 }
-                      ]}
-                      onPress={() => handleFollowUpAction(index)}
-                      activeOpacity={0.7}
-                    >
-                      <View style={dynamicStyles.followUpCheckbox}>
-                        <Ionicons 
-                          name={actionedFollowUps.has(index) ? "checkbox" : "square-outline"} 
-                          size={20} 
-                          color={actionedFollowUps.has(index) ? colors.primary : colors.textSecondary} 
-                        />
-                      </View>
-                      <View style={dynamicStyles.followUpContent}>
-                        {renderFollowUpText(followUp)}
-                      </View>
-                    </TouchableOpacity>
-                  ))}
+              <View style={{ marginTop: 20 }}>
+                <View style={dynamicStyles.sectionHeader}>
+                  <Ionicons name="notifications" size={18} color="#F59E0B" />
+                  <Text style={dynamicStyles.sectionTitle}>Follow-up Reminders</Text>
+                </View>
+                <View style={dynamicStyles.followUpsContainer}>
+                  {followUps.map((followUp: any, index: number) => {
+                    // Handle summary items
+                    if (followUp.summary) {
+                      return (
+                        <View key={index} style={dynamicStyles.followUpSummary}>
+                          <Text style={dynamicStyles.followUpSummaryText}>{followUp.text}</Text>
+                        </View>
+                      );
+                    }
+                    
+                    // Regular follow-up items
+                    const urgencyColors: any = {
+                      critical: { bg: '#FEE2E2', border: '#EF4444', text: '#991B1B' },
+                      high: { bg: '#FEF3C7', border: '#F59E0B', text: '#92400E' },
+                      medium: { bg: '#E0E7FF', border: '#6366F1', text: '#3730A3' }
+                    };
+                    const urgencyStyle = urgencyColors[followUp.urgency] || urgencyColors.medium;
+                    
+                    return (
+                      <TouchableOpacity 
+                        key={index} 
+                        style={[
+                          dynamicStyles.followUpCard,
+                          { 
+                            backgroundColor: isDark ? colors.card : urgencyStyle.bg,
+                            borderLeftColor: urgencyStyle.border 
+                          },
+                          actionedFollowUps.has(index) && { opacity: 0.5 }
+                        ]}
+                        onPress={() => handleFollowUpAction(index)}
+                        activeOpacity={0.7}
+                      >
+                        <View style={dynamicStyles.followUpCardHeader}>
+                          <View style={dynamicStyles.followUpCardLeft}>
+                            <View style={dynamicStyles.followUpCheckbox}>
+                              <Ionicons 
+                                name={actionedFollowUps.has(index) ? "checkbox" : "square-outline"} 
+                                size={20} 
+                                color={actionedFollowUps.has(index) ? colors.primary : colors.textSecondary} 
+                              />
+                            </View>
+                            <View>
+                              <Text style={[dynamicStyles.followUpCompany, followUp.is_priority && { fontWeight: '700' }]}>
+                                {followUp.is_priority && <Text style={{ color: '#F59E0B' }}>★ </Text>}
+                                {followUp.company}
+                              </Text>
+                              <Text style={dynamicStyles.followUpStatus}>{followUp.status}</Text>
+                            </View>
+                          </View>
+                          <View style={[dynamicStyles.followUpBadge, { backgroundColor: urgencyStyle.border }]}>
+                            <Text style={dynamicStyles.followUpBadgeText}>{followUp.overdue_days}d overdue</Text>
+                          </View>
+                        </View>
+                        <View style={dynamicStyles.followUpCardFooter}>
+                          <Ionicons name="bulb-outline" size={14} color={colors.textSecondary} />
+                          <Text style={dynamicStyles.followUpHint}>{followUp.action_hint}</Text>
+                        </View>
+                      </TouchableOpacity>
+                    );
+                  })}
                 </View>
               </View>
             )}
