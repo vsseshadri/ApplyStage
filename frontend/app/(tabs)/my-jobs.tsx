@@ -111,9 +111,12 @@ export default function MyJobsScreen() {
   const [showCityDropdown, setShowCityDropdown] = useState(false);
   const [showPositionDropdown, setShowPositionDropdown] = useState(false);
   const [showStatusDropdown, setShowStatusDropdown] = useState(false);
+  const [showJobTypeDropdown, setShowJobTypeDropdown] = useState(false);
+  const [showUpcomingStageDropdown, setShowUpcomingStageDropdown] = useState(false);
   const [customStatuses, setCustomStatuses] = useState<string[]>([]);
   const [newStatus, setNewStatus] = useState('');
   const [showStatusInput, setShowStatusInput] = useState(false);
+  const [upcomingScheduleDate, setUpcomingScheduleDate] = useState('');
 
   const [formData, setFormData] = useState({
     company_name: '',
@@ -124,9 +127,16 @@ export default function MyJobsScreen() {
     job_url: '',
     recruiter_email: '',
     status: 'applied',
+    job_type: '',
+    upcoming_stage: '',
+    upcoming_schedule: '',
+    notes: '',
     follow_up_days: '',
     is_priority: false,
   });
+
+  // Job type options
+  const JOB_TYPES = ['Full-Time', 'Part-Time', 'Contract', 'Internship'];
 
   useFocusEffect(
     React.useCallback(() => {
