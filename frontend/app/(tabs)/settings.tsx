@@ -25,6 +25,8 @@ export default function SettingsScreen() {
   const [communicationEmail, setCommunicationEmail] = useState(user?.communication_email || user?.email || '');
   const [isEditingEmail, setIsEditingEmail] = useState(false);
   const [emailError, setEmailError] = useState('');
+  const [sendingWeekly, setSendingWeekly] = useState(false);
+  const [sendingMonthly, setSendingMonthly] = useState(false);
   
   // Settings state
   const [twoFactorEnabled, setTwoFactorEnabled] = useState(false);
