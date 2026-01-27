@@ -481,7 +481,7 @@ export default function MyJobsScreen() {
     console.log('Form Data on Submit:', formData);
     console.log('Position Value:', formData.position);
     
-    // Only Company Name, Position, Location (State & City), Date Applied, and Job Type are mandatory
+    // Only Company Name, Position, Location (State & City), Date Applied, and Position Type are mandatory
     if (!formData.company_name.trim()) {
       Alert.alert('Error', 'Company Name is required');
       return;
@@ -502,9 +502,15 @@ export default function MyJobsScreen() {
       return;
     }
 
-    // Job Type is mandatory
+    // Position Type is mandatory
     if (!formData.job_type) {
-      Alert.alert('Error', 'Job Type is required');
+      Alert.alert('Error', 'Position Type is required');
+      return;
+    }
+
+    // Scheduled On is mandatory if Upcoming Stage is selected
+    if (formData.upcoming_stage && !formData.upcoming_schedule) {
+      Alert.alert('Error', 'Scheduled On date is required when Upcoming Stage is selected');
       return;
     }
 
@@ -961,14 +967,14 @@ export default function MyJobsScreen() {
     </Modal>
   );
 
-  // Job Type Dropdown
+  // Position Type Dropdown (renamed from Job Type)
   const renderJobTypeDropdown = () => (
     <Modal visible={showJobTypeDropdown} transparent animationType="fade" onRequestClose={() => setShowJobTypeDropdown(false)}>
       <View style={dynamicStyles.dropdownOverlay}>
         <TouchableOpacity style={dynamicStyles.dropdownBackdrop} activeOpacity={1} onPress={() => setShowJobTypeDropdown(false)} />
         <View style={dynamicStyles.dropdownContainer}>
           <View style={dynamicStyles.dropdownHeader}>
-            <Text style={dynamicStyles.dropdownTitle}>Select Job Type</Text>
+            <Text style={dynamicStyles.dropdownTitle}>Select Position Type</Text>
             <TouchableOpacity onPress={() => setShowJobTypeDropdown(false)}>
               <Ionicons name="close" size={24} color={colors.text} />
             </TouchableOpacity>
