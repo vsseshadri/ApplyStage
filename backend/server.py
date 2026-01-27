@@ -100,6 +100,10 @@ class JobApplication(BaseModel):
     custom_stages: List[str] = []
     reminders: List[Dict[str, Any]] = []
     is_priority: bool = False
+    job_type: Optional[str] = None
+    upcoming_stage: Optional[str] = None
+    upcoming_schedule: Optional[str] = None
+    notes: Optional[str] = None
     created_at: datetime
     updated_at: Optional[datetime] = None
 
@@ -120,12 +124,16 @@ class JobApplicationCreate(BaseModel):
     location: Dict[str, str]
     salary_range: Dict[str, float]
     work_mode: str
+    job_type: str
     job_url: Optional[str] = None
     recruiter_email: Optional[str] = None
     resume_file: Optional[str] = None
     date_applied: Optional[str] = None
     follow_up_days: Optional[int] = None
     status: str = "applied"
+    upcoming_stage: Optional[str] = None
+    upcoming_schedule: Optional[str] = None
+    notes: Optional[str] = None
     custom_stages: List[str] = []
     is_priority: bool = False
 
