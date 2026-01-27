@@ -728,11 +728,24 @@ export default function SettingsScreen() {
               <Text style={styles.notificationLabel}>Weekly Summary</Text>
               <Text style={styles.notificationSubtext}>Every Sunday at 1 AM</Text>
             </View>
-            <Switch
-              value={weeklyEmail}
-              onValueChange={handleWeeklyEmailToggle}
-              trackColor={{ false: colors.border, true: colors.primary }}
-            />
+            <View style={styles.summaryActions}>
+              <TouchableOpacity 
+                style={styles.sendNowButton} 
+                onPress={handleSendWeeklySummary}
+                disabled={sendingWeekly}
+              >
+                {sendingWeekly ? (
+                  <ActivityIndicator size="small" color={colors.primary} />
+                ) : (
+                  <Text style={styles.sendNowButtonText}>Send Now</Text>
+                )}
+              </TouchableOpacity>
+              <Switch
+                value={weeklyEmail}
+                onValueChange={handleWeeklyEmailToggle}
+                trackColor={{ false: colors.border, true: colors.primary }}
+              />
+            </View>
           </View>
           
           <View style={styles.notificationRow}>
