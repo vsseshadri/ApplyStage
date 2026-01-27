@@ -899,4 +899,8 @@ const styles = StyleSheet.create({
     flex: 1,
     minHeight: 600,
   },
+  htmlContentWeb: {
+    flex: 1,
+    overflow: 'scroll' as any,
+  },
 });
