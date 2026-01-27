@@ -1448,29 +1448,6 @@ export default function MyJobsScreen() {
                 </View>
               </View>
 
-              {/* Salary Range */}
-              <View style={dynamicStyles.formSection}>
-                <Text style={dynamicStyles.label}>Salary Range (USD)</Text>
-                <View style={dynamicStyles.salaryRow}>
-                  <TextInput
-                    style={[dynamicStyles.input, dynamicStyles.halfInput]}
-                    value={formData.min_salary}
-                    onChangeText={(text) => setFormData({ ...formData, min_salary: text })}
-                    placeholder="Min (e.g., 100000)"
-                    keyboardType="numeric"
-                    placeholderTextColor={colors.textSecondary}
-                  />
-                  <TextInput
-                    style={[dynamicStyles.input, dynamicStyles.halfInput]}
-                    value={formData.max_salary}
-                    onChangeText={(text) => setFormData({ ...formData, max_salary: text })}
-                    placeholder="Max (e.g., 150000)"
-                    keyboardType="numeric"
-                    placeholderTextColor={colors.textSecondary}
-                  />
-                </View>
-              </View>
-
               {/* Date Applied - Auto-formatting Text Input */}
               <View style={dynamicStyles.formSection}>
                 <Text style={dynamicStyles.label}>Date Applied *</Text>
@@ -1482,44 +1459,6 @@ export default function MyJobsScreen() {
                   placeholderTextColor={colors.textSecondary}
                   keyboardType="numeric"
                   maxLength={10}
-                />
-              </View>
-
-              {/* Follow-up Reminder */}
-              <View style={dynamicStyles.formSection}>
-                <Text style={dynamicStyles.label}>Follow-up Reminder (days)</Text>
-                <TextInput
-                  style={dynamicStyles.input}
-                  value={formData.follow_up_days}
-                  onChangeText={(text) => setFormData({ ...formData, follow_up_days: text })}
-                  placeholder="e.g., 7 (for push notification)"
-                  keyboardType="numeric"
-                  placeholderTextColor={colors.textSecondary}
-                />
-              </View>
-
-              {/* Resume */}
-              <View style={dynamicStyles.formSection}>
-                <Text style={dynamicStyles.label}>Resume</Text>
-                <TouchableOpacity style={dynamicStyles.resumeButton} onPress={handlePickResume}>
-                  <Ionicons name="document-attach" size={20} color={colors.primary} />
-                  <Text style={dynamicStyles.resumeButtonText}>
-                    {resumeFile ? resumeFile.name : 'Upload Resume (PDF/DOC)'}
-                  </Text>
-                </TouchableOpacity>
-              </View>
-
-              {/* Recruiter Email */}
-              <View style={dynamicStyles.formSection}>
-                <Text style={dynamicStyles.label}>Recruiter Email</Text>
-                <TextInput
-                  style={dynamicStyles.input}
-                  value={formData.recruiter_email}
-                  onChangeText={(text) => setFormData({ ...formData, recruiter_email: text })}
-                  placeholder="recruiter@company.com"
-                  placeholderTextColor={colors.textSecondary}
-                  autoCapitalize="none"
-                  keyboardType="email-address"
                 />
               </View>
 
@@ -1588,18 +1527,65 @@ export default function MyJobsScreen() {
                 )}
               </View>
 
-              {/* Job Type Dropdown - Mandatory */}
+              {/* Salary Range */}
               <View style={dynamicStyles.formSection}>
-                <Text style={dynamicStyles.label}>Job Type *</Text>
-                <TouchableOpacity 
-                  style={dynamicStyles.dropdownButton}
-                  onPress={() => setShowJobTypeDropdown(true)}
-                >
-                  <Text style={[dynamicStyles.dropdownButtonText, !formData.job_type && dynamicStyles.dropdownPlaceholder]}>
-                    {formData.job_type || 'Select Job Type'}
+                <Text style={dynamicStyles.label}>Salary Range (USD)</Text>
+                <View style={dynamicStyles.salaryRow}>
+                  <TextInput
+                    style={[dynamicStyles.input, dynamicStyles.halfInput]}
+                    value={formData.min_salary}
+                    onChangeText={(text) => setFormData({ ...formData, min_salary: text })}
+                    placeholder="Min (e.g., 100000)"
+                    keyboardType="numeric"
+                    placeholderTextColor={colors.textSecondary}
+                  />
+                  <TextInput
+                    style={[dynamicStyles.input, dynamicStyles.halfInput]}
+                    value={formData.max_salary}
+                    onChangeText={(text) => setFormData({ ...formData, max_salary: text })}
+                    placeholder="Max (e.g., 150000)"
+                    keyboardType="numeric"
+                    placeholderTextColor={colors.textSecondary}
+                  />
+                </View>
+              </View>
+
+              {/* Follow-up Reminder */}
+              <View style={dynamicStyles.formSection}>
+                <Text style={dynamicStyles.label}>Follow-up Reminder (days)</Text>
+                <TextInput
+                  style={dynamicStyles.input}
+                  value={formData.follow_up_days}
+                  onChangeText={(text) => setFormData({ ...formData, follow_up_days: text })}
+                  placeholder="Default: 7 days"
+                  keyboardType="numeric"
+                  placeholderTextColor={colors.textSecondary}
+                />
+              </View>
+
+              {/* Resume */}
+              <View style={dynamicStyles.formSection}>
+                <Text style={dynamicStyles.label}>Resume</Text>
+                <TouchableOpacity style={dynamicStyles.resumeButton} onPress={handlePickResume}>
+                  <Ionicons name="document-attach" size={20} color={colors.primary} />
+                  <Text style={dynamicStyles.resumeButtonText}>
+                    {resumeFile ? resumeFile.name : 'Upload Resume (PDF/DOC)'}
                   </Text>
-                  <Ionicons name="chevron-down" size={20} color={colors.textSecondary} />
                 </TouchableOpacity>
+              </View>
+
+              {/* Recruiter Email */}
+              <View style={dynamicStyles.formSection}>
+                <Text style={dynamicStyles.label}>Recruiter Email</Text>
+                <TextInput
+                  style={dynamicStyles.input}
+                  value={formData.recruiter_email}
+                  onChangeText={(text) => setFormData({ ...formData, recruiter_email: text })}
+                  placeholder="recruiter@company.com"
+                  placeholderTextColor={colors.textSecondary}
+                  autoCapitalize="none"
+                  keyboardType="email-address"
+                />
               </View>
 
               {/* Upcoming Stage Dropdown */}
@@ -1616,18 +1602,18 @@ export default function MyJobsScreen() {
                 </TouchableOpacity>
               </View>
 
-              {/* Schedule On - Only visible when Upcoming Stage is selected */}
+              {/* Scheduled On - Only visible when Upcoming Stage is selected */}
               {formData.upcoming_stage ? (
                 <View style={dynamicStyles.formSection}>
-                  <Text style={dynamicStyles.label}>Schedule On</Text>
+                  <Text style={dynamicStyles.label}>Scheduled On *</Text>
                   <TextInput
                     style={dynamicStyles.input}
                     value={upcomingScheduleDate}
                     onChangeText={handleUpcomingScheduleChange}
-                    placeholder="MM-DD-YY"
+                    placeholder="MM/DD/YYYY"
                     placeholderTextColor={colors.textSecondary}
                     keyboardType="numeric"
-                    maxLength={8}
+                    maxLength={10}
                   />
                 </View>
               ) : null}
