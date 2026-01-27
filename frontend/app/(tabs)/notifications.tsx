@@ -486,20 +486,140 @@ export default function NotificationsScreen() {
         </View>
       </View>
 
-      {notifications.length === 0 ? (
+      {notifications.length === 0 && reports.length === 0 ? (
         <View style={styles.emptyContainer}>
           <Ionicons name="notifications-off-outline" size={64} color={colors.textSecondary} />
           <Text style={[styles.emptyText, { color: colors.textSecondary }]}>No Notifications</Text>
           <Text style={[styles.emptySubtext, { color: colors.textSecondary }]}>
-            You're all caught up! Reminders will appear here.
+            You're all caught up! Reminders and reports will appear here.
           </Text>
         </View>
       ) : (
         <ScrollView style={styles.scrollContent} showsVerticalScrollIndicator={false}>
-          {notifications.map(renderNotification)}
+          {/* Reports Section */}
+          {reports.length > 0 && (
+            <>
+              <Text style={[styles.sectionHeader, { color: colors.text }]}>Reports</Text>
+              {reports.map((report) => (
+                <Swipeable
+                  key={report.report_id}
+                  renderRightActions={() => (
+                    <TouchableOpacity 
+                      style={styles.deleteAction}
+                      onPress={() => handleDeleteReport(report.report_id)}
+                    >
+                      <Ionicons name="trash-outline" size={24} color="#fff" />
+                      <Text style={styles.deleteActionText}>Delete</Text>
+                    </TouchableOpacity>
+                  )}
+                  overshootRight={false}
+                >
+                  <View style={[styles.reportCard, { backgroundColor: colors.card }]}>
+                    <View style={styles.reportIconContainer}>
+                      <Ionicons 
+                        name={report.report_type === 'weekly' ? 'calendar-outline' : 'calendar'}
+                        size={28}
+                        color={report.report_type === 'weekly' ? '#3B82F6' : '#8B5CF6'}
+                      />
+                      {!report.is_read && (
+                        <View style={styles.unreadDot} />
+                      )}
+                    </View>
+                    <View style={styles.reportContent}>
+                      <Text style={[styles.reportTitle, { color: colors.text }]} numberOfLines={1}>
+                        {report.title}
+                      </Text>
+                      <Text style={[styles.reportDate, { color: colors.textSecondary }]}>
+                        {format(new Date(report.created_at), 'MMM d, yyyy \'at\' h:mm a')}
+                      </Text>
+                    </View>
+                    <TouchableOpacity 
+                      style={[styles.viewButton, { backgroundColor: colors.primary }]}
+                      onPress={() => handleViewReport(report.report_id)}
+                    >
+                      <Text style={styles.viewButtonText}>View</Text>
+                    </TouchableOpacity>
+                  </View>
+                </Swipeable>
+              ))}
+            </>
+          )}
+          
+          {/* Follow-up Reminders Section */}
+          {notifications.length > 0 && (
+            <>
+              <Text style={[styles.sectionHeader, { color: colors.text, marginTop: reports.length > 0 ? 20 : 0 }]}>
+                Follow-up Reminders
+              </Text>
+              {notifications.map(renderNotification)}
+            </>
+          )}
           <View style={{ height: 20 }} />
         </ScrollView>
       )}
+
+      {/* Report Viewer Modal */}
+      <Modal
+        visible={reportModalVisible}
+        animationType="slide"
+        presentationStyle="fullScreen"
+        onRequestClose={() => setReportModalVisible(false)}
+      >
+        <SafeAreaView style={[styles.modalContainer, { backgroundColor: colors.background }]}>
+          <View style={[styles.modalHeader, { backgroundColor: colors.card, borderBottomColor: colors.border }]}>
+            <TouchableOpacity 
+              style={styles.closeButton}
+              onPress={() => setReportModalVisible(false)}
+            >
+              <Ionicons name="close" size={24} color={colors.text} />
+            </TouchableOpacity>
+            <Text style={[styles.modalTitle, { color: colors.text }]} numberOfLines={1}>
+              {selectedReport?.title || 'Report'}
+            </Text>
+            <View style={{ width: 40 }} />
+          </View>
+          
+          {loadingReport ? (
+            <View style={styles.loadingContainer}>
+              <ActivityIndicator size="large" color={colors.primary} />
+            </View>
+          ) : selectedReport?.content ? (
+            <ScrollView style={styles.reportContentContainer}>
+              <View style={styles.htmlContent}>
+                {/* Render HTML content using a simplified approach */}
+                <WebView
+                  originWhitelist={['*']}
+                  source={{ 
+                    html: `
+                      <!DOCTYPE html>
+                      <html>
+                        <head>
+                          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                          <style>
+                            body {
+                              font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+                              padding: 16px;
+                              margin: 0;
+                              background-color: ${isDark ? '#1F2937' : '#FFFFFF'};
+                              color: ${isDark ? '#F3F4F6' : '#1F2937'};
+                            }
+                            h1, h2 { color: ${isDark ? '#60A5FA' : '#2563EB'}; }
+                            * { box-sizing: border-box; }
+                          </style>
+                        </head>
+                        <body>${selectedReport.content}</body>
+                      </html>
+                    `
+                  }}
+                  style={styles.webView}
+                  scrollEnabled={true}
+                  showsVerticalScrollIndicator={false}
+                />
+              </View>
+            </ScrollView>
+          ) : null}
+        </SafeAreaView>
+      </Modal>
     </SafeAreaView>
   );
 }
