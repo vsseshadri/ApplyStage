@@ -397,7 +397,7 @@ export default function MyJobsScreen() {
       upcoming_stage: '',
       upcoming_schedule: '',
       notes: '',
-      follow_up_days: '',
+      follow_up_days: '7',
       is_priority: false,
     });
     setSelectedState('');
