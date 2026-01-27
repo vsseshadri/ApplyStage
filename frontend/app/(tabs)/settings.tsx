@@ -422,6 +422,11 @@ export default function SettingsScreen() {
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       <ScrollView style={styles.scrollContent} showsVerticalScrollIndicator={false}>
+        {/* Page Title */}
+        <View style={styles.pageTitleRow}>
+          <Text style={styles.pageTitle}>Settings</Text>
+        </View>
+        
         {/* Profile Section */}
         <View style={styles.profileSection}>
           <TouchableOpacity onPress={handlePhotoUpload} style={styles.profilePhotoContainer}>
