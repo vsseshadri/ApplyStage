@@ -552,6 +552,24 @@ export default function SettingsScreen() {
       fontSize: 12,
       marginTop: 4,
     },
+    summaryActions: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 12,
+    },
+    sendNowButton: {
+      backgroundColor: colors.primary + '15',
+      paddingHorizontal: 12,
+      paddingVertical: 6,
+      borderRadius: 6,
+      minWidth: 80,
+      alignItems: 'center',
+    },
+    sendNowButtonText: {
+      color: colors.primary,
+      fontSize: 13,
+      fontWeight: '600',
+    },
 
     // Section styling
     section: {
