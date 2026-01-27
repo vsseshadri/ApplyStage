@@ -38,9 +38,13 @@ class User(BaseModel):
     created_at: datetime
     is_private_relay: bool = False
     preferred_display_name: Optional[str] = None
+    communication_email: Optional[str] = None
 
 class DisplayNameUpdate(BaseModel):
     preferred_display_name: str
+
+class CommunicationEmailUpdate(BaseModel):
+    communication_email: str
 
 class SessionDataResponse(BaseModel):
     id: str
