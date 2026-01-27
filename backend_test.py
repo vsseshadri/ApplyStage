@@ -414,6 +414,124 @@ class JobTrackerAPITester:
             self.results['templates']['create'] = {'status': 'ERROR', 'message': str(e)}
             print(f"❌ POST /api/templates - ERROR: {e}")
 
+    async def test_email_summary_endpoints(self):
+        """Test email summary endpoints"""
+        print("\n📧 Testing Email Summary Endpoints...")
+        
+        # Test PUT /api/user/communication-email with valid email
+        valid_email = "test@example.com"
+        try:
+            async with self.session.put(f"{API_BASE}/user/communication-email", 
+                                      json={"communication_email": valid_email}, 
+                                      headers=self.auth_headers) as response:
+                if response.status == 200:
+                    data = await response.json()
+                    if data.get('communication_email') == valid_email:
+                        self.results['other']['email_update_valid'] = {'status': 'PASS', 'message': 'Valid email update successful'}
+                        print("✅ PUT /api/user/communication-email (valid) - PASS")
+                    else:
+                        self.results['other']['email_update_valid'] = {'status': 'FAIL', 'message': 'Email not returned correctly'}
+                        print("❌ PUT /api/user/communication-email (valid) - FAIL: Email not returned")
+                else:
+                    self.results['other']['email_update_valid'] = {'status': 'FAIL', 'message': f'Status: {response.status}'}
+                    print(f"❌ PUT /api/user/communication-email (valid) - FAIL: Status {response.status}")
+        except Exception as e:
+            self.results['other']['email_update_valid'] = {'status': 'ERROR', 'message': str(e)}
+            print(f"❌ PUT /api/user/communication-email (valid) - ERROR: {e}")
+
+        # Test PUT /api/user/communication-email with invalid email
+        invalid_email = "invalid-email"
+        try:
+            async with self.session.put(f"{API_BASE}/user/communication-email", 
+                                      json={"communication_email": invalid_email}, 
+                                      headers=self.auth_headers) as response:
+                if response.status == 400:
+                    data = await response.json()
+                    if "Invalid email format" in data.get('detail', ''):
+                        self.results['other']['email_update_invalid'] = {'status': 'PASS', 'message': 'Invalid email properly rejected'}
+                        print("✅ PUT /api/user/communication-email (invalid) - PASS")
+                    else:
+                        self.results['other']['email_update_invalid'] = {'status': 'FAIL', 'message': 'Wrong error message'}
+                        print("❌ PUT /api/user/communication-email (invalid) - FAIL: Wrong error message")
+                else:
+                    self.results['other']['email_update_invalid'] = {'status': 'FAIL', 'message': f'Expected 400, got {response.status}'}
+                    print(f"❌ PUT /api/user/communication-email (invalid) - FAIL: Expected 400, got {response.status}")
+        except Exception as e:
+            self.results['other']['email_update_invalid'] = {'status': 'ERROR', 'message': str(e)}
+            print(f"❌ PUT /api/user/communication-email (invalid) - ERROR: {e}")
+
+        # Test GET /api/email-summary/weekly
+        try:
+            async with self.session.get(f"{API_BASE}/email-summary/weekly", headers=self.auth_headers) as response:
+                if response.status == 200:
+                    data = await response.json()
+                    required_fields = ['subject', 'body', 'to_email', 'stats']
+                    missing_fields = [field for field in required_fields if field not in data]
+                    
+                    if not missing_fields:
+                        # Check subject format
+                        subject = data.get('subject', '')
+                        if 'Weekly Summary for the week' in subject:
+                            # Check stats structure
+                            stats = data.get('stats', {})
+                            expected_stats = ['weekly_applications', 'status_counts', 'follow_ups_count']
+                            missing_stats = [stat for stat in expected_stats if stat not in stats]
+                            
+                            if not missing_stats:
+                                self.results['other']['weekly_summary'] = {'status': 'PASS', 'message': 'Weekly summary generated correctly'}
+                                print("✅ GET /api/email-summary/weekly - PASS")
+                            else:
+                                self.results['other']['weekly_summary'] = {'status': 'FAIL', 'message': f'Missing stats: {missing_stats}'}
+                                print(f"❌ GET /api/email-summary/weekly - FAIL: Missing stats {missing_stats}")
+                        else:
+                            self.results['other']['weekly_summary'] = {'status': 'FAIL', 'message': f'Wrong subject format: {subject}'}
+                            print(f"❌ GET /api/email-summary/weekly - FAIL: Wrong subject format")
+                    else:
+                        self.results['other']['weekly_summary'] = {'status': 'FAIL', 'message': f'Missing fields: {missing_fields}'}
+                        print(f"❌ GET /api/email-summary/weekly - FAIL: Missing fields {missing_fields}")
+                else:
+                    self.results['other']['weekly_summary'] = {'status': 'FAIL', 'message': f'Status: {response.status}'}
+                    print(f"❌ GET /api/email-summary/weekly - FAIL: Status {response.status}")
+        except Exception as e:
+            self.results['other']['weekly_summary'] = {'status': 'ERROR', 'message': str(e)}
+            print(f"❌ GET /api/email-summary/weekly - ERROR: {e}")
+
+        # Test GET /api/email-summary/monthly
+        try:
+            async with self.session.get(f"{API_BASE}/email-summary/monthly", headers=self.auth_headers) as response:
+                if response.status == 200:
+                    data = await response.json()
+                    required_fields = ['subject', 'body', 'to_email', 'stats']
+                    missing_fields = [field for field in required_fields if field not in data]
+                    
+                    if not missing_fields:
+                        # Check subject format
+                        subject = data.get('subject', '')
+                        if 'Monthly Summary for' in subject:
+                            # Check stats structure
+                            stats = data.get('stats', {})
+                            expected_stats = ['total_applications', 'monthly_applications', 'status_counts', 'work_mode_counts', 'response_rate']
+                            missing_stats = [stat for stat in expected_stats if stat not in stats]
+                            
+                            if not missing_stats:
+                                self.results['other']['monthly_summary'] = {'status': 'PASS', 'message': 'Monthly summary generated correctly'}
+                                print("✅ GET /api/email-summary/monthly - PASS")
+                            else:
+                                self.results['other']['monthly_summary'] = {'status': 'FAIL', 'message': f'Missing stats: {missing_stats}'}
+                                print(f"❌ GET /api/email-summary/monthly - FAIL: Missing stats {missing_stats}")
+                        else:
+                            self.results['other']['monthly_summary'] = {'status': 'FAIL', 'message': f'Wrong subject format: {subject}'}
+                            print(f"❌ GET /api/email-summary/monthly - FAIL: Wrong subject format")
+                    else:
+                        self.results['other']['monthly_summary'] = {'status': 'FAIL', 'message': f'Missing fields: {missing_fields}'}
+                        print(f"❌ GET /api/email-summary/monthly - FAIL: Missing fields {missing_fields}")
+                else:
+                    self.results['other']['monthly_summary'] = {'status': 'FAIL', 'message': f'Status: {response.status}'}
+                    print(f"❌ GET /api/email-summary/monthly - FAIL: Status {response.status}")
+        except Exception as e:
+            self.results['other']['monthly_summary'] = {'status': 'ERROR', 'message': str(e)}
+            print(f"❌ GET /api/email-summary/monthly - ERROR: {e}")
+
     async def test_other_endpoints(self):
         """Test other endpoints"""
         print("\n🔧 Testing Other Endpoints...")
