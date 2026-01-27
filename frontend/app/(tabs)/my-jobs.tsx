@@ -361,6 +361,27 @@ export default function MyJobsScreen() {
     setDateAppliedText(formatted);
   };
 
+  // Handle upcoming schedule date input
+  const handleUpcomingScheduleChange = (text: string) => {
+    // Remove any non-numeric characters except dashes
+    const cleaned = text.replace(/[^\d-]/g, '');
+    
+    // Auto-format as MM-DD-YY
+    let formatted = cleaned;
+    if (cleaned.length >= 2 && !cleaned.includes('-')) {
+      formatted = cleaned.slice(0, 2) + '-' + cleaned.slice(2);
+    }
+    if (cleaned.length >= 4 && cleaned.split('-').length < 3) {
+      const parts = formatted.split('-');
+      if (parts.length === 2 && parts[1].length >= 2) {
+        formatted = parts[0] + '-' + parts[1].slice(0, 2) + '-' + parts[1].slice(2);
+      }
+    }
+    
+    setUpcomingScheduleDate(formatted.slice(0, 8));
+    setFormData({ ...formData, upcoming_schedule: formatted.slice(0, 8) });
+  };
+
   const openAddModal = () => {
     setEditingJob(null);
     setFormData({
@@ -372,6 +393,10 @@ export default function MyJobsScreen() {
       job_url: '',
       recruiter_email: '',
       status: 'applied',
+      job_type: '',
+      upcoming_stage: '',
+      upcoming_schedule: '',
+      notes: '',
       follow_up_days: '',
       is_priority: false,
     });
@@ -379,6 +404,7 @@ export default function MyJobsScreen() {
     setSelectedCity('');
     setResumeFile(null);
     setDateAppliedText(format(new Date(), 'MM/dd/yyyy'));
+    setUpcomingScheduleDate('');
     setShowPositionInput(false);
     setNewPosition('');
     setModalVisible(true);
@@ -395,9 +421,14 @@ export default function MyJobsScreen() {
       job_url: job.job_url || '',
       recruiter_email: job.recruiter_email || '',
       status: job.status,
+      job_type: job.job_type || '',
+      upcoming_stage: job.upcoming_stage || '',
+      upcoming_schedule: job.upcoming_schedule || '',
+      notes: job.notes || '',
       follow_up_days: job.follow_up_days?.toString() || '',
       is_priority: job.is_priority || false,
     });
+    setUpcomingScheduleDate(job.upcoming_schedule || '');
     setSelectedState(job.location.state || '');
     setSelectedCity(job.location.city || '');
     setResumeFile(job.resume_file ? { name: 'Uploaded Resume' } : null);
