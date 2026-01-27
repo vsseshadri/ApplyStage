@@ -401,6 +401,79 @@ export default function SettingsScreen() {
       color: colors.textSecondary,
       marginTop: 2,
     },
+    
+    // Email field styles
+    emailFieldContainer: {
+      width: '100%',
+      marginBottom: 16,
+    },
+    emailFieldLabel: {
+      fontSize: 13,
+      color: colors.textSecondary,
+      marginBottom: 6,
+    },
+    emailInputRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 8,
+    },
+    emailInput: {
+      flex: 1,
+      backgroundColor: colors.inputBackground,
+      borderRadius: 8,
+      paddingHorizontal: 12,
+      paddingVertical: 10,
+      fontSize: 14,
+      color: colors.text,
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+    emailInputError: {
+      borderColor: '#EF4444',
+    },
+    emailDisplayRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      backgroundColor: colors.inputBackground,
+      borderRadius: 8,
+      paddingHorizontal: 12,
+      paddingVertical: 10,
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+    emailDisplayValue: {
+      fontSize: 14,
+      color: colors.text,
+      flex: 1,
+    },
+    saveEmailButton: {
+      backgroundColor: colors.primary,
+      borderRadius: 8,
+      paddingHorizontal: 12,
+      paddingVertical: 8,
+    },
+    saveEmailButtonText: {
+      color: '#fff',
+      fontSize: 13,
+      fontWeight: '600',
+    },
+    cancelEmailButton: {
+      backgroundColor: colors.border,
+      borderRadius: 8,
+      paddingHorizontal: 12,
+      paddingVertical: 8,
+    },
+    cancelEmailButtonText: {
+      color: colors.text,
+      fontSize: 13,
+      fontWeight: '600',
+    },
+    emailErrorText: {
+      color: '#EF4444',
+      fontSize: 12,
+      marginTop: 4,
+    },
 
     // Section styling
     section: {
