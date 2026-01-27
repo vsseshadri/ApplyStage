@@ -74,6 +74,17 @@ class JobApplication(BaseModel):
     created_at: datetime
     updated_at: Optional[datetime] = None
 
+class Report(BaseModel):
+    report_id: str
+    user_id: str
+    report_type: str  # "weekly" or "monthly"
+    title: str
+    date_range: str
+    content: str
+    stats: Dict[str, Any]
+    created_at: datetime
+    is_read: bool = False
+
 class JobApplicationCreate(BaseModel):
     company_name: str
     position: str
