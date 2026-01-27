@@ -51,6 +51,152 @@ const getStateAbbreviation = (state: string): string => {
   return STATE_ABBREVIATIONS[state] || state.substring(0, 2).toUpperCase();
 };
 
+// Calendar helper functions
+const getDefaultCalendarSource = async () => {
+  if (Platform.OS === 'ios') {
+    const defaultCalendar = await Calendar.getDefaultCalendarAsync();
+    return defaultCalendar.source;
+  }
+  return null;
+};
+
+const getOrCreateCalendar = async (): Promise<string | null> => {
+  try {
+    const { status } = await Calendar.requestCalendarPermissionsAsync();
+    if (status !== 'granted') {
+      Alert.alert('Permission Required', 'Calendar permission is needed to add events.');
+      return null;
+    }
+
+    const calendars = await Calendar.getCalendarsAsync(Calendar.EntityTypes.EVENT);
+    
+    // On iOS, use the default calendar
+    if (Platform.OS === 'ios') {
+      const defaultCalendar = calendars.find(cal => cal.allowsModifications);
+      if (defaultCalendar) {
+        return defaultCalendar.id;
+      }
+    }
+    
+    // On Android, look for the primary Google calendar or any modifiable calendar
+    if (Platform.OS === 'android') {
+      const googleCalendar = calendars.find(cal => 
+        cal.accessLevel === Calendar.CalendarAccessLevel.OWNER && 
+        cal.allowsModifications
+      );
+      if (googleCalendar) {
+        return googleCalendar.id;
+      }
+      
+      // Fallback to any modifiable calendar
+      const modifiableCalendar = calendars.find(cal => cal.allowsModifications);
+      if (modifiableCalendar) {
+        return modifiableCalendar.id;
+      }
+    }
+    
+    return null;
+  } catch (error) {
+    console.error('Error getting calendar:', error);
+    return null;
+  }
+};
+
+const addEventToCalendar = async (
+  companyName: string,
+  upcomingStage: string,
+  scheduledDate: string,
+  position: string,
+  location: { state: string; city: string },
+  notes: string
+): Promise<boolean> => {
+  try {
+    const calendarId = await getOrCreateCalendar();
+    if (!calendarId) {
+      Alert.alert('Error', 'Could not access calendar. Please check your permissions.');
+      return false;
+    }
+
+    // Parse the scheduled date (MM/DD/YYYY format)
+    const parts = scheduledDate.replace('/', '-').replace('/', '-').split('-');
+    if (parts.length !== 3) {
+      Alert.alert('Error', 'Invalid date format');
+      return false;
+    }
+    
+    let month = parseInt(parts[0]);
+    let day = parseInt(parts[1]);
+    let year = parseInt(parts[2]);
+    if (year < 100) year += 2000;
+
+    // Set event for 9:00 AM local time, 1 hour duration
+    const startDate = new Date(year, month - 1, day, 9, 0, 0);
+    const endDate = new Date(year, month - 1, day, 10, 0, 0);
+
+    // Format the stage name for the title
+    const formattedStage = upcomingStage.split('_').map(word => 
+      word.charAt(0).toUpperCase() + word.slice(1)
+    ).join(' ');
+
+    const eventTitle = `${companyName} - ${formattedStage}`;
+    const eventDescription = `Position: ${position}\nLocation: ${location.city}, ${location.state}${notes ? `\n\nNotes: ${notes}` : ''}`;
+
+    await Calendar.createEventAsync(calendarId, {
+      title: eventTitle,
+      startDate,
+      endDate,
+      notes: eventDescription,
+      timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+      alarms: [{ relativeOffset: -60 }], // Reminder 1 hour before
+    });
+
+    return true;
+  } catch (error) {
+    console.error('Error adding event to calendar:', error);
+    return false;
+  }
+};
+
+const promptAddToCalendar = (
+  companyName: string,
+  upcomingStage: string,
+  scheduledDate: string,
+  position: string,
+  location: { state: string; city: string },
+  notes: string
+) => {
+  const formattedStage = upcomingStage.split('_').map(word => 
+    word.charAt(0).toUpperCase() + word.slice(1)
+  ).join(' ');
+
+  Alert.alert(
+    'Add to Calendar',
+    `Would you like to add this interview to your calendar?\n\n${companyName} - ${formattedStage}\n${scheduledDate} at 9:00 AM`,
+    [
+      {
+        text: 'No, Thanks',
+        style: 'cancel'
+      },
+      {
+        text: 'Add to Calendar',
+        onPress: async () => {
+          const success = await addEventToCalendar(
+            companyName,
+            upcomingStage,
+            scheduledDate,
+            position,
+            location,
+            notes
+          );
+          if (success) {
+            Alert.alert('Success', 'Event added to your calendar!');
+          }
+        }
+      }
+    ]
+  );
+};
+
 export default function MyJobsScreen() {
   const { user, sessionToken, refreshUser } = useAuth();
   const { colors, isDark } = useTheme();
