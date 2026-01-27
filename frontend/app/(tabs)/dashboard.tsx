@@ -602,21 +602,12 @@ export default function DashboardScreen() {
                     <Text style={dynamicStyles.upcomingPosition} numberOfLines={1}>
                       {interview.position}
                     </Text>
-                    <View style={dynamicStyles.upcomingStageBadge}>
-                      <View style={[dynamicStyles.stageDot, { backgroundColor: STATUS_COLORS[interview.stage] || '#8B5CF6' }]} />
-                      <Text style={dynamicStyles.upcomingStageText}>
-                        {interview.stage?.replace(/_/g, ' ').replace(/\b\w/g, (l: string) => l.toUpperCase())}
-                      </Text>
-                    </View>
                   </View>
-                  <View style={dynamicStyles.upcomingDaysContainer}>
-                    {interview.days_until === 0 ? (
-                      <Text style={dynamicStyles.upcomingToday}>Today</Text>
-                    ) : interview.days_until === 1 ? (
-                      <Text style={dynamicStyles.upcomingTomorrow}>Tomorrow</Text>
-                    ) : (
-                      <Text style={dynamicStyles.upcomingDays}>{interview.days_until}d</Text>
-                    )}
+                  <View style={dynamicStyles.upcomingStageBadgeRight}>
+                    <View style={[dynamicStyles.stageDot, { backgroundColor: STATUS_COLORS[interview.stage] || '#8B5CF6' }]} />
+                    <Text style={dynamicStyles.upcomingStageTextRight}>
+                      {interview.stage?.replace(/_/g, ' ').replace(/\b\w/g, (l: string) => l.toUpperCase())}
+                    </Text>
                   </View>
                 </View>
               ))}
