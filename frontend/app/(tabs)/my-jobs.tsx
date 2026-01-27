@@ -141,13 +141,14 @@ export default function MyJobsScreen() {
 
   const fetchJobs = async () => {
     try {
-      const response = await fetch(`${BACKEND_URL}/api/jobs`, {
+      const response = await fetch(`${BACKEND_URL}/api/jobs?limit=100`, {
         headers: { 'Authorization': `Bearer ${sessionToken}` }
       });
 
       if (response.ok) {
         const data = await response.json();
-        setJobs(data);
+        // Handle both old array format and new paginated format
+        setJobs(Array.isArray(data) ? data : data.jobs || []);
       }
     } catch (error) {
       console.error('Error fetching jobs:', error);
