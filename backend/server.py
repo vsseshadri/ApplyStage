@@ -379,14 +379,47 @@ async def apple_auth(auth_data: AppleAuthRequest):
         logging.error(f"Apple auth error: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Authentication failed: {str(e)}")
 
-@api_router.get("/jobs", response_model=List[JobApplication])
-async def get_jobs(current_user: User = Depends(get_current_user)):
-    jobs = await db.job_applications.find(
-        {"user_id": current_user.user_id},
-        {"_id": 0}
-    ).sort("created_at", -1).to_list(1000)
+@api_router.get("/jobs")
+async def get_jobs(
+    current_user: User = Depends(get_current_user),
+    page: int = 1,
+    limit: int = 50,
+    status: Optional[str] = None,
+    work_mode: Optional[str] = None,
+    is_priority: Optional[bool] = None
+):
+    """Get jobs with pagination and optional filters"""
+    skip = (page - 1) * limit
     
-    return [JobApplication(**job) for job in jobs]
+    # Build query filter
+    query = {"user_id": current_user.user_id}
+    if status:
+        query["status"] = status
+    if work_mode:
+        query["work_mode"] = work_mode
+    if is_priority is not None:
+        query["is_priority"] = is_priority
+    
+    # Get total count for pagination metadata
+    total_count = await db.job_applications.count_documents(query)
+    
+    # Fetch paginated results with projection
+    jobs = await db.job_applications.find(
+        query,
+        {"_id": 0}
+    ).sort("created_at", -1).skip(skip).limit(limit).to_list(limit)
+    
+    return {
+        "jobs": [JobApplication(**job) for job in jobs],
+        "pagination": {
+            "page": page,
+            "limit": limit,
+            "total_count": total_count,
+            "total_pages": (total_count + limit - 1) // limit,
+            "has_next": page * limit < total_count,
+            "has_prev": page > 1
+        }
+    }
 
 @api_router.post("/jobs", response_model=JobApplication)
 async def create_job(job_data: JobApplicationCreate, current_user: User = Depends(get_current_user)):
