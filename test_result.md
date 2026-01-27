@@ -105,6 +105,21 @@
 user_problem_statement: "Build a comprehensive mobile job tracking app with Dashboard, My Jobs, Analytics, and Settings tabs. Features include AI job categorization, adaptive interview stages, business day aging, rich charts, Google/Apple login, in-app purchases, push notifications, email summaries, and CSV export."
 
 backend:
+  - task: "Email summary API endpoints"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "Implemented email summary endpoints: PUT /api/user/communication-email, GET /api/email-summary/weekly, GET /api/email-summary/monthly"
+      - working: true
+        agent: "testing"
+        comment: "✅ PASS - All 4 email summary API tests PASSED (100% success rate). PUT /api/user/communication-email validates email format correctly (accepts valid emails, rejects invalid with 400 error). GET /api/email-summary/weekly returns proper weekly summary with subject, body, to_email, and stats structure. GET /api/email-summary/monthly returns comprehensive monthly summary with all required fields and statistics. Fixed datetime handling issues during testing for proper date comparisons."
+
   - task: "Auth endpoints (Google OAuth integration)"
     implemented: true
     working: true
