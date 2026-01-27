@@ -1007,6 +1007,15 @@ const createStyles = (colors: any, isDark: boolean) => StyleSheet.create({
     alignItems: 'center',
     alignSelf: 'flex-start',
   },
+  upcomingStageBadgeRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: isDark ? 'rgba(139, 92, 246, 0.15)' : 'rgba(139, 92, 246, 0.1)',
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 8,
+    marginLeft: 10,
+  },
   stageDot: {
     width: 8,
     height: 8,
@@ -1017,6 +1026,12 @@ const createStyles = (colors: any, isDark: boolean) => StyleSheet.create({
     fontSize: 11,
     fontWeight: '500',
     color: colors.textSecondary,
+    textTransform: 'capitalize',
+  },
+  upcomingStageTextRight: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#8B5CF6',
     textTransform: 'capitalize',
   },
   upcomingDaysContainer: {
