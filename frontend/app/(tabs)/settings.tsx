@@ -22,6 +22,9 @@ export default function SettingsScreen() {
   const [isEditingName, setIsEditingName] = useState(!user?.preferred_display_name); // Start in edit mode if no name set
   const [weeklyEmail, setWeeklyEmail] = useState(user?.preferences?.weekly_email ?? true);
   const [monthlyEmail, setMonthlyEmail] = useState(user?.preferences?.monthly_email ?? true);
+  const [communicationEmail, setCommunicationEmail] = useState(user?.communication_email || user?.email || '');
+  const [isEditingEmail, setIsEditingEmail] = useState(false);
+  const [emailError, setEmailError] = useState('');
   
   // Settings state
   const [twoFactorEnabled, setTwoFactorEnabled] = useState(false);
@@ -40,6 +43,64 @@ export default function SettingsScreen() {
       setIsEditingName(true);
     }
   }, [user?.preferred_display_name]);
+
+  // Update communication email when user loads
+  React.useEffect(() => {
+    if (user?.communication_email) {
+      setCommunicationEmail(user.communication_email);
+    } else if (user?.email) {
+      setCommunicationEmail(user.email);
+    }
+  }, [user?.communication_email, user?.email]);
+
+  // Email validation function
+  const validateEmail = (email: string): boolean => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
+  };
+
+  const handleEmailChange = (text: string) => {
+    setCommunicationEmail(text);
+    if (text && !validateEmail(text)) {
+      setEmailError('Please enter a valid email address');
+    } else {
+      setEmailError('');
+    }
+  };
+
+  const handleEmailSave = async () => {
+    if (!communicationEmail.trim()) {
+      setEmailError('Email is required');
+      return;
+    }
+    if (!validateEmail(communicationEmail)) {
+      setEmailError('Please enter a valid email address');
+      return;
+    }
+    
+    try {
+      const response = await fetch(`${BACKEND_URL}/api/user/communication-email`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${sessionToken}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ communication_email: communicationEmail.trim() }),
+      });
+      
+      if (response.ok) {
+        await refreshUser();
+        setIsEditingEmail(false);
+        setEmailError('');
+        Alert.alert('Success', 'Communication email updated successfully');
+      } else {
+        Alert.alert('Error', 'Failed to update communication email.');
+      }
+    } catch (error) {
+      console.error('Error updating communication email:', error);
+      Alert.alert('Error', 'Failed to update communication email.');
+    }
+  };
 
   const checkBiometricType = async () => {
     try {
