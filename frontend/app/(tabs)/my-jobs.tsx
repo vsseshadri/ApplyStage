@@ -750,6 +750,9 @@ export default function MyJobsScreen() {
         await fetchJobs();
         setModalVisible(false);
         
+        // Trigger dashboard refresh so charts update immediately
+        triggerDashboardRefresh();
+        
         // Check if Scheduled On was EDITED (not just present) - prompt to add to calendar
         // For new jobs: always prompt if there's a scheduled date
         // For editing: only prompt if the scheduled on value was changed
