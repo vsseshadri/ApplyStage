@@ -1329,8 +1329,14 @@ const createStyles = (colors: any, isDark: boolean) => StyleSheet.create({
     fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace',
     letterSpacing: 0.3,
   },
-  followUpOverdue: {
+  followUpOverdueBadge: {
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 6,
+  },
+  followUpOverdueText: {
+    color: 'white',
     fontSize: 11,
-    color: colors.textSecondary,
+    fontWeight: '600',
   },
 });
