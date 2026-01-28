@@ -22,6 +22,7 @@ export default function LoginScreen() {
     if (!loading && user && sessionToken) {
       checkJobsAndRedirect();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user, loading, sessionToken]);
 
   const checkJobsAndRedirect = async () => {
@@ -93,7 +94,7 @@ export default function LoginScreen() {
           </View>
           <View style={styles.feature}>
             <Ionicons name="notifications" size={24} color="#007AFF" />
-            <Text style={styles.featureText}>Set Reminders and Send Follow-Up's</Text>
+            <Text style={styles.featureText}>Set Reminders and Send Follow-Ups</Text>
           </View>
           <View style={styles.feature}>
             <Ionicons name="shield-checkmark" size={24} color="#007AFF" />
