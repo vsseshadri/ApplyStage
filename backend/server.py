@@ -1036,7 +1036,8 @@ async def get_ai_insights(current_user: User = Depends(get_current_user)):
                 "biz_days": fu['biz_days'],
                 "is_priority": fu['is_priority'],
                 "urgency": fu['urgency'],
-                "action_hint": action_hint
+                "action_hint": action_hint,
+                "recruiter_email": fu.get('recruiter_email', '')
             })
         
         if len(follow_ups_needed) > 4:
