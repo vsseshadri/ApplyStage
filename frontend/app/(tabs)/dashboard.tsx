@@ -700,9 +700,6 @@ export default function DashboardScreen() {
                       <Text style={dynamicStyles.upcomingPosition} numberOfLines={1}>
                         {interview.position}
                       </Text>
-                      <View style={[dynamicStyles.upcomingStatusBadge, { backgroundColor: statusColor }]}>
-                        <Text style={dynamicStyles.upcomingStatusText}>{formatStatus(interview.status)}</Text>
-                      </View>
                     </View>
                     <View style={dynamicStyles.upcomingStageBadgeRight}>
                       <View style={[dynamicStyles.stageDot, { backgroundColor: STATUS_COLORS[interview.stage] || '#8B5CF6' }]} />
