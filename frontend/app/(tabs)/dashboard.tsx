@@ -665,32 +665,54 @@ export default function DashboardScreen() {
               <Ionicons name="calendar" size={16} color="#8B5CF6" /> Upcoming Interviews
             </Text>
             <View style={dynamicStyles.upcomingContainer}>
-              {upcomingInterviews.map((interview, index) => (
-                <View key={interview.job_id || index} style={dynamicStyles.upcomingCard}>
-                  <View style={dynamicStyles.upcomingDateBadge}>
-                    <Text style={dynamicStyles.upcomingDateDay}>
-                      {interview.schedule_date?.split(' ')[1]?.replace(',', '') || '--'}
-                    </Text>
-                    <Text style={dynamicStyles.upcomingDateMonth}>
-                      {interview.schedule_date?.split(' ')[0] || '--'}
-                    </Text>
+              {upcomingInterviews.map((interview, index) => {
+                // Get status color for badge
+                const statusColors: any = {
+                  'applied': '#3B82F6',
+                  'recruiter_screening': '#8B5CF6',
+                  'phone_screen': '#6366F1',
+                  'coding_round_1': '#EC4899',
+                  'coding_round_2': '#EC4899',
+                  'system_design': '#F59E0B',
+                  'behavioural': '#10B981',
+                  'hiring_manager': '#14B8A6',
+                  'final_round': '#22C55E',
+                  'offer': '#22C55E',
+                  'rejected': '#EF4444'
+                };
+                const statusColor = statusColors[interview.status] || '#6B7280';
+                const formatStatus = (status: string) => status?.split('_').map((word: string) => word.charAt(0).toUpperCase() + word.slice(1)).join(' ') || 'Applied';
+                
+                return (
+                  <View key={interview.job_id || index} style={dynamicStyles.upcomingCard}>
+                    <View style={dynamicStyles.upcomingDateBadge}>
+                      <Text style={dynamicStyles.upcomingDateDay}>
+                        {interview.schedule_date?.split(' ')[1]?.replace(',', '') || '--'}
+                      </Text>
+                      <Text style={dynamicStyles.upcomingDateMonth}>
+                        {interview.schedule_date?.split(' ')[0] || '--'}
+                      </Text>
+                    </View>
+                    <View style={dynamicStyles.upcomingDetails}>
+                      <Text style={dynamicStyles.upcomingCompany} numberOfLines={1}>
+                        {interview.company_name}
+                      </Text>
+                      <Text style={dynamicStyles.upcomingPosition} numberOfLines={1}>
+                        {interview.position}
+                      </Text>
+                      <View style={[dynamicStyles.upcomingStatusBadge, { backgroundColor: statusColor }]}>
+                        <Text style={dynamicStyles.upcomingStatusText}>{formatStatus(interview.status)}</Text>
+                      </View>
+                    </View>
+                    <View style={dynamicStyles.upcomingStageBadgeRight}>
+                      <View style={[dynamicStyles.stageDot, { backgroundColor: STATUS_COLORS[interview.stage] || '#8B5CF6' }]} />
+                      <Text style={dynamicStyles.upcomingStageTextRight}>
+                        {interview.stage?.replace(/_/g, ' ').replace(/\b\w/g, (l: string) => l.toUpperCase())}
+                      </Text>
+                    </View>
                   </View>
-                  <View style={dynamicStyles.upcomingDetails}>
-                    <Text style={dynamicStyles.upcomingCompany} numberOfLines={1}>
-                      {interview.company_name}
-                    </Text>
-                    <Text style={dynamicStyles.upcomingPosition} numberOfLines={1}>
-                      {interview.position}
-                    </Text>
-                  </View>
-                  <View style={dynamicStyles.upcomingStageBadgeRight}>
-                    <View style={[dynamicStyles.stageDot, { backgroundColor: STATUS_COLORS[interview.stage] || '#8B5CF6' }]} />
-                    <Text style={dynamicStyles.upcomingStageTextRight}>
-                      {interview.stage?.replace(/_/g, ' ').replace(/\b\w/g, (l: string) => l.toUpperCase())}
-                    </Text>
-                  </View>
-                </View>
-              ))}
+                );
+              })}
             </View>
           </View>
         )}
