@@ -580,39 +580,12 @@ export default function DashboardScreen() {
               ))}
             </View>
             
-            {/* Follow-up Reminders - Compact UI */}
+            {/* Follow-up Reminders - Compact UI with Swipe to Delete */}
             {followUps.length > 0 && (
               <View style={{ marginTop: 20 }}>
-                <View style={dynamicStyles.followUpSectionHeader}>
-                  <View style={dynamicStyles.sectionHeader}>
-                    <Ionicons name="notifications" size={18} color="#F59E0B" />
-                    <Text style={dynamicStyles.sectionTitle}>Follow-up Reminders</Text>
-                  </View>
-                  {actionedFollowUps.size > 0 && (
-                    <TouchableOpacity 
-                      onPress={() => {
-                        const selectedIndices = Array.from(actionedFollowUps);
-                        const selectedCompanies = selectedIndices.map(i => followUps[i]?.company).filter(Boolean).join(', ');
-                        Alert.alert(
-                          'Delete Reminders',
-                          `Remove ${actionedFollowUps.size} selected reminder${actionedFollowUps.size > 1 ? 's' : ''}?\n\n${selectedCompanies}`,
-                          [
-                            { text: 'Cancel', style: 'cancel' },
-                            { 
-                              text: 'Delete', 
-                              style: 'destructive',
-                              onPress: () => {
-                                setFollowUps(prev => prev.filter((_, i) => !actionedFollowUps.has(i)));
-                                setActionedFollowUps(new Set());
-                              }
-                            }
-                          ]
-                        );
-                      }}
-                    >
-                      <Text style={dynamicStyles.followUpDeleteText}>Delete</Text>
-                    </TouchableOpacity>
-                  )}
+                <View style={dynamicStyles.sectionHeader}>
+                  <Ionicons name="notifications" size={18} color="#F59E0B" />
+                  <Text style={dynamicStyles.sectionTitle}>Follow-up Reminders</Text>
                 </View>
                 <View style={dynamicStyles.followUpsContainer}>
                   {followUps.map((followUp: any, index: number) => {
@@ -647,8 +620,6 @@ export default function DashboardScreen() {
                     };
                     const statusColor = statusColors[followUp.status] || '#6B7280';
                     
-                    const isSelected = actionedFollowUps.has(index);
-                    
                     // Handle send email - use recruiter_email if available
                     const handleSendEmail = () => {
                       const toEmail = followUp.recruiter_email || '';
@@ -662,22 +633,27 @@ export default function DashboardScreen() {
                       });
                     };
                     
-                    return (
-                      <View key={index} style={[
+                    // Handle delete on swipe
+                    const handleDelete = () => {
+                      setFollowUps(prev => prev.filter((_, i) => i !== index));
+                    };
+                    
+                    // Render delete action for swipe
+                    const renderRightActions = () => (
+                      <TouchableOpacity
+                        style={dynamicStyles.followUpDeleteAction}
+                        onPress={handleDelete}
+                      >
+                        <Ionicons name="trash-outline" size={20} color="#FFF" />
+                        <Text style={dynamicStyles.followUpDeleteActionText}>Delete</Text>
+                      </TouchableOpacity>
+                    );
+                    
+                    const cardContent = (
+                      <View style={[
                         dynamicStyles.followUpCardCompact,
-                        { borderLeftColor: urgencyStyle.border },
-                        isSelected && { backgroundColor: isDark ? '#1a1a2e' : '#F0F9FF' }
+                        { borderLeftColor: urgencyStyle.border }
                       ]}>
-                        <TouchableOpacity 
-                          style={dynamicStyles.followUpCheckbox}
-                          onPress={() => handleFollowUpAction(index)}
-                        >
-                          <Ionicons 
-                            name={isSelected ? "checkbox" : "square-outline"} 
-                            size={18} 
-                            color={isSelected ? colors.primary : colors.textSecondary} 
-                          />
-                        </TouchableOpacity>
                         <View style={dynamicStyles.followUpCardContent}>
                           <View style={dynamicStyles.followUpTopRow}>
                             <Text style={[dynamicStyles.followUpCompanyCompact, followUp.is_priority && { fontWeight: '700' }]} numberOfLines={1}>
@@ -702,6 +678,16 @@ export default function DashboardScreen() {
                           </View>
                         </View>
                       </View>
+                    );
+                    
+                    return (
+                      <Swipeable
+                        key={index}
+                        renderRightActions={renderRightActions}
+                        overshootRight={false}
+                      >
+                        {cardContent}
+                      </Swipeable>
                     );
                   })}
                 </View>
