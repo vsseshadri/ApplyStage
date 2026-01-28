@@ -1262,11 +1262,17 @@ const createStyles = (colors: any, isDark: boolean) => StyleSheet.create({
     flex: 1,
     marginLeft: 8,
   },
+  followUpTopRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 6,
+  },
   followUpCompanyCompact: {
     fontSize: 14,
     fontWeight: '600',
     color: colors.text,
-    marginBottom: 4,
+    flex: 1,
   },
   followUpMetaRow: {
     flexDirection: 'row',
