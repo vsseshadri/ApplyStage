@@ -1213,17 +1213,6 @@ const createStyles = (colors: any, isDark: boolean) => StyleSheet.create({
     marginBottom: 12,
     gap: 8,
   },
-  followUpSectionHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 12,
-  },
-  followUpDeleteText: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#EF4444',
-  },
   // Enhanced Insights Grid
   insightsGrid: {
     gap: 10,
