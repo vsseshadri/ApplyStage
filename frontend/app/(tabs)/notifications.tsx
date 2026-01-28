@@ -739,21 +739,14 @@ const styles = StyleSheet.create({
     fontSize: 11,
   },
   agingBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 8,
-    gap: 3,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 6,
   },
-  agingNumber: {
+  agingText: {
+    color: 'white',
     fontSize: 11,
-    fontWeight: 'bold',
-    fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace',
-  },
-  agingLabel: {
-    fontSize: 11,
-    fontWeight: '500',
+    fontWeight: '600',
   },
   followUpButton: {
     flexDirection: 'row',
