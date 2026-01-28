@@ -554,6 +554,8 @@ export default function MyJobsScreen() {
     setResumeFile(null);
     setDateAppliedText(format(new Date(), 'MM/dd/yyyy'));
     setUpcomingScheduleDate('');
+    setOriginalScheduledOn(''); // Reset original scheduled on
+    setScheduledOnEdited(false); // Reset edited flag
     setShowPositionInput(false);
     setNewPosition('');
     setModalVisible(true);
@@ -578,6 +580,8 @@ export default function MyJobsScreen() {
       is_priority: job.is_priority || false,
     });
     setUpcomingScheduleDate(job.upcoming_schedule || '');
+    setOriginalScheduledOn(job.upcoming_schedule || ''); // Store original value
+    setScheduledOnEdited(false); // Reset edited flag
     setSelectedState(job.location.state || '');
     setSelectedCity(job.location.city || '');
     setResumeFile(job.resume_file ? { name: 'Uploaded Resume' } : null);
