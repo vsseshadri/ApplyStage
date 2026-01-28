@@ -737,15 +737,20 @@ const styles = StyleSheet.create({
   appliedText: {
     fontSize: 11,
   },
-  agingBadge: {
+  daysCounter: {
+    alignItems: 'center',
     paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: 6,
+    paddingVertical: 4,
+    borderRadius: 8,
   },
-  agingText: {
+  daysNumber: {
+    fontSize: 16,
+    fontWeight: 'bold',
     color: 'white',
-    fontSize: 11,
-    fontWeight: '600',
+  },
+  daysLabel: {
+    fontSize: 10,
+    color: 'rgba(255,255,255,0.85)',
   },
   followUpButton: {
     flexDirection: 'row',
