@@ -406,9 +406,9 @@ export default function DashboardScreen() {
           </TouchableOpacity>
         </View>
 
-        {/* Horizontal Bar Chart - By Status */}
+        {/* Horizontal Bar Chart - By Application Status */}
         <View style={dynamicStyles.section}>
-          <Text style={dynamicStyles.sectionTitle}>By Status</Text>
+          <Text style={dynamicStyles.sectionTitle}>By Application Status</Text>
           
           {barChartData.length > 0 ? (
             <View style={dynamicStyles.chartCard}>
