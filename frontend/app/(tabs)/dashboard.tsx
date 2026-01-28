@@ -1360,13 +1360,21 @@ const createStyles = (colors: any, isDark: boolean) => StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: 6,
+    marginBottom: 4,
   },
   followUpCompanyCompact: {
     fontSize: 14,
     fontWeight: '600',
     color: colors.text,
     flex: 1,
+  },
+  followUpRightSection: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  followUpMailIcon: {
+    padding: 4,
   },
   followUpStatusBadge: {
     paddingHorizontal: 10,
