@@ -380,13 +380,13 @@ export default function NotificationsScreen() {
           )}
           
           <View style={[styles.cardContent, selectMode && { flex: 1 }]}>
-            {/* Row 1: Company Name + Aging Badge */}
+            {/* Row 1: Company Name + Days Overdue Badge */}
             <View style={styles.row}>
               <Text style={[styles.companyName, { color: colors.text }]} numberOfLines={1}>
                 {notification.company_name}
               </Text>
               <View style={[styles.daysCounter, { backgroundColor: urgencyColor }]}>
-                <Text style={styles.daysNumber}>{notification.total_aging}</Text>
+                <Text style={styles.daysNumber}>{notification.days_overdue}</Text>
                 <Text style={styles.daysLabel}>days</Text>
               </View>
             </View>
@@ -398,20 +398,12 @@ export default function NotificationsScreen() {
               </Text>
             </View>
             
-            {/* Row 3: Applied Date + Follow-up Button (right-aligned) */}
+            {/* Row 3: Applied Date + Overdue label (right-aligned) */}
             <View style={styles.rowSpaceBetween}>
               <Text style={[styles.appliedText, { color: colors.textSecondary }]}>
                 Applied: {appliedDate}
               </Text>
-              {!selectMode && (
-                <TouchableOpacity
-                  style={[styles.followUpButton, { backgroundColor: colors.primary + '12' }]}
-                  onPress={() => handleSendEmail(notification)}
-                >
-                  <Ionicons name="mail-outline" size={12} color={colors.primary} />
-                  <Text style={[styles.followUpText, { color: colors.primary }]}>Follow-up</Text>
-                </TouchableOpacity>
-              )}
+              <Text style={[styles.overdueLabel, { color: colors.textSecondary }]}>overdue</Text>
             </View>
           </View>
         </View>
