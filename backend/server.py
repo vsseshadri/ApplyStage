@@ -636,7 +636,7 @@ async def get_upcoming_interviews(current_user: User = Depends(get_current_user)
             "upcoming_stage": {"$exists": True, "$ne": None, "$ne": ""},
             "upcoming_schedule": {"$exists": True, "$ne": None, "$ne": ""}
         },
-        {"_id": 0, "job_id": 1, "company_name": 1, "position": 1, "upcoming_stage": 1, "upcoming_schedule": 1}
+        {"_id": 0, "job_id": 1, "company_name": 1, "position": 1, "upcoming_stage": 1, "upcoming_schedule": 1, "status": 1}
     ).to_list(100)
     
     today = datetime.now(timezone.utc).date()
@@ -662,6 +662,7 @@ async def get_upcoming_interviews(current_user: User = Depends(get_current_user)
                             "company_name": job.get("company_name"),
                             "position": job.get("position"),
                             "stage": job.get("upcoming_stage"),
+                            "status": job.get("status", "applied"),
                             "schedule_date": schedule_date.strftime("%b %d, %Y"),
                             "schedule_raw": schedule_str,
                             "days_until": (schedule_date - today).days
