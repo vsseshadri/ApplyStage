@@ -1249,4 +1249,45 @@ const createStyles = (colors: any, isDark: boolean) => StyleSheet.create({
     fontSize: 13,
     color: colors.textSecondary,
   },
+  // Compact Follow-up Card styles
+  followUpCardCompact: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: colors.card,
+    borderRadius: 10,
+    padding: 12,
+    borderLeftWidth: 4,
+  },
+  followUpCardContent: {
+    flex: 1,
+    marginLeft: 8,
+  },
+  followUpCompanyCompact: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: colors.text,
+    marginBottom: 4,
+  },
+  followUpMetaRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  followUpStatusBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 4,
+  },
+  followUpStatusText: {
+    color: '#FFFFFF',
+    fontSize: 11,
+    fontWeight: '600',
+    fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace',
+    letterSpacing: 0.3,
+  },
+  followUpOverdue: {
+    fontSize: 12,
+    color: colors.textSecondary,
+    fontWeight: '500',
+  },
 });
