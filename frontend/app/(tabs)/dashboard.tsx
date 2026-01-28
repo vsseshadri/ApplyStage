@@ -631,15 +631,15 @@ export default function DashboardScreen() {
                           />
                         </View>
                         <View style={dynamicStyles.followUpCardContent}>
-                          <Text style={[dynamicStyles.followUpCompanyCompact, followUp.is_priority && { fontWeight: '700' }]} numberOfLines={1}>
-                            {followUp.is_priority && <Text style={{ color: '#F59E0B' }}>★ </Text>}
-                            {followUp.company}
-                          </Text>
-                          <View style={dynamicStyles.followUpMetaRow}>
-                            <View style={[dynamicStyles.followUpStatusBadge, { backgroundColor: statusColor }]}>
-                              <Text style={dynamicStyles.followUpStatusText}>{followUp.status}</Text>
-                            </View>
+                          <View style={dynamicStyles.followUpTopRow}>
+                            <Text style={[dynamicStyles.followUpCompanyCompact, followUp.is_priority && { fontWeight: '700' }]} numberOfLines={1}>
+                              {followUp.is_priority && <Text style={{ color: '#F59E0B' }}>★ </Text>}
+                              {followUp.company}
+                            </Text>
                             <Text style={dynamicStyles.followUpOverdue}>{followUp.overdue_days}d overdue</Text>
+                          </View>
+                          <View style={[dynamicStyles.followUpStatusBadge, { backgroundColor: statusColor }]}>
+                            <Text style={dynamicStyles.followUpStatusText}>{followUp.status}</Text>
                           </View>
                         </View>
                       </TouchableOpacity>
