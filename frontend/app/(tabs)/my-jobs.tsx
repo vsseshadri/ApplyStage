@@ -774,8 +774,6 @@ export default function MyJobsScreen() {
         } else {
           Alert.alert('Success', editingJob ? 'Job updated successfully' : 'Job added successfully');
         }
-      } else if (response.status === 403) {
-        Alert.alert('Trial Expired', 'Your 7-day trial has ended. Please upgrade to continue adding jobs.');
       } else {
         Alert.alert('Error', 'Failed to save job application');
       }
