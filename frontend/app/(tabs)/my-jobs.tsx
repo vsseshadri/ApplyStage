@@ -529,6 +529,11 @@ export default function MyJobsScreen() {
     
     setUpcomingScheduleDate(formatted);
     setFormData({ ...formData, upcoming_schedule: formatted });
+    
+    // Track if the value has been edited (different from original)
+    if (formatted !== originalScheduledOn) {
+      setScheduledOnEdited(true);
+    }
   };
 
   const openAddModal = () => {
