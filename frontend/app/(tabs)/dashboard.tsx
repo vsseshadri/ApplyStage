@@ -1417,19 +1417,9 @@ const createStyles = (colors: any, isDark: boolean) => StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
   },
-  followUpBottomRight: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
   followUpOverdueText: {
     fontSize: 11,
     color: colors.textSecondary,
     fontStyle: 'italic',
-  },
-  followUpDeleteButton: {
-    padding: 4,
-    backgroundColor: '#FEE2E2',
-    borderRadius: 4,
   },
 });
