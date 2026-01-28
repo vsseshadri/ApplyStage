@@ -619,43 +619,91 @@ export default function DashboardScreen() {
                     };
                     const statusColor = statusColors[followUp.status] || '#6B7280';
                     
+                    const isSelected = actionedFollowUps.has(index);
+                    
+                    // Handle send email
+                    const handleSendEmail = () => {
+                      const subject = encodeURIComponent(`Follow-up: Application at ${followUp.company}`);
+                      const body = encodeURIComponent(
+                        `Dear Hiring Team,\n\nI hope this email finds you well. I wanted to follow up on my application at ${followUp.company}.\n\nI remain very interested in this opportunity and would appreciate any updates on the status of my application.\n\nThank you for your time and consideration.\n\nBest regards`
+                      );
+                      const emailUrl = `mailto:?subject=${subject}&body=${body}`;
+                      Linking.openURL(emailUrl).catch(() => {
+                        Alert.alert('Error', 'Unable to open email app.');
+                      });
+                    };
+                    
+                    // Handle delete
+                    const handleDelete = () => {
+                      Alert.alert(
+                        'Delete Reminder',
+                        `Remove follow-up reminder for ${followUp.company}?`,
+                        [
+                          { text: 'Cancel', style: 'cancel' },
+                          { 
+                            text: 'Delete', 
+                            style: 'destructive',
+                            onPress: () => {
+                              setActionedFollowUps(prev => {
+                                const newSet = new Set(prev);
+                                newSet.delete(index);
+                                return newSet;
+                              });
+                              // Remove from followUps list
+                              setFollowUps(prev => prev.filter((_, i) => i !== index));
+                            }
+                          }
+                        ]
+                      );
+                    };
+                    
                     return (
-                      <TouchableOpacity 
-                        key={index} 
-                        style={[
-                          dynamicStyles.followUpCardCompact,
-                          { borderLeftColor: urgencyStyle.border },
-                          actionedFollowUps.has(index) && { opacity: 0.5 }
-                        ]}
-                        onPress={() => handleFollowUpAction(index)}
-                        activeOpacity={0.7}
-                      >
-                        <View style={dynamicStyles.followUpCheckbox}>
+                      <View key={index} style={[
+                        dynamicStyles.followUpCardCompact,
+                        { borderLeftColor: urgencyStyle.border },
+                        isSelected && { opacity: 0.7 }
+                      ]}>
+                        <TouchableOpacity 
+                          style={dynamicStyles.followUpCheckbox}
+                          onPress={() => handleFollowUpAction(index)}
+                        >
                           <Ionicons 
-                            name={actionedFollowUps.has(index) ? "checkbox" : "square-outline"} 
+                            name={isSelected ? "checkbox" : "square-outline"} 
                             size={18} 
-                            color={actionedFollowUps.has(index) ? colors.primary : colors.textSecondary} 
+                            color={isSelected ? colors.primary : colors.textSecondary} 
                           />
-                        </View>
+                        </TouchableOpacity>
                         <View style={dynamicStyles.followUpCardContent}>
                           <View style={dynamicStyles.followUpTopRow}>
                             <Text style={[dynamicStyles.followUpCompanyCompact, followUp.is_priority && { fontWeight: '700' }]} numberOfLines={1}>
                               {followUp.is_priority && <Text style={{ color: '#F59E0B' }}>★ </Text>}
                               {followUp.company}
                             </Text>
-                            <View style={[dynamicStyles.followUpDaysCounter, { backgroundColor: urgencyStyle.border }]}>
-                              <Text style={dynamicStyles.followUpDaysNumber}>{followUp.overdue_days}</Text>
-                              <Text style={dynamicStyles.followUpDaysLabel}>days</Text>
+                            <View style={dynamicStyles.followUpRightSection}>
+                              <TouchableOpacity onPress={handleSendEmail} style={dynamicStyles.followUpMailIcon}>
+                                <Ionicons name="mail-outline" size={16} color={colors.primary} />
+                              </TouchableOpacity>
+                              <View style={[dynamicStyles.followUpDaysCounter, { backgroundColor: urgencyStyle.border }]}>
+                                <Text style={dynamicStyles.followUpDaysNumber}>{followUp.overdue_days}</Text>
+                                <Text style={dynamicStyles.followUpDaysLabel}>days</Text>
+                              </View>
                             </View>
                           </View>
                           <View style={dynamicStyles.followUpBottomRow}>
                             <View style={[dynamicStyles.followUpStatusBadge, { backgroundColor: statusColor }]}>
                               <Text style={dynamicStyles.followUpStatusText}>{followUp.status}</Text>
                             </View>
-                            <Text style={dynamicStyles.followUpOverdueText}>overdue</Text>
+                            <View style={dynamicStyles.followUpBottomRight}>
+                              <Text style={dynamicStyles.followUpOverdueText}>overdue</Text>
+                              {isSelected && (
+                                <TouchableOpacity onPress={handleDelete} style={dynamicStyles.followUpDeleteButton}>
+                                  <Ionicons name="trash-outline" size={14} color="#EF4444" />
+                                </TouchableOpacity>
+                              )}
+                            </View>
                           </View>
                         </View>
-                      </TouchableOpacity>
+                      </View>
                     );
                   })}
                 </View>
