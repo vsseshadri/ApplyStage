@@ -582,9 +582,36 @@ export default function DashboardScreen() {
             {/* Follow-up Reminders - Compact UI */}
             {followUps.length > 0 && (
               <View style={{ marginTop: 20 }}>
-                <View style={dynamicStyles.sectionHeader}>
-                  <Ionicons name="notifications" size={18} color="#F59E0B" />
-                  <Text style={dynamicStyles.sectionTitle}>Follow-up Reminders</Text>
+                <View style={dynamicStyles.followUpSectionHeader}>
+                  <View style={dynamicStyles.sectionHeader}>
+                    <Ionicons name="notifications" size={18} color="#F59E0B" />
+                    <Text style={dynamicStyles.sectionTitle}>Follow-up Reminders</Text>
+                  </View>
+                  {actionedFollowUps.size > 0 && (
+                    <TouchableOpacity 
+                      onPress={() => {
+                        const selectedIndices = Array.from(actionedFollowUps);
+                        const selectedCompanies = selectedIndices.map(i => followUps[i]?.company).filter(Boolean).join(', ');
+                        Alert.alert(
+                          'Delete Reminders',
+                          `Remove ${actionedFollowUps.size} selected reminder${actionedFollowUps.size > 1 ? 's' : ''}?\n\n${selectedCompanies}`,
+                          [
+                            { text: 'Cancel', style: 'cancel' },
+                            { 
+                              text: 'Delete', 
+                              style: 'destructive',
+                              onPress: () => {
+                                setFollowUps(prev => prev.filter((_, i) => !actionedFollowUps.has(i)));
+                                setActionedFollowUps(new Set());
+                              }
+                            }
+                          ]
+                        );
+                      }}
+                    >
+                      <Text style={dynamicStyles.followUpDeleteText}>Delete</Text>
+                    </TouchableOpacity>
+                  )}
                 </View>
                 <View style={dynamicStyles.followUpsContainer}>
                   {followUps.map((followUp: any, index: number) => {
@@ -621,47 +648,24 @@ export default function DashboardScreen() {
                     
                     const isSelected = actionedFollowUps.has(index);
                     
-                    // Handle send email
+                    // Handle send email - use recruiter_email if available
                     const handleSendEmail = () => {
+                      const toEmail = followUp.recruiter_email || '';
                       const subject = encodeURIComponent(`Follow-up: Application at ${followUp.company}`);
                       const body = encodeURIComponent(
                         `Dear Hiring Team,\n\nI hope this email finds you well. I wanted to follow up on my application at ${followUp.company}.\n\nI remain very interested in this opportunity and would appreciate any updates on the status of my application.\n\nThank you for your time and consideration.\n\nBest regards`
                       );
-                      const emailUrl = `mailto:?subject=${subject}&body=${body}`;
+                      const emailUrl = `mailto:${toEmail}?subject=${subject}&body=${body}`;
                       Linking.openURL(emailUrl).catch(() => {
                         Alert.alert('Error', 'Unable to open email app.');
                       });
-                    };
-                    
-                    // Handle delete
-                    const handleDelete = () => {
-                      Alert.alert(
-                        'Delete Reminder',
-                        `Remove follow-up reminder for ${followUp.company}?`,
-                        [
-                          { text: 'Cancel', style: 'cancel' },
-                          { 
-                            text: 'Delete', 
-                            style: 'destructive',
-                            onPress: () => {
-                              setActionedFollowUps(prev => {
-                                const newSet = new Set(prev);
-                                newSet.delete(index);
-                                return newSet;
-                              });
-                              // Remove from followUps list
-                              setFollowUps(prev => prev.filter((_, i) => i !== index));
-                            }
-                          }
-                        ]
-                      );
                     };
                     
                     return (
                       <View key={index} style={[
                         dynamicStyles.followUpCardCompact,
                         { borderLeftColor: urgencyStyle.border },
-                        isSelected && { opacity: 0.7 }
+                        isSelected && { backgroundColor: isDark ? '#1a1a2e' : '#F0F9FF' }
                       ]}>
                         <TouchableOpacity 
                           style={dynamicStyles.followUpCheckbox}
@@ -681,7 +685,7 @@ export default function DashboardScreen() {
                             </Text>
                             <View style={dynamicStyles.followUpRightSection}>
                               <TouchableOpacity onPress={handleSendEmail} style={dynamicStyles.followUpMailIcon}>
-                                <Ionicons name="mail-outline" size={16} color={colors.primary} />
+                                <Ionicons name="mail-outline" size={20} color={colors.primary} />
                               </TouchableOpacity>
                               <View style={[dynamicStyles.followUpDaysCounter, { backgroundColor: urgencyStyle.border }]}>
                                 <Text style={dynamicStyles.followUpDaysNumber}>{followUp.overdue_days}</Text>
@@ -693,11 +697,15 @@ export default function DashboardScreen() {
                             <View style={[dynamicStyles.followUpStatusBadge, { backgroundColor: statusColor }]}>
                               <Text style={dynamicStyles.followUpStatusText}>{followUp.status}</Text>
                             </View>
-                            <View style={dynamicStyles.followUpBottomRight}>
-                              <Text style={dynamicStyles.followUpOverdueText}>overdue</Text>
-                              {isSelected && (
-                                <TouchableOpacity onPress={handleDelete} style={dynamicStyles.followUpDeleteButton}>
-                                  <Ionicons name="trash-outline" size={14} color="#EF4444" />
+                            <Text style={dynamicStyles.followUpOverdueText}>overdue</Text>
+                          </View>
+                        </View>
+                      </View>
+                    );
+                  })}
+                </View>
+              </View>
+            )}
                                 </TouchableOpacity>
                               )}
                             </View>
