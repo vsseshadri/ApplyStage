@@ -10,6 +10,7 @@ import { format } from 'date-fns';
 import { useRouter } from 'expo-router';
 import Constants from 'expo-constants';
 import Svg, { Path, Circle, G } from 'react-native-svg';
+import { Swipeable } from 'react-native-gesture-handler';
 
 const BACKEND_URL = Constants.expoConfig?.extra?.EXPO_PUBLIC_BACKEND_URL || process.env.EXPO_PUBLIC_BACKEND_URL;
 
