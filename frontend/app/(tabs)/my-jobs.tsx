@@ -200,7 +200,7 @@ const promptAddToCalendar = (
 export default function MyJobsScreen() {
   const { user, sessionToken, refreshUser } = useAuth();
   const { colors, isDark } = useTheme();
-  const { filter, filterTitle, clearFilter, setFilter, workModeFilter: contextWorkModeFilter } = useFilter();
+  const { filter, filterTitle, clearFilter, setFilter, workModeFilter: contextWorkModeFilter, triggerDashboardRefresh } = useFilter();
   const [jobs, setJobs] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
