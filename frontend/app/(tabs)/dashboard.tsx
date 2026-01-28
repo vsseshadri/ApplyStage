@@ -706,17 +706,6 @@ export default function DashboardScreen() {
                 </View>
               </View>
             )}
-                                </TouchableOpacity>
-                              )}
-                            </View>
-                          </View>
-                        </View>
-                      </View>
-                    );
-                  })}
-                </View>
-              </View>
-            )}
           </View>
         )}
 
