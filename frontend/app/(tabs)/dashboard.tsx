@@ -1317,26 +1317,21 @@ const createStyles = (colors: any, isDark: boolean) => StyleSheet.create({
     color: colors.text,
     flex: 1,
   },
-  followUpMetaRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
   followUpStatusBadge: {
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 4,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 6,
+    alignSelf: 'flex-start',
   },
   followUpStatusText: {
-    color: '#FFFFFF',
-    fontSize: 11,
+    color: 'white',
+    fontSize: 12,
     fontWeight: '600',
     fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace',
     letterSpacing: 0.3,
   },
   followUpOverdue: {
-    fontSize: 12,
+    fontSize: 11,
     color: colors.textSecondary,
-    fontWeight: '500',
   },
 });
