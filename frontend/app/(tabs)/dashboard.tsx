@@ -67,7 +67,7 @@ const formatLocationWithAbbr = (location: string): string => {
 export default function DashboardScreen() {
   const { user, sessionToken, isNewUser } = useAuth();
   const { colors, isDark } = useTheme();
-  const { setFilter } = useFilter();
+  const { setFilter, dashboardRefreshTrigger } = useFilter();
   const router = useRouter();
   const [stats, setStats] = useState<any>(null);
   const [insights, setInsights] = useState<any[]>([]);
@@ -88,6 +88,13 @@ export default function DashboardScreen() {
     });
     return () => subscription?.remove();
   }, []);
+
+  // Refresh dashboard data when triggered from My Jobs (status/work mode changes)
+  React.useEffect(() => {
+    if (dashboardRefreshTrigger > 0 && sessionToken) {
+      fetchData();
+    }
+  }, [dashboardRefreshTrigger]);
 
   // Function to handle marking a follow-up as actioned
   const handleFollowUpAction = (index: number) => {
