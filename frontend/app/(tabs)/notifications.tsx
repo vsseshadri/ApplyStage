@@ -385,10 +385,9 @@ export default function NotificationsScreen() {
               <Text style={[styles.companyName, { color: colors.text }]} numberOfLines={1}>
                 {notification.company_name}
               </Text>
-              <View style={[styles.agingBadge, { backgroundColor: urgencyColor }]}>
-                <Text style={styles.agingText}>
-                  {notification.total_aging}d
-                </Text>
+              <View style={[styles.daysCounter, { backgroundColor: urgencyColor }]}>
+                <Text style={styles.daysNumber}>{notification.total_aging}</Text>
+                <Text style={styles.daysLabel}>days</Text>
               </View>
             </View>
             
