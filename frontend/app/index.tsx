@@ -4,21 +4,61 @@ import { useRouter } from 'expo-router';
 import { useAuth } from '../contexts/AuthContext';
 import { Ionicons } from '@expo/vector-icons';
 import * as AppleAuthentication from 'expo-apple-authentication';
+import Constants from 'expo-constants';
+
+const BACKEND_URL = Constants.expoConfig?.extra?.EXPO_PUBLIC_BACKEND_URL || process.env.EXPO_PUBLIC_BACKEND_URL;
 
 export default function LoginScreen() {
-  const { user, loading, login, loginWithApple } = useAuth();
+  const { user, loading, login, loginWithApple, token } = useAuth();
   const router = useRouter();
   const [isAppleAvailable, setIsAppleAvailable] = useState(false);
+  const [isCheckingJobs, setIsCheckingJobs] = useState(false);
 
   useEffect(() => {
     checkAppleAvailability();
   }, []);
 
   useEffect(() => {
-    if (!loading && user) {
-      router.replace('/(tabs)/my-jobs');
+    if (!loading && user && token) {
+      checkJobsAndRedirect();
     }
-  }, [user, loading]);
+  }, [user, loading, token]);
+
+  const checkJobsAndRedirect = async () => {
+    if (isCheckingJobs) return;
+    setIsCheckingJobs(true);
+    
+    try {
+      const response = await fetch(`${BACKEND_URL}/api/jobs?page=1&limit=1`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        const hasJobs = data.pagination?.total_count > 0;
+        
+        if (hasJobs) {
+          // User has jobs, go to Dashboard
+          router.replace('/(tabs)/dashboard');
+        } else {
+          // New user with no jobs, go to My Jobs
+          router.replace('/(tabs)/my-jobs');
+        }
+      } else {
+        // If API fails, default to My Jobs
+        router.replace('/(tabs)/my-jobs');
+      }
+    } catch (error) {
+      console.error('Error checking jobs:', error);
+      // On error, default to My Jobs
+      router.replace('/(tabs)/my-jobs');
+    } finally {
+      setIsCheckingJobs(false);
+    }
+  };
 
   const checkAppleAvailability = async () => {
     if (Platform.OS === 'ios') {
