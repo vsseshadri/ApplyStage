@@ -9,6 +9,8 @@ interface FilterContextType {
   workModeFilter: WorkModeType;
   setFilter: (filter: FilterType, workMode?: string) => void;
   clearFilter: () => void;
+  dashboardRefreshTrigger: number;
+  triggerDashboardRefresh: () => void;
 }
 
 const FilterContext = createContext<FilterContextType | undefined>(undefined);
@@ -16,6 +18,7 @@ const FilterContext = createContext<FilterContextType | undefined>(undefined);
 export function FilterProvider({ children }: { children: ReactNode }) {
   const [filter, setFilterState] = useState<FilterType>('all');
   const [workModeFilter, setWorkModeFilter] = useState<WorkModeType>('all');
+  const [dashboardRefreshTrigger, setDashboardRefreshTrigger] = useState(0);
 
   const filterTitles: Record<FilterType, string> = {
     'all': 'My Jobs',
@@ -39,6 +42,10 @@ export function FilterProvider({ children }: { children: ReactNode }) {
     setWorkModeFilter('all');
   };
 
+  const triggerDashboardRefresh = () => {
+    setDashboardRefreshTrigger(prev => prev + 1);
+  };
+
   return (
     <FilterContext.Provider value={{
       filter,
@@ -46,6 +53,8 @@ export function FilterProvider({ children }: { children: ReactNode }) {
       workModeFilter,
       setFilter,
       clearFilter,
+      dashboardRefreshTrigger,
+      triggerDashboardRefresh,
     }}>
       {children}
     </FilterContext.Provider>
