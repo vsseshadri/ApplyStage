@@ -9,6 +9,7 @@ export default function TabsLayout() {
 
   return (
     <Tabs
+      initialRouteName="my-jobs"
       screenOptions={{
         tabBarActiveTintColor: colors.primary,
         tabBarInactiveTintColor: colors.textSecondary,
