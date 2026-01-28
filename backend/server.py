@@ -815,7 +815,8 @@ async def get_ai_insights(current_user: User = Depends(get_current_user)):
                     "overdue_days": overdue_by, 
                     "biz_days": biz_days,
                     "is_priority": is_priority,
-                    "urgency": urgency
+                    "urgency": urgency,
+                    "recruiter_email": job.get("recruiter_email", "")
                 })
         
         # Progression tracking
