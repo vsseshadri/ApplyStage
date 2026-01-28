@@ -643,12 +643,16 @@ export default function DashboardScreen() {
                               {followUp.is_priority && <Text style={{ color: '#F59E0B' }}>★ </Text>}
                               {followUp.company}
                             </Text>
-                            <View style={[dynamicStyles.followUpOverdueBadge, { backgroundColor: urgencyStyle.border }]}>
-                              <Text style={dynamicStyles.followUpOverdueText}>{followUp.overdue_days}d overdue</Text>
+                            <View style={[dynamicStyles.followUpDaysCounter, { backgroundColor: urgencyStyle.border }]}>
+                              <Text style={dynamicStyles.followUpDaysNumber}>{followUp.overdue_days}</Text>
+                              <Text style={dynamicStyles.followUpDaysLabel}>days</Text>
                             </View>
                           </View>
-                          <View style={[dynamicStyles.followUpStatusBadge, { backgroundColor: statusColor }]}>
-                            <Text style={dynamicStyles.followUpStatusText}>{followUp.status}</Text>
+                          <View style={dynamicStyles.followUpBottomRow}>
+                            <View style={[dynamicStyles.followUpStatusBadge, { backgroundColor: statusColor }]}>
+                              <Text style={dynamicStyles.followUpStatusText}>{followUp.status}</Text>
+                            </View>
+                            <Text style={dynamicStyles.followUpOverdueText}>overdue</Text>
                           </View>
                         </View>
                       </TouchableOpacity>
