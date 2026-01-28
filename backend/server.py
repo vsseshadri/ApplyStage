@@ -435,14 +435,6 @@ async def get_jobs(
 
 @api_router.post("/jobs", response_model=JobApplication)
 async def create_job(job_data: JobApplicationCreate, current_user: User = Depends(get_current_user)):
-    if current_user.payment_status == "trial":
-        if current_user.trial_end_date:
-            trial_end = current_user.trial_end_date
-            if trial_end.tzinfo is None:
-                trial_end = trial_end.replace(tzinfo=timezone.utc)
-            if datetime.now(timezone.utc) > trial_end:
-                raise HTTPException(status_code=403, detail="Trial period expired. Please upgrade to continue.")
-    
     job_id = f"job_{uuid.uuid4().hex[:12]}"
     now = datetime.now(timezone.utc)
     
