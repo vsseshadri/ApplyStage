@@ -50,7 +50,7 @@
       "typedRoutes": true
     },
     "extra": {
-      "EXPO_PUBLIC_BACKEND_URL": "https://interviewpal-14.preview.emergentagent.com"
+      "EXPO_PUBLIC_BACKEND_URL": "https://jobfollow-1.preview.emergentagent.com"
     }
   }
 }

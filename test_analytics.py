@@ -17,7 +17,7 @@ load_dotenv('/app/backend/.env')
 load_dotenv('/app/frontend/.env')
 
 # Configuration
-BACKEND_URL = os.environ.get('EXPO_PUBLIC_BACKEND_URL', 'https://interviewpal-14.preview.emergentagent.com')
+BACKEND_URL = os.environ.get('EXPO_PUBLIC_BACKEND_URL', 'https://jobfollow-1.preview.emergentagent.com')
 API_BASE = f"{BACKEND_URL}/api"
 MONGO_URL = os.environ.get('MONGO_URL', 'mongodb://localhost:27017')
 DB_NAME = os.environ.get('DB_NAME', 'test_database')
