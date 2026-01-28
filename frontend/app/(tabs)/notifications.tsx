@@ -748,12 +748,12 @@ const styles = StyleSheet.create({
     gap: 3,
   },
   agingNumber: {
-    fontSize: 14,
+    fontSize: 11,
     fontWeight: 'bold',
     fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace',
   },
   agingLabel: {
-    fontSize: 10,
+    fontSize: 11,
     fontWeight: '500',
   },
   followUpButton: {
