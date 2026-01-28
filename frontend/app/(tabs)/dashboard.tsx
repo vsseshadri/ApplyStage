@@ -1338,7 +1338,6 @@ const createStyles = (colors: any, isDark: boolean) => StyleSheet.create({
   },
   followUpCardContent: {
     flex: 1,
-    marginLeft: 8,
   },
   followUpTopRow: {
     flexDirection: 'row',
