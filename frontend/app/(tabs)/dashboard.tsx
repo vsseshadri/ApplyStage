@@ -1136,6 +1136,20 @@ const createStyles = (colors: any, isDark: boolean) => StyleSheet.create({
     color: '#8B5CF6',
     textTransform: 'capitalize',
   },
+  upcomingStatusBadge: {
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 6,
+    alignSelf: 'flex-start',
+    marginTop: 6,
+  },
+  upcomingStatusText: {
+    color: 'white',
+    fontSize: 12,
+    fontWeight: '600',
+    fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace',
+    letterSpacing: 0.3,
+  },
   upcomingDaysContainer: {
     marginLeft: 10,
     alignItems: 'center',
