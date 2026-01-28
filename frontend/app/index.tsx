@@ -9,7 +9,7 @@ import Constants from 'expo-constants';
 const BACKEND_URL = Constants.expoConfig?.extra?.EXPO_PUBLIC_BACKEND_URL || process.env.EXPO_PUBLIC_BACKEND_URL;
 
 export default function LoginScreen() {
-  const { user, loading, login, loginWithApple, token } = useAuth();
+  const { user, loading, login, loginWithApple, sessionToken } = useAuth();
   const router = useRouter();
   const [isAppleAvailable, setIsAppleAvailable] = useState(false);
   const [isCheckingJobs, setIsCheckingJobs] = useState(false);
@@ -19,10 +19,10 @@ export default function LoginScreen() {
   }, []);
 
   useEffect(() => {
-    if (!loading && user && token) {
+    if (!loading && user && sessionToken) {
       checkJobsAndRedirect();
     }
-  }, [user, loading, token]);
+  }, [user, loading, sessionToken]);
 
   const checkJobsAndRedirect = async () => {
     if (isCheckingJobs) return;
@@ -31,7 +31,7 @@ export default function LoginScreen() {
     try {
       const response = await fetch(`${BACKEND_URL}/api/jobs?page=1&limit=1`, {
         headers: {
-          'Authorization': `Bearer ${token}`,
+          'Authorization': `Bearer ${sessionToken}`,
           'Content-Type': 'application/json',
         },
       });
