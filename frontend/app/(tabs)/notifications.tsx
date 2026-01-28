@@ -744,6 +744,10 @@ const styles = StyleSheet.create({
     fontSize: 10,
     color: 'rgba(255,255,255,0.85)',
   },
+  overdueLabel: {
+    fontSize: 11,
+    fontStyle: 'italic',
+  },
   followUpButton: {
     flexDirection: 'row',
     alignItems: 'center',
