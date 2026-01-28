@@ -670,8 +670,6 @@ export default function SettingsScreen() {
             </View>
           </TouchableOpacity>
           
-          <Text style={styles.userEmail}>{user?.email || 'user@example.com'}</Text>
-          
           {/* Preferred Display Name */}
           <View style={styles.displayNameContainer}>
             <Text style={styles.displayNameLabel}>Preferred Display Name</Text>
