@@ -750,8 +750,13 @@ export default function MyJobsScreen() {
         await fetchJobs();
         setModalVisible(false);
         
-        // Check if Scheduled On has a valid date - prompt to add to calendar
-        if (formData.upcoming_stage && formData.upcoming_schedule) {
+        // Check if Scheduled On was EDITED (not just present) - prompt to add to calendar
+        // For new jobs: always prompt if there's a scheduled date
+        // For editing: only prompt if the scheduled on value was changed
+        const shouldPromptCalendar = formData.upcoming_stage && formData.upcoming_schedule && 
+          ((!editingJob && formData.upcoming_schedule) || scheduledOnEdited);
+        
+        if (shouldPromptCalendar) {
           // Small delay to ensure the success message shows first
           setTimeout(() => {
             promptAddToCalendar(
