@@ -951,9 +951,48 @@ async def get_ai_insights(current_user: User = Depends(get_current_user)):
             "is_priority": False
         })
     
-    # === COMBINE AND LIMIT INSIGHTS ===
-    # Priority insights first, then regular, limit to 6 total
-    all_insights = priority_insights + regular_insights
+    # === COMBINE AND LIMIT INSIGHTS - Group by company ===
+    # First, group priority coaching insights by company
+    company_insights = {}
+    other_insights = []
+    
+    for insight in priority_insights + regular_insights:
+        text = insight.get("text", "")
+        # Check if this is a company-specific insight (contains company name followed by colon)
+        if ": " in text and insight.get("type") in ["coaching", "attention"]:
+            company = text.split(": ")[0]
+            if company not in company_insights:
+                company_insights[company] = {
+                    "company": company,
+                    "tips": [],
+                    "is_priority": insight.get("is_priority", False),
+                    "color": insight.get("color", "#F59E0B"),
+                    "icon": insight.get("icon", "star")
+                }
+            # Extract the tip part (after company name)
+            tip = text.split(": ", 1)[1] if ": " in text else text
+            company_insights[company]["tips"].append(tip)
+        else:
+            other_insights.append(insight)
+    
+    # Convert grouped company insights to single cards
+    grouped_insights = []
+    for company, data in company_insights.items():
+        tips_text = " • ".join(data["tips"][:2])  # Max 2 tips per company
+        grouped_insights.append({
+            "icon": data["icon"],
+            "color": data["color"],
+            "text": f"{company}: {tips_text}",
+            "type": "grouped",
+            "is_priority": data["is_priority"],
+            "company": company
+        })
+    
+    # Sort: priority first
+    grouped_insights.sort(key=lambda x: (0 if x["is_priority"] else 1))
+    
+    # Combine: grouped company insights first, then other insights
+    all_insights = grouped_insights + other_insights
     limited_insights = all_insights[:6]
     
     # Convert to the format expected by frontend
@@ -963,7 +1002,8 @@ async def get_ai_insights(current_user: User = Depends(get_current_user)):
             "icon": insight.get("icon", "information-circle"),
             "color": insight.get("color", "#6B7280"),
             "text": insight.get("text", ""),
-            "type": insight.get("type", "info")
+            "type": insight.get("type", "info"),
+            "company": insight.get("company", None)
         })
     
     # === FOLLOW-UP REMINDERS - Adapted based on status ===
