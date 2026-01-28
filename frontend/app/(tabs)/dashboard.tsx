@@ -1333,14 +1333,29 @@ const createStyles = (colors: any, isDark: boolean) => StyleSheet.create({
     fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace',
     letterSpacing: 0.3,
   },
-  followUpOverdueBadge: {
+  followUpDaysCounter: {
+    alignItems: 'center',
     paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: 6,
+    paddingVertical: 4,
+    borderRadius: 8,
+  },
+  followUpDaysNumber: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: 'white',
+  },
+  followUpDaysLabel: {
+    fontSize: 10,
+    color: 'rgba(255,255,255,0.85)',
+  },
+  followUpBottomRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
   },
   followUpOverdueText: {
-    color: 'white',
     fontSize: 11,
-    fontWeight: '600',
+    color: colors.textSecondary,
+    fontStyle: 'italic',
   },
 });
