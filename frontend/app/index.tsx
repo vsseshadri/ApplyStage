@@ -85,8 +85,6 @@ export default function LoginScreen() {
             <Text style={styles.buttonText}>Sign in with Apple</Text>
           </TouchableOpacity>
         )}
-
-        <Text style={styles.trialText}>Start with a 7-day free trial</Text>
       </View>
     </View>
   );
