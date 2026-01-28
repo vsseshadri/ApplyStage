@@ -572,7 +572,7 @@ export default function DashboardScreen() {
               ))}
             </View>
             
-            {/* Follow-up Reminders - Enhanced UI */}
+            {/* Follow-up Reminders - Compact UI */}
             {followUps.length > 0 && (
               <View style={{ marginTop: 20 }}>
                 <View style={dynamicStyles.sectionHeader}>
@@ -590,7 +590,7 @@ export default function DashboardScreen() {
                       );
                     }
                     
-                    // Regular follow-up items
+                    // Regular follow-up items - Compact design
                     const urgencyColors: any = {
                       critical: { bg: '#FEE2E2', border: '#EF4444', text: '#991B1B' },
                       high: { bg: '#FEF3C7', border: '#F59E0B', text: '#92400E' },
@@ -598,44 +598,49 @@ export default function DashboardScreen() {
                     };
                     const urgencyStyle = urgencyColors[followUp.urgency] || urgencyColors.medium;
                     
+                    // Get status color for badge
+                    const statusColors: any = {
+                      'Applied': '#3B82F6',
+                      'Recruiter Screening': '#8B5CF6',
+                      'Phone Screen': '#6366F1',
+                      'Coding Round 1': '#EC4899',
+                      'Coding Round 2': '#EC4899',
+                      'System Design': '#F59E0B',
+                      'Behavioural': '#10B981',
+                      'Hiring Manager': '#14B8A6',
+                      'Final Round': '#22C55E'
+                    };
+                    const statusColor = statusColors[followUp.status] || '#6B7280';
+                    
                     return (
                       <TouchableOpacity 
                         key={index} 
                         style={[
-                          dynamicStyles.followUpCard,
-                          { 
-                            backgroundColor: isDark ? colors.card : urgencyStyle.bg,
-                            borderLeftColor: urgencyStyle.border 
-                          },
+                          dynamicStyles.followUpCardCompact,
+                          { borderLeftColor: urgencyStyle.border },
                           actionedFollowUps.has(index) && { opacity: 0.5 }
                         ]}
                         onPress={() => handleFollowUpAction(index)}
                         activeOpacity={0.7}
                       >
-                        <View style={dynamicStyles.followUpCardHeader}>
-                          <View style={dynamicStyles.followUpCardLeft}>
-                            <View style={dynamicStyles.followUpCheckbox}>
-                              <Ionicons 
-                                name={actionedFollowUps.has(index) ? "checkbox" : "square-outline"} 
-                                size={20} 
-                                color={actionedFollowUps.has(index) ? colors.primary : colors.textSecondary} 
-                              />
-                            </View>
-                            <View>
-                              <Text style={[dynamicStyles.followUpCompany, followUp.is_priority && { fontWeight: '700' }]}>
-                                {followUp.is_priority && <Text style={{ color: '#F59E0B' }}>★ </Text>}
-                                {followUp.company}
-                              </Text>
-                              <Text style={dynamicStyles.followUpStatus}>{followUp.status}</Text>
-                            </View>
-                          </View>
-                          <View style={[dynamicStyles.followUpBadge, { backgroundColor: urgencyStyle.border }]}>
-                            <Text style={dynamicStyles.followUpBadgeText}>{followUp.overdue_days}d overdue</Text>
-                          </View>
+                        <View style={dynamicStyles.followUpCheckbox}>
+                          <Ionicons 
+                            name={actionedFollowUps.has(index) ? "checkbox" : "square-outline"} 
+                            size={18} 
+                            color={actionedFollowUps.has(index) ? colors.primary : colors.textSecondary} 
+                          />
                         </View>
-                        <View style={dynamicStyles.followUpCardFooter}>
-                          <Ionicons name="bulb-outline" size={14} color={colors.textSecondary} />
-                          <Text style={dynamicStyles.followUpHint}>{followUp.action_hint}</Text>
+                        <View style={dynamicStyles.followUpCardContent}>
+                          <Text style={[dynamicStyles.followUpCompanyCompact, followUp.is_priority && { fontWeight: '700' }]} numberOfLines={1}>
+                            {followUp.is_priority && <Text style={{ color: '#F59E0B' }}>★ </Text>}
+                            {followUp.company}
+                          </Text>
+                          <View style={dynamicStyles.followUpMetaRow}>
+                            <View style={[dynamicStyles.followUpStatusBadge, { backgroundColor: statusColor }]}>
+                              <Text style={dynamicStyles.followUpStatusText}>{followUp.status}</Text>
+                            </View>
+                            <Text style={dynamicStyles.followUpOverdue}>{followUp.overdue_days}d overdue</Text>
+                          </View>
                         </View>
                       </TouchableOpacity>
                     );
