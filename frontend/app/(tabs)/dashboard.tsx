@@ -1397,4 +1397,18 @@ const createStyles = (colors: any, isDark: boolean) => StyleSheet.create({
     color: colors.textSecondary,
     fontStyle: 'italic',
   },
+  followUpDeleteAction: {
+    backgroundColor: '#EF4444',
+    justifyContent: 'center',
+    alignItems: 'center',
+    width: 80,
+    borderRadius: 10,
+    marginLeft: 8,
+  },
+  followUpDeleteActionText: {
+    color: '#FFF',
+    fontSize: 12,
+    fontWeight: '600',
+    marginTop: 4,
+  },
 });
