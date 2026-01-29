@@ -17,14 +17,14 @@ export default function OnboardingScreen() {
   const [showCountryDropdown, setShowCountryDropdown] = useState(false);
   const [countrySearch, setCountrySearch] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [errors, setErrors] = useState<{displayName?: string; domicileCountry?: string}>({});
+  const [errors, setErrors] = useState<{displayName: string | undefined; domicileCountry: string | undefined}>({displayName: undefined, domicileCountry: undefined});
 
   const filteredCountries = COUNTRIES.filter(country =>
     country.toLowerCase().includes(countrySearch.toLowerCase())
   );
 
   const validateForm = (): boolean => {
-    const newErrors: {displayName?: string; domicileCountry?: string} = {};
+    const newErrors: {displayName: string | undefined; domicileCountry: string | undefined} = {displayName: undefined, domicileCountry: undefined};
     
     if (!displayName.trim()) {
       newErrors.displayName = 'Display Name is required';
