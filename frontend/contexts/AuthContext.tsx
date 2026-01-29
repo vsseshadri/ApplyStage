@@ -99,7 +99,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             setSessionToken(token);
             await fetchUser(token);
           } else {
-            // Biometric failed, user needs to login again
+            // Biometric failed, clear tokens and require fresh login
+            await AsyncStorage.removeItem('session_token');
+            setSessionToken(null);
+            setUser(null);
             setLoading(false);
             return;
           }
@@ -111,6 +114,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
     } catch (error) {
       console.error('Error loading session:', error);
+      // Clear potentially corrupt session data
+      await AsyncStorage.removeItem('session_token');
+      setSessionToken(null);
+      setUser(null);
     } finally {
       setLoading(false);
     }
