@@ -690,6 +690,83 @@ export default function SettingsScreen() {
       fontSize: 16,
       fontWeight: '600',
     },
+    // Country dropdown styles
+    countryDropdownButton: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      backgroundColor: colors.inputBackground,
+      borderRadius: 8,
+      paddingHorizontal: 12,
+      paddingVertical: 12,
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+    modalContainer: {
+      flex: 1,
+      backgroundColor: colors.background,
+    },
+    modalHeader: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      padding: 16,
+      borderBottomWidth: 1,
+      borderBottomColor: colors.border,
+    },
+    modalTitle: {
+      fontSize: 18,
+      fontWeight: '600',
+      color: colors.text,
+    },
+    searchContainer: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: colors.inputBackground,
+      borderRadius: 10,
+      margin: 16,
+      paddingHorizontal: 12,
+    },
+    searchIcon: {
+      marginRight: 8,
+    },
+    searchInput: {
+      flex: 1,
+      padding: 12,
+      fontSize: 16,
+      color: colors.text,
+    },
+    countryItem: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      padding: 16,
+      paddingHorizontal: 20,
+    },
+    countryItemSelected: {
+      backgroundColor: colors.primary + '15',
+    },
+    countryItemText: {
+      fontSize: 16,
+      color: colors.text,
+    },
+    countryItemTextSelected: {
+      color: colors.primary,
+      fontWeight: '600',
+    },
+    countrySeparator: {
+      height: 1,
+      backgroundColor: colors.border,
+      marginHorizontal: 16,
+    },
+    emptyContainer: {
+      padding: 40,
+      alignItems: 'center',
+    },
+    emptyText: {
+      fontSize: 16,
+      color: colors.textSecondary,
+    },
   });
 
   return (
