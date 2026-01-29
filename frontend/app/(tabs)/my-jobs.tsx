@@ -1028,13 +1028,13 @@ export default function MyJobsScreen() {
         <TouchableOpacity style={dynamicStyles.dropdownBackdrop} activeOpacity={1} onPress={() => setShowStateDropdown(false)} />
         <View style={dynamicStyles.dropdownContainer}>
           <View style={dynamicStyles.dropdownHeader}>
-            <Text style={dynamicStyles.dropdownTitle}>Select State</Text>
+            <Text style={dynamicStyles.dropdownTitle}>Select {stateLabel}</Text>
             <TouchableOpacity onPress={() => setShowStateDropdown(false)}>
               <Ionicons name="close" size={24} color={colors.text} />
             </TouchableOpacity>
           </View>
           <ScrollView style={dynamicStyles.dropdownScroll} nestedScrollEnabled={true}>
-            {US_STATES.map((state) => (
+            {statesData.map((state) => (
               <TouchableOpacity
                 key={state}
                 style={[dynamicStyles.dropdownItem, selectedState === state && dynamicStyles.dropdownItemSelected]}
@@ -1073,7 +1073,7 @@ export default function MyJobsScreen() {
           <ScrollView style={dynamicStyles.dropdownScroll} nestedScrollEnabled={true}>
             {availableCities.length === 0 ? (
               <View style={dynamicStyles.dropdownEmpty}>
-                <Text style={dynamicStyles.dropdownEmptyText}>Please select a state first</Text>
+                <Text style={dynamicStyles.dropdownEmptyText}>Please select a {stateLabel.toLowerCase()} first</Text>
               </View>
             ) : (
               availableCities.map((city) => (
