@@ -1023,7 +1023,19 @@ export default function MyJobsScreen() {
     );
   };
 
-  // State Dropdown Modal
+  // State search filter
+  const [stateSearchText, setStateSearchText] = useState('');
+  const [citySearchText, setCitySearchText] = useState('');
+  
+  const filteredStates = stateSearchText 
+    ? statesData.filter(s => s.toLowerCase().includes(stateSearchText.toLowerCase()))
+    : statesData;
+    
+  const filteredCities = citySearchText
+    ? availableCities.filter(c => c.toLowerCase().includes(citySearchText.toLowerCase()))
+    : availableCities;
+
+  // State Dropdown Modal with search and manual entry
   const renderStateDropdown = () => (
     <Modal visible={showStateDropdown} transparent animationType="fade" onRequestClose={() => setShowStateDropdown(false)}>
       <View style={dynamicStyles.dropdownOverlay}>
@@ -1031,12 +1043,53 @@ export default function MyJobsScreen() {
         <View style={dynamicStyles.dropdownContainer}>
           <View style={dynamicStyles.dropdownHeader}>
             <Text style={dynamicStyles.dropdownTitle}>Select {stateLabel}</Text>
-            <TouchableOpacity onPress={() => setShowStateDropdown(false)}>
+            <TouchableOpacity onPress={() => { setShowStateDropdown(false); setStateSearchText(''); }}>
               <Ionicons name="close" size={24} color={colors.text} />
             </TouchableOpacity>
           </View>
-          <ScrollView style={dynamicStyles.dropdownScroll} nestedScrollEnabled={true}>
-            {statesData.map((state) => (
+          {/* Search Input */}
+          <View style={dynamicStyles.dropdownSearchContainer}>
+            <Ionicons name="search" size={18} color={colors.textSecondary} />
+            <TextInput
+              style={dynamicStyles.dropdownSearchInput}
+              placeholder={`Search or type ${stateLabel.toLowerCase()}...`}
+              placeholderTextColor={colors.textSecondary}
+              value={stateSearchText}
+              onChangeText={setStateSearchText}
+              autoCapitalize="words"
+              returnKeyType="done"
+              onSubmitEditing={() => {
+                if (stateSearchText.trim()) {
+                  setSelectedState(stateSearchText.trim());
+                  setSelectedCity('');
+                  setShowStateDropdown(false);
+                  setStateSearchText('');
+                }
+              }}
+            />
+            {stateSearchText.length > 0 && (
+              <TouchableOpacity onPress={() => setStateSearchText('')}>
+                <Ionicons name="close-circle" size={18} color={colors.textSecondary} />
+              </TouchableOpacity>
+            )}
+          </View>
+          {/* Manual Entry Hint */}
+          {stateSearchText.length > 0 && filteredStates.length === 0 && (
+            <TouchableOpacity 
+              style={dynamicStyles.manualEntryHint}
+              onPress={() => {
+                setSelectedState(stateSearchText.trim());
+                setSelectedCity('');
+                setShowStateDropdown(false);
+                setStateSearchText('');
+              }}
+            >
+              <Ionicons name="add-circle-outline" size={20} color={colors.primary} />
+              <Text style={dynamicStyles.manualEntryText}>Use "{stateSearchText}" as {stateLabel.toLowerCase()}</Text>
+            </TouchableOpacity>
+          )}
+          <ScrollView style={dynamicStyles.dropdownScroll} nestedScrollEnabled={true} keyboardShouldPersistTaps="handled">
+            {filteredStates.map((state) => (
               <TouchableOpacity
                 key={state}
                 style={[dynamicStyles.dropdownItem, selectedState === state && dynamicStyles.dropdownItemSelected]}
@@ -1044,6 +1097,7 @@ export default function MyJobsScreen() {
                   setSelectedState(state);
                   setSelectedCity('');
                   setShowStateDropdown(false);
+                  setStateSearchText('');
                 }}
               >
                 <Text style={[dynamicStyles.dropdownItemText, selectedState === state && dynamicStyles.dropdownItemTextSelected]}>
@@ -1060,7 +1114,7 @@ export default function MyJobsScreen() {
     </Modal>
   );
 
-  // City Dropdown Modal
+  // City Dropdown Modal with search and manual entry
   const renderCityDropdown = () => (
     <Modal visible={showCityDropdown} transparent animationType="fade" onRequestClose={() => setShowCityDropdown(false)}>
       <View style={dynamicStyles.dropdownOverlay}>
@@ -1068,23 +1122,63 @@ export default function MyJobsScreen() {
         <View style={dynamicStyles.dropdownContainer}>
           <View style={dynamicStyles.dropdownHeader}>
             <Text style={dynamicStyles.dropdownTitle}>Select City</Text>
-            <TouchableOpacity onPress={() => setShowCityDropdown(false)}>
+            <TouchableOpacity onPress={() => { setShowCityDropdown(false); setCitySearchText(''); }}>
               <Ionicons name="close" size={24} color={colors.text} />
             </TouchableOpacity>
           </View>
-          <ScrollView style={dynamicStyles.dropdownScroll} nestedScrollEnabled={true}>
-            {availableCities.length === 0 ? (
+          {/* Search Input */}
+          <View style={dynamicStyles.dropdownSearchContainer}>
+            <Ionicons name="search" size={18} color={colors.textSecondary} />
+            <TextInput
+              style={dynamicStyles.dropdownSearchInput}
+              placeholder="Search or type city..."
+              placeholderTextColor={colors.textSecondary}
+              value={citySearchText}
+              onChangeText={setCitySearchText}
+              autoCapitalize="words"
+              returnKeyType="done"
+              onSubmitEditing={() => {
+                if (citySearchText.trim()) {
+                  setSelectedCity(citySearchText.trim());
+                  setShowCityDropdown(false);
+                  setCitySearchText('');
+                }
+              }}
+            />
+            {citySearchText.length > 0 && (
+              <TouchableOpacity onPress={() => setCitySearchText('')}>
+                <Ionicons name="close-circle" size={18} color={colors.textSecondary} />
+              </TouchableOpacity>
+            )}
+          </View>
+          {/* Manual Entry Hint */}
+          {citySearchText.length > 0 && filteredCities.length === 0 && (
+            <TouchableOpacity 
+              style={dynamicStyles.manualEntryHint}
+              onPress={() => {
+                setSelectedCity(citySearchText.trim());
+                setShowCityDropdown(false);
+                setCitySearchText('');
+              }}
+            >
+              <Ionicons name="add-circle-outline" size={20} color={colors.primary} />
+              <Text style={dynamicStyles.manualEntryText}>Use "{citySearchText}" as city</Text>
+            </TouchableOpacity>
+          )}
+          <ScrollView style={dynamicStyles.dropdownScroll} nestedScrollEnabled={true} keyboardShouldPersistTaps="handled">
+            {availableCities.length === 0 && !citySearchText ? (
               <View style={dynamicStyles.dropdownEmpty}>
                 <Text style={dynamicStyles.dropdownEmptyText}>Please select a {stateLabel.toLowerCase()} first</Text>
               </View>
             ) : (
-              availableCities.map((city) => (
+              filteredCities.map((city) => (
                 <TouchableOpacity
                   key={city}
                   style={[dynamicStyles.dropdownItem, selectedCity === city && dynamicStyles.dropdownItemSelected]}
                   onPress={() => {
                     setSelectedCity(city);
                     setShowCityDropdown(false);
+                    setCitySearchText('');
                   }}
                 >
                   <Text style={[dynamicStyles.dropdownItemText, selectedCity === city && dynamicStyles.dropdownItemTextSelected]}>
