@@ -1027,10 +1027,7 @@ export default function MyJobsScreen() {
     );
   };
 
-  // State search filter
-  const [stateSearchText, setStateSearchText] = useState('');
-  const [citySearchText, setCitySearchText] = useState('');
-  
+  // Filtered states and cities based on search
   const filteredStates = stateSearchText 
     ? statesData.filter(s => s.toLowerCase().includes(stateSearchText.toLowerCase()))
     : statesData;
