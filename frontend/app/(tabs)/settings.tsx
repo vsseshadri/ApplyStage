@@ -743,6 +743,20 @@ export default function SettingsScreen() {
             )}
           </View>
           
+          {/* Domicile Country */}
+          <View style={styles.displayNameContainer}>
+            <Text style={styles.displayNameLabel}>Domicile Country</Text>
+            <TouchableOpacity
+              style={styles.countryDropdownButton}
+              onPress={() => setShowCountryDropdown(true)}
+            >
+              <Text style={[styles.displayNameValue, !domicileCountry && { color: colors.textSecondary }]}>
+                {domicileCountry || 'Select your country'}
+              </Text>
+              <Ionicons name="chevron-down" size={20} color={colors.textSecondary} />
+            </TouchableOpacity>
+          </View>
+          
           <Text style={styles.notificationPrefsLabel}>Preferences</Text>
           
           <View style={styles.notificationRow}>
