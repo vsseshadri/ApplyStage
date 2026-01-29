@@ -1134,6 +1134,35 @@ async def update_display_name(data: DisplayNameUpdate, current_user: User = Depe
     
     return {"message": "Display name updated", "preferred_display_name": data.preferred_display_name}
 
+@api_router.put("/user/domicile-country")
+async def update_domicile_country(data: DomicileCountryUpdate, current_user: User = Depends(get_current_user)):
+    """Update the user's domicile country"""
+    await db.users.update_one(
+        {"user_id": current_user.user_id},
+        {"$set": {"domicile_country": data.domicile_country}}
+    )
+    
+    return {"message": "Domicile country updated", "domicile_country": data.domicile_country}
+
+@api_router.post("/user/onboarding")
+async def complete_onboarding(data: OnboardingUpdate, current_user: User = Depends(get_current_user)):
+    """Complete user onboarding with display name and domicile country"""
+    await db.users.update_one(
+        {"user_id": current_user.user_id},
+        {"$set": {
+            "preferred_display_name": data.preferred_display_name,
+            "domicile_country": data.domicile_country,
+            "onboarding_completed": True
+        }}
+    )
+    
+    return {
+        "message": "Onboarding completed",
+        "preferred_display_name": data.preferred_display_name,
+        "domicile_country": data.domicile_country,
+        "onboarding_completed": True
+    }
+
 @api_router.put("/user/communication-email")
 async def update_communication_email(data: CommunicationEmailUpdate, current_user: User = Depends(get_current_user)):
     """Update the user's communication email for weekly/monthly summaries"""
