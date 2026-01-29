@@ -696,7 +696,20 @@ async def get_ai_insights(current_user: User = Depends(get_current_user)):
     """
     jobs = await db.job_applications.find(
         {"user_id": current_user.user_id},
-        {"_id": 0}
+        {
+            "_id": 0,
+            "status": 1,
+            "company_name": 1,
+            "position": 1,
+            "date_applied": 1,
+            "created_at": 1,
+            "follow_up_days": 1,
+            "is_priority": 1,
+            "upcoming_stage": 1,
+            "upcoming_schedule": 1,
+            "recruiter_email": 1,
+            "updated_at": 1
+        }
     ).to_list(1000)
     
     strategic_insights = []
