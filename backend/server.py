@@ -68,12 +68,21 @@ class User(BaseModel):
     is_private_relay: bool = False
     preferred_display_name: Optional[str] = None
     communication_email: Optional[str] = None
+    domicile_country: Optional[str] = None
+    onboarding_completed: bool = False
 
 class DisplayNameUpdate(BaseModel):
     preferred_display_name: str
 
 class CommunicationEmailUpdate(BaseModel):
     communication_email: str
+
+class DomicileCountryUpdate(BaseModel):
+    domicile_country: str
+
+class OnboardingUpdate(BaseModel):
+    preferred_display_name: str
+    domicile_country: str
 
 class SessionDataResponse(BaseModel):
     id: str
