@@ -20,16 +20,23 @@ export default function LoginScreen() {
 
   useEffect(() => {
     if (!loading && user && sessionToken) {
-      checkJobsAndRedirect();
+      handlePostLoginRedirect();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user, loading, sessionToken]);
 
-  const checkJobsAndRedirect = async () => {
+  const handlePostLoginRedirect = async () => {
     if (isCheckingJobs) return;
     setIsCheckingJobs(true);
     
     try {
+      // Check if user has completed onboarding
+      if (!user?.onboarding_completed) {
+        router.replace('/onboarding');
+        return;
+      }
+      
+      // User has completed onboarding, check for jobs
       const response = await fetch(`${BACKEND_URL}/api/jobs?page=1&limit=1`, {
         headers: {
           'Authorization': `Bearer ${sessionToken}`,
@@ -45,7 +52,7 @@ export default function LoginScreen() {
           // User has jobs, go to Dashboard
           router.replace('/(tabs)/dashboard');
         } else {
-          // New user with no jobs, go to My Jobs
+          // User with no jobs, go to My Jobs
           router.replace('/(tabs)/my-jobs');
         }
       } else {
@@ -53,7 +60,7 @@ export default function LoginScreen() {
         router.replace('/(tabs)/my-jobs');
       }
     } catch (error) {
-      console.error('Error checking jobs:', error);
+      console.error('Error during post-login redirect:', error);
       // On error, default to My Jobs
       router.replace('/(tabs)/my-jobs');
     } finally {
