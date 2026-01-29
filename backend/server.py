@@ -1211,9 +1211,21 @@ async def verify_payment(payment: PaymentVerification, current_user: User = Depe
 
 @api_router.get("/export/csv")
 async def export_csv(current_user: User = Depends(get_current_user)):
+    # Optimized query: Only fetch fields needed for CSV export
     jobs = await db.job_applications.find(
         {"user_id": current_user.user_id},
-        {"_id": 0}
+        {
+            "_id": 0,
+            "company_name": 1,
+            "position": 1,
+            "location": 1,
+            "work_mode": 1,
+            "salary_range": 1,
+            "status": 1,
+            "date_applied": 1,
+            "created_at": 1,
+            "updated_at": 1
+        }
     ).sort("created_at", -1).to_list(1000)
     
     output = io.StringIO()
