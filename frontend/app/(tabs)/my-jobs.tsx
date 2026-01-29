@@ -845,29 +845,31 @@ export default function MyJobsScreen() {
   const allPositions = [...DEFAULT_POSITIONS, ...customPositions];
   const allStatuses = [...STATUSES, ...customStatuses];
   
-  // Get location data based on user's domicile country
+  // Data-driven location configuration based on user's domicile country
+  const LOCATION_CONFIG: { [key: string]: { stateLabel: string; states: string[]; cities: { [key: string]: string[] } } } = {
+    'Canada': {
+      stateLabel: 'Province/Territory',
+      states: CANADA_PROVINCES,
+      cities: CANADA_PROVINCES_AND_CITIES,
+    },
+    'India': {
+      stateLabel: 'State',
+      states: INDIA_STATES,
+      cities: INDIA_STATES_AND_CITIES,
+    },
+    'United States of America': {
+      stateLabel: 'State',
+      states: US_STATES,
+      cities: US_STATES_AND_CITIES,
+    },
+  };
+  
+  // Get location config - fallback to US if country not in config
   const domicileCountry = user?.domicile_country || 'United States of America';
-  
-  const getStateLabel = () => {
-    if (domicileCountry === 'Canada') return 'Province/Territory';
-    return 'State';
-  };
-  
-  const getStatesData = () => {
-    if (domicileCountry === 'Canada') return CANADA_PROVINCES;
-    if (domicileCountry === 'India') return INDIA_STATES;
-    return US_STATES;
-  };
-  
-  const getStatesAndCitiesData = () => {
-    if (domicileCountry === 'Canada') return CANADA_PROVINCES_AND_CITIES;
-    if (domicileCountry === 'India') return INDIA_STATES_AND_CITIES;
-    return US_STATES_AND_CITIES;
-  };
-  
-  const statesData = getStatesData();
-  const statesAndCitiesData = getStatesAndCitiesData();
-  const stateLabel = getStateLabel();
+  const locationConfig = LOCATION_CONFIG[domicileCountry] || LOCATION_CONFIG['United States of America'];
+  const stateLabel = locationConfig.stateLabel;
+  const statesData = locationConfig.states;
+  const statesAndCitiesData = locationConfig.cities;
   const availableCities = selectedState ? statesAndCitiesData[selectedState] || [] : [];
 
   const dynamicStyles = createStyles(colors, isDark, isTablet);
