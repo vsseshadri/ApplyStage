@@ -62,7 +62,8 @@
         {
           "calendarPermission": "Allow Job Tracker to access your calendar to add interview events"
         }
-      ]
+      ],
+      "@react-native-community/datetimepicker"
     ],
     "experiments": {
       "typedRoutes": true

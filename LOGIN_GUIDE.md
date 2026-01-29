@@ -3,7 +3,7 @@
 ## How to Login
 
 ### Web Preview (Current Method)
-1. Go to: **https://jobfollow-1.preview.emergentagent.com**
+1. Go to: **https://careertrail-4.preview.emergentagent.com**
 2. Click **"Continue with Google"** button
 3. You'll be redirected to Emergent Auth (https://auth.emergentagent.com)
 4. Sign in with your Google account
@@ -12,7 +12,7 @@
 
 ### What Happens Behind the Scenes
 1. App shows login screen
-2. Clicking Google button opens: `https://auth.emergentagent.com/?redirect=https://jobfollow-1.preview.emergentagent.com/`
+2. Clicking Google button opens: `https://auth.emergentagent.com/?redirect=https://careertrail-4.preview.emergentagent.com/`
 3. After Google OAuth, Emergent auth redirects back with session_id in URL hash
 4. App extracts session_id from URL (e.g., `#session_id=abc123`)
 5. App calls backend `/api/auth/session` with session_id
@@ -99,7 +99,7 @@ Web browser console will show all React/Expo logs
 ## Mobile Testing (Optional)
 ### Using Expo Go App:
 1. Install Expo Go on iOS/Android
-2. Scan QR code from: `https://jobfollow-1.preview.emergentagent.com`
+2. Scan QR code from: `https://careertrail-4.preview.emergentagent.com`
 3. App opens in Expo Go
 4. Login flow same as web
 
