@@ -17,25 +17,31 @@ export default function OnboardingScreen() {
   const [showCountryDropdown, setShowCountryDropdown] = useState(false);
   const [countrySearch, setCountrySearch] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [errors, setErrors] = useState<{displayName: string | undefined; domicileCountry: string | undefined}>({displayName: undefined, domicileCountry: undefined});
+  const [displayNameError, setDisplayNameError] = useState('');
+  const [countryError, setCountryError] = useState('');
 
   const filteredCountries = COUNTRIES.filter(country =>
     country.toLowerCase().includes(countrySearch.toLowerCase())
   );
 
-  const validateForm = (): boolean => {
-    const newErrors: {displayName: string | undefined; domicileCountry: string | undefined} = {displayName: undefined, domicileCountry: undefined};
+  const validateForm = () => {
+    let isValid = true;
     
     if (!displayName.trim()) {
-      newErrors.displayName = 'Display Name is required';
+      setDisplayNameError('Display Name is required');
+      isValid = false;
+    } else {
+      setDisplayNameError('');
     }
     
     if (!domicileCountry) {
-      newErrors.domicileCountry = 'Domicile Country is required';
+      setCountryError('Please select your country');
+      isValid = false;
+    } else {
+      setCountryError('');
     }
     
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
+    return isValid;
   };
 
   const handleContinue = async () => {
@@ -73,9 +79,7 @@ export default function OnboardingScreen() {
     setDomicileCountry(country);
     setShowCountryDropdown(false);
     setCountrySearch('');
-    if (errors.domicileCountry) {
-      setErrors(prev => ({ ...prev, domicileCountry: undefined }));
-    }
+    setCountryError('');
   };
 
   return (
@@ -87,15 +91,16 @@ export default function OnboardingScreen() {
         <ScrollView 
           contentContainerStyle={styles.scrollContent}
           showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
         >
           {/* Welcome Header */}
           <View style={styles.headerSection}>
             <View style={styles.iconContainer}>
-              <Ionicons name="briefcase" size={60} color="#007AFF" />
+              <Ionicons name="rocket" size={50} color="#007AFF" />
             </View>
-            <Text style={styles.welcomeTitle}>Welcome to Job Tracker!</Text>
+            <Text style={styles.welcomeTitle}>Let's Get Started! 🎯</Text>
             <Text style={styles.welcomeSubtitle}>
-              Let's set up your profile to get you started on your job search journey.
+              Ready to organize your job applications like a pro? Just a couple quick details and you're all set!
             </Text>
           </View>
 
@@ -103,48 +108,40 @@ export default function OnboardingScreen() {
           <View style={styles.formSection}>
             {/* Display Name Field */}
             <View style={styles.inputGroup}>
-              <Text style={styles.label}>Display Name <Text style={styles.required}>*</Text></Text>
+              <Text style={styles.label}>What should we call you?</Text>
               <TextInput
-                style={[styles.input, errors.displayName && styles.inputError]}
-                placeholder="Enter your preferred name"
+                style={[styles.input, displayNameError ? styles.inputError : null]}
+                placeholder="Your name"
                 placeholderTextColor="#999"
                 value={displayName}
                 onChangeText={(text) => {
                   setDisplayName(text);
-                  if (errors.displayName) {
-                    setErrors(prev => ({ ...prev, displayName: undefined }));
-                  }
+                  if (displayNameError) setDisplayNameError('');
                 }}
                 autoCapitalize="words"
+                returnKeyType="next"
               />
-              {errors.displayName && (
-                <Text style={styles.errorText}>{errors.displayName}</Text>
-              )}
+              {displayNameError ? (
+                <Text style={styles.errorText}>{displayNameError}</Text>
+              ) : null}
             </View>
 
             {/* Domicile Country Field */}
             <View style={styles.inputGroup}>
-              <Text style={styles.label}>Domicile Country <Text style={styles.required}>*</Text></Text>
+              <Text style={styles.label}>Where are you based?</Text>
               <TouchableOpacity
-                style={[styles.dropdownButton, errors.domicileCountry && styles.inputError]}
+                style={[styles.dropdownButton, countryError ? styles.inputError : null]}
                 onPress={() => setShowCountryDropdown(true)}
+                activeOpacity={0.7}
               >
                 <Text style={[styles.dropdownText, !domicileCountry && styles.placeholderText]}>
                   {domicileCountry || 'Select your country'}
                 </Text>
                 <Ionicons name="chevron-down" size={20} color="#666" />
               </TouchableOpacity>
-              {errors.domicileCountry && (
-                <Text style={styles.errorText}>{errors.domicileCountry}</Text>
-              )}
-            </View>
-
-            {/* Info Box */}
-            <View style={styles.infoBox}>
-              <Ionicons name="information-circle-outline" size={20} color="#007AFF" />
-              <Text style={styles.infoText}>
-                Your domicile country helps us customize the job entry form with relevant location options.
-              </Text>
+              {countryError ? (
+                <Text style={styles.errorText}>{countryError}</Text>
+              ) : null}
             </View>
           </View>
 
@@ -153,6 +150,7 @@ export default function OnboardingScreen() {
             style={[styles.continueButton, isSubmitting && styles.buttonDisabled]}
             onPress={handleContinue}
             disabled={isSubmitting}
+            activeOpacity={0.8}
           >
             {isSubmitting ? (
               <ActivityIndicator color="#FFF" />
@@ -175,10 +173,13 @@ export default function OnboardingScreen() {
         <SafeAreaView style={styles.modalContainer}>
           <View style={styles.modalHeader}>
             <Text style={styles.modalTitle}>Select Country</Text>
-            <TouchableOpacity onPress={() => {
-              setShowCountryDropdown(false);
-              setCountrySearch('');
-            }}>
+            <TouchableOpacity 
+              onPress={() => {
+                setShowCountryDropdown(false);
+                setCountrySearch('');
+              }}
+              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+            >
               <Ionicons name="close" size={28} color="#333" />
             </TouchableOpacity>
           </View>
@@ -204,6 +205,7 @@ export default function OnboardingScreen() {
           <FlatList
             data={filteredCountries}
             keyExtractor={(item) => item}
+            keyboardShouldPersistTaps="handled"
             renderItem={({ item }) => (
               <TouchableOpacity
                 style={[
@@ -211,6 +213,7 @@ export default function OnboardingScreen() {
                   domicileCountry === item && styles.countryItemSelected
                 ]}
                 onPress={() => selectCountry(item)}
+                activeOpacity={0.7}
               >
                 <Text style={[
                   styles.countryItemText,
@@ -239,7 +242,7 @@ export default function OnboardingScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F5F5F5',
+    backgroundColor: '#F8F9FA',
   },
   keyboardView: {
     flex: 1,
@@ -254,27 +257,27 @@ const styles = StyleSheet.create({
     marginBottom: 40,
   },
   iconContainer: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
+    width: 88,
+    height: 88,
+    borderRadius: 44,
     backgroundColor: '#E8F2FF',
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 24,
+    marginBottom: 20,
   },
   welcomeTitle: {
-    fontSize: 28,
+    fontSize: 26,
     fontWeight: '700',
     color: '#1A1A1A',
     textAlign: 'center',
     marginBottom: 12,
   },
   welcomeSubtitle: {
-    fontSize: 16,
+    fontSize: 15,
     color: '#666',
     textAlign: 'center',
-    lineHeight: 24,
-    paddingHorizontal: 20,
+    lineHeight: 22,
+    paddingHorizontal: 16,
   },
   formSection: {
     marginBottom: 32,
@@ -287,9 +290,6 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#333',
     marginBottom: 8,
-  },
-  required: {
-    color: '#EF4444',
   },
   input: {
     backgroundColor: '#FFF',
@@ -325,20 +325,6 @@ const styles = StyleSheet.create({
   placeholderText: {
     color: '#999',
   },
-  infoBox: {
-    flexDirection: 'row',
-    backgroundColor: '#E8F2FF',
-    borderRadius: 12,
-    padding: 16,
-    marginTop: 8,
-  },
-  infoText: {
-    flex: 1,
-    fontSize: 14,
-    color: '#007AFF',
-    marginLeft: 10,
-    lineHeight: 20,
-  },
   continueButton: {
     backgroundColor: '#007AFF',
     borderRadius: 12,
@@ -346,18 +332,13 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
-    shadowColor: '#007AFF',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 4,
   },
   buttonDisabled: {
-    opacity: 0.7,
+    opacity: 0.6,
   },
   continueButtonText: {
     color: '#FFF',
-    fontSize: 18,
+    fontSize: 17,
     fontWeight: '600',
   },
   buttonIcon: {
@@ -418,7 +399,7 @@ const styles = StyleSheet.create({
   },
   separator: {
     height: 1,
-    backgroundColor: '#E5E5E5',
+    backgroundColor: '#F0F0F0',
     marginHorizontal: 16,
   },
   emptyContainer: {
