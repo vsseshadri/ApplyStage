@@ -11,6 +11,7 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.jobtracker.app",
+      "usesAppleSignIn": true,
       "infoPlist": {
         "NSUserTrackingUsageDescription": "Track your job applications and progress",
         "NSCalendarsUsageDescription": "Schedule reminders for job follow-ups"
