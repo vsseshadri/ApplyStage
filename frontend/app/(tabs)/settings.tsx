@@ -29,6 +29,11 @@ export default function SettingsScreen() {
   const [sendingWeekly, setSendingWeekly] = useState(false);
   const [sendingMonthly, setSendingMonthly] = useState(false);
   
+  // Domicile Country state
+  const [domicileCountry, setDomicileCountry] = useState(user?.domicile_country || '');
+  const [showCountryDropdown, setShowCountryDropdown] = useState(false);
+  const [countrySearch, setCountrySearch] = useState('');
+  
   // Settings state
   const [twoFactorEnabled, setTwoFactorEnabled] = useState(false);
   const [biometricType, setBiometricType] = useState<string>('Biometrics');
