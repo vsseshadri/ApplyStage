@@ -844,7 +844,31 @@ export default function MyJobsScreen() {
 
   const allPositions = [...DEFAULT_POSITIONS, ...customPositions];
   const allStatuses = [...STATUSES, ...customStatuses];
-  const availableCities = selectedState ? US_STATES_AND_CITIES[selectedState] || [] : [];
+  
+  // Get location data based on user's domicile country
+  const domicileCountry = user?.domicile_country || 'United States of America';
+  
+  const getStateLabel = () => {
+    if (domicileCountry === 'Canada') return 'Province/Territory';
+    return 'State';
+  };
+  
+  const getStatesData = () => {
+    if (domicileCountry === 'Canada') return CANADA_PROVINCES;
+    if (domicileCountry === 'India') return INDIA_STATES;
+    return US_STATES;
+  };
+  
+  const getStatesAndCitiesData = () => {
+    if (domicileCountry === 'Canada') return CANADA_PROVINCES_AND_CITIES;
+    if (domicileCountry === 'India') return INDIA_STATES_AND_CITIES;
+    return US_STATES_AND_CITIES;
+  };
+  
+  const statesData = getStatesData();
+  const statesAndCitiesData = getStatesAndCitiesData();
+  const stateLabel = getStateLabel();
+  const availableCities = selectedState ? statesAndCitiesData[selectedState] || [] : [];
 
   const dynamicStyles = createStyles(colors, isDark, isTablet);
 
