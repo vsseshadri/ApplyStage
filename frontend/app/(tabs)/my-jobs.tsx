@@ -11,6 +11,8 @@ import * as DocumentPicker from 'expo-document-picker';
 import * as Calendar from 'expo-calendar';
 import { useFocusEffect } from '@react-navigation/native';
 import { US_STATES_AND_CITIES, US_STATES } from '../../utils/usStatesAndCities';
+import { CANADA_PROVINCES_AND_CITIES, CANADA_PROVINCES } from '../../utils/canadaProvincesAndCities';
+import { INDIA_STATES_AND_CITIES, INDIA_STATES } from '../../utils/indiaStatesAndCities';
 
 const BACKEND_URL = Constants.expoConfig?.extra?.EXPO_PUBLIC_BACKEND_URL || process.env.EXPO_PUBLIC_BACKEND_URL;
 
