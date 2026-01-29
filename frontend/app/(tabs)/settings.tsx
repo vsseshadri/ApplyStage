@@ -61,6 +61,18 @@ export default function SettingsScreen() {
     }
   }, [user?.communication_email, user?.email]);
 
+  // Update domicile country when user loads
+  React.useEffect(() => {
+    if (user?.domicile_country) {
+      setDomicileCountry(user.domicile_country);
+    }
+  }, [user?.domicile_country]);
+
+  // Filtered countries for search
+  const filteredCountries = COUNTRIES.filter(country =>
+    country.toLowerCase().includes(countrySearch.toLowerCase())
+  );
+
   // Email validation function
   const validateEmail = (email: string): boolean => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -73,6 +85,33 @@ export default function SettingsScreen() {
       setEmailError('Please enter a valid email address');
     } else {
       setEmailError('');
+    }
+  };
+
+  // Handle domicile country selection
+  const handleDomicileCountrySelect = async (country: string) => {
+    setDomicileCountry(country);
+    setShowCountryDropdown(false);
+    setCountrySearch('');
+    
+    try {
+      const response = await fetch(`${BACKEND_URL}/api/user/domicile-country`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${sessionToken}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ domicile_country: country }),
+      });
+      
+      if (response.ok) {
+        await refreshUser();
+      } else {
+        Alert.alert('Error', 'Failed to update domicile country.');
+      }
+    } catch (error) {
+      console.error('Error updating domicile country:', error);
+      Alert.alert('Error', 'Failed to update domicile country.');
     }
   };
 
