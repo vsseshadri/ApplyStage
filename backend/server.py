@@ -210,7 +210,9 @@ async def get_current_user(authorization: Optional[str] = Header(None)) -> User:
                 "preferences": {"weekly_email": True, "monthly_email": True},
                 "created_at": datetime.now(timezone.utc),
                 "is_private_relay": False,
-                "preferred_display_name": "Test User"
+                "preferred_display_name": None,
+                "domicile_country": None,
+                "onboarding_completed": False
             }
             await db.users.insert_one(test_user)
         return User(**test_user)
