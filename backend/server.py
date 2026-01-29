@@ -552,9 +552,16 @@ async def delete_job(job_id: str, current_user: User = Depends(get_current_user)
 
 @api_router.get("/dashboard/stats")
 async def get_dashboard_stats(current_user: User = Depends(get_current_user)):
+    # Optimized query: Only fetch fields needed for stats calculation
     jobs = await db.job_applications.find(
         {"user_id": current_user.user_id},
-        {"_id": 0}
+        {
+            "_id": 0,
+            "status": 1,
+            "location": 1,
+            "work_mode": 1,
+            "created_at": 1
+        }
     ).to_list(1000)
     
     stats = {
