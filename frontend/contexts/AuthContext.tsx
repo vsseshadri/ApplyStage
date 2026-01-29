@@ -21,6 +21,8 @@ interface User {
   is_private_relay?: boolean;
   is_new_user?: boolean;
   preferred_display_name?: string | null;
+  domicile_country?: string | null;
+  onboarding_completed?: boolean;
 }
 
 interface AuthContextType {
