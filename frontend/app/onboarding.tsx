@@ -47,6 +47,12 @@ export default function OnboardingScreen() {
   const handleContinue = async () => {
     if (!validateForm()) return;
     
+    if (!sessionToken) {
+      Alert.alert('Error', 'Session expired. Please login again.');
+      router.replace('/');
+      return;
+    }
+    
     setIsSubmitting(true);
     try {
       const response = await fetch(`${BACKEND_URL}/api/user/onboarding`, {
@@ -65,11 +71,13 @@ export default function OnboardingScreen() {
         await refreshUser();
         router.replace('/(tabs)/my-jobs');
       } else {
-        const error = await response.json();
-        console.error('Onboarding error:', error);
+        const errorData = await response.json().catch(() => ({}));
+        console.error('Onboarding error:', errorData);
+        Alert.alert('Error', errorData.detail || 'Failed to save your preferences. Please try again.');
       }
     } catch (error) {
       console.error('Error completing onboarding:', error);
+      Alert.alert('Error', 'Network error. Please check your connection and try again.');
     } finally {
       setIsSubmitting(false);
     }
