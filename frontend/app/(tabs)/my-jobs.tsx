@@ -1635,7 +1635,7 @@ export default function MyJobsScreen() {
                     onPress={() => setShowStateDropdown(true)}
                   >
                     <Text style={[dynamicStyles.dropdownButtonText, !selectedState && dynamicStyles.dropdownPlaceholder]}>
-                      {selectedState || 'Select State'}
+                      {selectedState || `Select ${stateLabel}`}
                     </Text>
                     <Ionicons name="chevron-down" size={20} color={colors.textSecondary} />
                   </TouchableOpacity>
