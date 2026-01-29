@@ -268,6 +268,10 @@ export default function MyJobsScreen() {
   const [upcomingScheduleDate, setUpcomingScheduleDate] = useState('');
   const [scheduledOnEdited, setScheduledOnEdited] = useState(false); // Track if Scheduled On was edited
   const [originalScheduledOn, setOriginalScheduledOn] = useState(''); // Track original value for comparison
+  
+  // State/City search filters
+  const [stateSearchText, setStateSearchText] = useState('');
+  const [citySearchText, setCitySearchText] = useState('');
 
   const [formData, setFormData] = useState({
     company_name: '',
