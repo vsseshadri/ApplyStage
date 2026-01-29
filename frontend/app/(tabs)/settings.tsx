@@ -857,6 +857,73 @@ export default function SettingsScreen() {
           <Text style={styles.logoutButtonText}>Logout</Text>
         </TouchableOpacity>
       </ScrollView>
+
+      {/* Country Selection Modal */}
+      <Modal
+        visible={showCountryDropdown}
+        animationType="slide"
+        presentationStyle="pageSheet"
+      >
+        <SafeAreaView style={styles.modalContainer}>
+          <View style={styles.modalHeader}>
+            <Text style={styles.modalTitle}>Select Country</Text>
+            <TouchableOpacity onPress={() => {
+              setShowCountryDropdown(false);
+              setCountrySearch('');
+            }}>
+              <Ionicons name="close" size={28} color={colors.text} />
+            </TouchableOpacity>
+          </View>
+          
+          <View style={styles.searchContainer}>
+            <Ionicons name="search" size={20} color={colors.textSecondary} style={styles.searchIcon} />
+            <TextInput
+              style={styles.searchInput}
+              placeholder="Search countries..."
+              placeholderTextColor={colors.textSecondary}
+              value={countrySearch}
+              onChangeText={setCountrySearch}
+              autoCapitalize="none"
+              autoCorrect={false}
+            />
+            {countrySearch.length > 0 && (
+              <TouchableOpacity onPress={() => setCountrySearch('')}>
+                <Ionicons name="close-circle" size={20} color={colors.textSecondary} />
+              </TouchableOpacity>
+            )}
+          </View>
+
+          <FlatList
+            data={filteredCountries}
+            keyExtractor={(item) => item}
+            renderItem={({ item }) => (
+              <TouchableOpacity
+                style={[
+                  styles.countryItem,
+                  domicileCountry === item && styles.countryItemSelected
+                ]}
+                onPress={() => handleDomicileCountrySelect(item)}
+              >
+                <Text style={[
+                  styles.countryItemText,
+                  domicileCountry === item && styles.countryItemTextSelected
+                ]}>
+                  {item}
+                </Text>
+                {domicileCountry === item && (
+                  <Ionicons name="checkmark" size={20} color={colors.primary} />
+                )}
+              </TouchableOpacity>
+            )}
+            ItemSeparatorComponent={() => <View style={styles.countrySeparator} />}
+            ListEmptyComponent={() => (
+              <View style={styles.emptyContainer}>
+                <Text style={styles.emptyText}>No countries found</Text>
+              </View>
+            )}
+          />
+        </SafeAreaView>
+      </Modal>
     </SafeAreaView>
   );
 }
