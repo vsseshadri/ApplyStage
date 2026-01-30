@@ -1920,9 +1920,30 @@ export default function MyJobsScreen() {
 
   return (
     <SafeAreaView style={dynamicStyles.container} edges={['top']}>
-      {/* Page Title */}
+      {/* Page Title Row with Three-dots Menu */}
       <View style={dynamicStyles.pageTitleRow}>
         <Text style={dynamicStyles.pageTitle}>My Jobs</Text>
+        
+        {/* Three-dots Menu Button - moved above filter */}
+        {selectMode ? (
+          <TouchableOpacity 
+            style={dynamicStyles.selectButton}
+            onPress={selectedJobs.size > 0 ? deleteSelectedJobs : toggleSelectMode}
+          >
+            <Ionicons 
+              name={selectedJobs.size > 0 ? 'trash' : 'close'} 
+              size={20} 
+              color={selectedJobs.size > 0 ? '#EF4444' : colors.primary} 
+            />
+          </TouchableOpacity>
+        ) : (
+          <TouchableOpacity 
+            style={dynamicStyles.selectButton}
+            onPress={() => setShowOptionsMenu(true)}
+          >
+            <Ionicons name="ellipsis-vertical" size={20} color={colors.primary} />
+          </TouchableOpacity>
+        )}
       </View>
       
       {/* Horizontal Filters */}
@@ -1982,27 +2003,6 @@ export default function MyJobsScreen() {
             <Ionicons name="chevron-down" size={12} color={statusFilter !== 'all' ? 'white' : colors.text} />
           </TouchableOpacity>
         </ScrollView>
-        
-        {/* Three-dots Menu Button (replaces Select Button) */}
-        {selectMode ? (
-          <TouchableOpacity 
-            style={dynamicStyles.selectButton}
-            onPress={selectedJobs.size > 0 ? deleteSelectedJobs : toggleSelectMode}
-          >
-            <Ionicons 
-              name={selectedJobs.size > 0 ? 'trash' : 'close'} 
-              size={20} 
-              color={selectedJobs.size > 0 ? '#EF4444' : colors.primary} 
-            />
-          </TouchableOpacity>
-        ) : (
-          <TouchableOpacity 
-            style={dynamicStyles.selectButton}
-            onPress={() => setShowOptionsMenu(true)}
-          >
-            <Ionicons name="ellipsis-vertical" size={20} color={colors.primary} />
-          </TouchableOpacity>
-        )}
       </View>
       
       {/* Options Menu Modal */}
