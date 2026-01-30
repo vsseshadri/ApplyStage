@@ -1403,6 +1403,40 @@ const createStyles = (colors: any, isDark: boolean) => StyleSheet.create({
     color: colors.textSecondary,
     textAlign: 'center',
   },
+  // Compact Work Mode Chart Styles (for tablet)
+  workModeContainerCompact: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    alignItems: 'flex-end',
+    height: 100,
+    paddingHorizontal: 8,
+    paddingBottom: 8,
+  },
+  workModeRowCompact: {
+    alignItems: 'center',
+    flex: 1,
+  },
+  workModeBarWrapperCompact: {
+    height: 60,
+    width: 24,
+    backgroundColor: isDark ? '#2C2C2E' : '#F3F4F6',
+    borderRadius: 12,
+    justifyContent: 'flex-end',
+    overflow: 'hidden',
+    marginBottom: 6,
+  },
+  workModeValueCompact: {
+    fontSize: 10,
+    fontWeight: 'bold',
+    color: colors.text,
+    marginBottom: 2,
+    fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace',
+  },
+  workModeLabelCompact: {
+    fontSize: 9,
+    color: colors.textSecondary,
+    textAlign: 'center',
+  },
   // Donut Chart Styles
   donutContainer: {
     alignItems: 'center',
