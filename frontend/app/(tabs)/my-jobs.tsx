@@ -485,9 +485,6 @@ export default function MyJobsScreen() {
     // Wait for modal animation to complete
     await new Promise(resolve => setTimeout(resolve, 300));
     
-    // Set picker as active
-    setIsPickerActive(true);
-    
     try {
       // Use document picker with generic type for better Expo Go compatibility
       const pickerResult = await DocumentPicker.getDocumentAsync({
@@ -495,9 +492,6 @@ export default function MyJobsScreen() {
         copyToCacheDirectory: true,
         multiple: false,
       });
-      
-      // Reset picker state
-      setIsPickerActive(false);
       
       // Check if user cancelled
       if (pickerResult.canceled) {
