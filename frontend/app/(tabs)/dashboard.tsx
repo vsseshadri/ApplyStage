@@ -405,6 +405,18 @@ export default function DashboardScreen() {
             <Text style={dynamicStyles.statNumber}>{stats?.offer || 0}</Text>
             <Text style={dynamicStyles.statLabel}>Offers</Text>
           </TouchableOpacity>
+          
+          <TouchableOpacity 
+            style={dynamicStyles.statCard}
+            onPress={() => handleStatCardPress('rejected')}
+            activeOpacity={0.7}
+          >
+            <View style={[dynamicStyles.statIcon, { backgroundColor: '#EF444420' }]}>
+              <Ionicons name="close-circle" size={18} color="#EF4444" />
+            </View>
+            <Text style={dynamicStyles.statNumber}>{stats?.rejected || 0}</Text>
+            <Text style={dynamicStyles.statLabel}>Rejected</Text>
+          </TouchableOpacity>
         </View>
 
         {/* Horizontal Bar Chart - By Application Status */}
