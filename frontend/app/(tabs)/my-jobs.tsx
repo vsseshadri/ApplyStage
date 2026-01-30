@@ -478,11 +478,11 @@ export default function MyJobsScreen() {
       return;
     }
     
-    // Close the options menu first
+    // Close the options menu first and wait for it to fully close
     setShowOptionsMenu(false);
     
-    // Wait for modal animation to complete
-    await new Promise(resolve => setTimeout(resolve, 500));
+    // Wait longer for modal animation to fully complete and any pending picker to finish
+    await new Promise(resolve => setTimeout(resolve, 800));
     
     let pickerResult;
     try {
@@ -496,7 +496,12 @@ export default function MyJobsScreen() {
       console.log('Picker result:', JSON.stringify(pickerResult));
     } catch (pickerError: any) {
       console.error('Document picker error:', pickerError);
-      Alert.alert('Picker Error', `Could not open file picker: ${pickerError?.message || 'Unknown error'}`);
+      // If it's a "different picking in progress" error, inform user to try again
+      if (pickerError?.message?.includes('Different document picking')) {
+        Alert.alert('Please Wait', 'A file picker is already open. Please close it and try again.');
+      } else {
+        Alert.alert('Picker Error', `Could not open file picker: ${pickerError?.message || 'Unknown error'}`);
+      }
       return;
     }
     
