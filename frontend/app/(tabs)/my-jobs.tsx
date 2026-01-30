@@ -2500,6 +2500,9 @@ const createStyles = (colors: any, isDark: boolean, isTablet: boolean = false) =
   },
   // Page Title
   pageTitleRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
     paddingHorizontal: 16,
     paddingVertical: 12,
     backgroundColor: colors.background,
