@@ -1102,9 +1102,12 @@ const createStyles = (colors: any, isDark: boolean) => StyleSheet.create({
     flex: 1 
   },
   header: { 
-    backgroundColor: colors.headerBackground,
+    backgroundColor: isDark ? 'rgba(28, 28, 30, 0.7)' : 'rgba(255, 255, 255, 0.7)',
     paddingHorizontal: 20,
     paddingVertical: 16,
+    borderBottomWidth: 0.5,
+    borderBottomColor: isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)',
+    overflow: 'hidden',
   },
   headerContent: {
     flexDirection: 'row',
@@ -1116,18 +1119,18 @@ const createStyles = (colors: any, isDark: boolean) => StyleSheet.create({
   },
   greeting: {
     fontSize: 14,
-    color: colors.headerText,
+    color: isDark ? 'rgba(255, 255, 255, 0.8)' : 'rgba(0, 0, 0, 0.6)',
     opacity: 0.8,
   },
   userName: {
     fontSize: 22,
     fontWeight: 'bold',
-    color: colors.headerText,
+    color: isDark ? '#FFFFFF' : '#000000',
   },
   dateText: {
     fontSize: 14,
     fontWeight: '600',
-    color: 'white',
+    color: isDark ? 'rgba(255, 255, 255, 0.9)' : colors.primary,
     opacity: 0.95,
   },
   scrollView: { 
