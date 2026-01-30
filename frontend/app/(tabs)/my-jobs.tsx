@@ -482,42 +482,50 @@ export default function MyJobsScreen() {
     setShowOptionsMenu(false);
     
     // Wait for modal animation to complete
-    await new Promise(resolve => setTimeout(resolve, 300));
+    await new Promise(resolve => setTimeout(resolve, 500));
     
+    let pickerResult;
     try {
+      console.log('Opening document picker for CSV...');
       // Use document picker with generic type for better Expo Go compatibility
-      const pickerResult = await DocumentPicker.getDocumentAsync({
+      pickerResult = await DocumentPicker.getDocumentAsync({
         type: '*/*',
         copyToCacheDirectory: true,
         multiple: false,
       });
-      
-      // Check if user cancelled
-      if (pickerResult.canceled) {
-        console.log('User cancelled picker');
-        return;
-      }
-      
-      // Check if we have assets
-      if (!pickerResult.assets || pickerResult.assets.length === 0) {
-        Alert.alert('Error', 'No file was selected. Please try again.');
-        return;
-      }
+      console.log('Picker result:', JSON.stringify(pickerResult));
+    } catch (pickerError: any) {
+      console.error('Document picker error:', pickerError);
+      Alert.alert('Picker Error', `Could not open file picker: ${pickerError?.message || 'Unknown error'}`);
+      return;
+    }
     
-      const file = pickerResult.assets[0];
-      console.log('Selected file:', file.name, file.uri);
-      
-      // Verify it's a CSV file
-      if (!file.name.toLowerCase().endsWith('.csv')) {
-        Alert.alert('Invalid File', 'Please select a CSV file (.csv extension required).');
-        return;
-      }
-      
-      setIsImporting(true);
-      
-      // Read the file content
-      let csvText = '';
-      try {
+    // Check if user cancelled
+    if (pickerResult.canceled) {
+      console.log('User cancelled picker');
+      return;
+    }
+    
+    // Check if we have assets
+    if (!pickerResult.assets || pickerResult.assets.length === 0) {
+      Alert.alert('Error', 'No file was selected. Please try again.');
+      return;
+    }
+  
+    const file = pickerResult.assets[0];
+    console.log('Selected file:', file.name, file.uri);
+    
+    // Verify it's a CSV file
+    if (!file.name.toLowerCase().endsWith('.csv')) {
+      Alert.alert('Invalid File', 'Please select a CSV file (.csv extension required).');
+      return;
+    }
+    
+    setIsImporting(true);
+    
+    // Read the file content
+    let csvText = '';
+    try {
         console.log('Reading file content...');
         const response = await fetch(file.uri);
         if (!response.ok) {
