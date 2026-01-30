@@ -850,7 +850,10 @@ export default function MyJobsScreen() {
           jobsToUpdate.push({
             jobId: existingJob.job_id,
             data: {
+              company_name: companyName,
+              position: position,
               job_type: jobType,
+              location: { state: state || '', city: city || '' },
               date_applied: dateApplied,
               work_mode: workMode || 'remote',
               status: status || 'applied',
