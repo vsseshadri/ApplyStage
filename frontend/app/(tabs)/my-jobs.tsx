@@ -589,7 +589,7 @@ export default function MyJobsScreen() {
   };
   // ============ END CSV HELPER FUNCTIONS ============
 
-  // CSV Import function
+  // CSV/Excel Import function
   const handleImportCSV = async () => {
     // Prevent multiple simultaneous calls
     if (isImporting) {
@@ -605,7 +605,7 @@ export default function MyJobsScreen() {
     
     let pickerResult;
     try {
-      console.log('Opening document picker for CSV...');
+      console.log('Opening document picker for CSV/Excel...');
       // Use document picker with generic type for better Expo Go compatibility
       pickerResult = await DocumentPicker.getDocumentAsync({
         type: '*/*',
@@ -637,68 +637,141 @@ export default function MyJobsScreen() {
     }
   
     const file = pickerResult.assets[0];
+    const fileName = file.name.toLowerCase();
     console.log('Selected file:', file.name, file.uri);
     
-    // Verify it's a CSV file
-    if (!file.name.toLowerCase().endsWith('.csv')) {
-      Alert.alert('Invalid File', 'Please select a CSV file (.csv extension required).');
+    // Verify it's a CSV or Excel file
+    const isCSV = fileName.endsWith('.csv');
+    const isExcel = fileName.endsWith('.xlsx') || fileName.endsWith('.xls');
+    
+    if (!isCSV && !isExcel) {
+      Alert.alert('Invalid File', 'Please select a CSV (.csv) or Excel (.xlsx, .xls) file.');
       return;
     }
     
     setIsImporting(true);
     
     try {
-      // Read the file content
-      let csvText = '';
-      try {
-        console.log('Reading file content...');
-        const response = await fetch(file.uri);
-        if (!response.ok) {
-          throw new Error('Failed to read file');
+      let dataRows: string[][] = [];
+      
+      if (isCSV) {
+        // Read CSV file
+        let csvText = '';
+        try {
+          console.log('Reading CSV file content...');
+          const response = await fetch(file.uri);
+          if (!response.ok) {
+            throw new Error('Failed to read file');
+          }
+          csvText = await response.text();
+          console.log('CSV content length:', csvText.length);
+        } catch (readError) {
+          console.error('Error reading CSV file:', readError);
+          Alert.alert('Read Error', 'Could not read the CSV file content. Please try again.');
+          setIsImporting(false);
+          return;
         }
-        csvText = await response.text();
-        console.log('File content length:', csvText.length);
-      } catch (readError) {
-        console.error('Error reading file:', readError);
-        Alert.alert('Read Error', 'Could not read the file content. Please try again.');
+        
+        if (!csvText || csvText.trim().length === 0) {
+          Alert.alert('Empty File', 'The CSV file appears to be empty.');
+          setIsImporting(false);
+          return;
+        }
+        
+        // Parse CSV into rows
+        const lines = csvText.split('\n').filter(line => line.trim());
+        dataRows = lines.map(line => parseCSVLine(line));
+        
+      } else if (isExcel) {
+        // Read Excel file
+        try {
+          console.log('Reading Excel file content...');
+          const response = await fetch(file.uri);
+          if (!response.ok) {
+            throw new Error('Failed to read file');
+          }
+          const arrayBuffer = await response.arrayBuffer();
+          const workbook = XLSX.read(arrayBuffer, { type: 'array' });
+          
+          // Get first sheet
+          const firstSheetName = workbook.SheetNames[0];
+          const worksheet = workbook.Sheets[firstSheetName];
+          
+          // Convert to array of arrays
+          const sheetData = XLSX.utils.sheet_to_json(worksheet, { header: 1, defval: '' }) as any[][];
+          dataRows = sheetData.filter(row => row.some(cell => cell !== ''));
+          
+          console.log('Excel rows parsed:', dataRows.length);
+        } catch (readError) {
+          console.error('Error reading Excel file:', readError);
+          Alert.alert('Read Error', 'Could not read the Excel file. Please ensure it is a valid .xlsx or .xls file.');
+          setIsImporting(false);
+          return;
+        }
+      }
+      
+      if (dataRows.length < 1) {
+        Alert.alert('Empty File', 'The file appears to be empty.');
         setIsImporting(false);
         return;
       }
       
-      if (!csvText || csvText.trim().length === 0) {
-        Alert.alert('Empty File', 'The selected file appears to be empty.');
-        setIsImporting(false);
-        return;
+      console.log('Total rows:', dataRows.length);
+      console.log('First row:', JSON.stringify(dataRows[0]));
+      
+      // Check if first row is a header row
+      const firstRow = dataRows[0].map(cell => String(cell).toLowerCase().trim());
+      const expectedHeaders = ['company name', 'position', 'position type', 'state', 'city', 'date applied', 'work mode', 'application status'];
+      const headerAliases: { [key: string]: string[] } = {
+        'company name': ['company name', 'company', 'company_name'],
+        'position': ['position', 'role', 'job title', 'title'],
+        'position type': ['position type', 'job type', 'type', 'job_type', 'position_type'],
+        'state': ['state', 'province', 'province/territory'],
+        'city': ['city', 'location'],
+        'date applied': ['date applied', 'date_applied', 'applied date', 'applied_date', 'date'],
+        'work mode': ['work mode', 'work_mode', 'mode', 'remote/onsite', 'workplace'],
+        'application status': ['application status', 'status', 'application_status', 'stage'],
+      };
+      
+      // Determine if it's a header row by checking if first cell matches any header alias
+      let hasHeaders = false;
+      let columnMap: number[] = [0, 1, 2, 3, 4, 5, 6, 7]; // Default positional mapping
+      
+      // Check if first row contains header keywords
+      const headerMatches = expectedHeaders.map(header => {
+        const aliases = headerAliases[header];
+        return firstRow.findIndex(cell => aliases.some(alias => cell.includes(alias)));
+      });
+      
+      // If at least 4 headers are found, treat as header row
+      const foundHeaderCount = headerMatches.filter(idx => idx !== -1).length;
+      console.log('Found headers:', foundHeaderCount);
+      
+      if (foundHeaderCount >= 4) {
+        hasHeaders = true;
+        columnMap = headerMatches.map((idx, i) => idx !== -1 ? idx : i);
+        console.log('Header row detected, column mapping:', columnMap);
+        
+        // Validate that required headers are present
+        const missingHeaders: string[] = [];
+        expectedHeaders.forEach((header, i) => {
+          if (headerMatches[i] === -1) {
+            missingHeaders.push(header);
+          }
+        });
+        
+        if (missingHeaders.length > 0) {
+          console.log('Missing headers:', missingHeaders);
+          // Don't fail, just use positional mapping for missing headers
+        }
+      } else {
+        console.log('No header row detected, using positional parsing');
       }
       
-      console.log('CSV Text preview:', csvText.substring(0, 200));
+      const startIndex = hasHeaders ? 1 : 0;
       
-      // Parse CSV - Direct positional parsing without header requirement
-      const lines = csvText.split('\n').filter(line => line.trim());
-      console.log('Number of lines:', lines.length);
-      
-      if (lines.length < 1) {
-        Alert.alert('Empty File', 'The CSV file appears to be empty.');
-        setIsImporting(false);
-        return;
-      }
-      
-      // Check first line to determine if it's a header row or data row
-      console.log('First line:', lines[0]);
-      const firstLine = parseCSVLine(lines[0]);
-      console.log('First line parsed:', JSON.stringify(firstLine));
-      const firstValue = firstLine[0]?.toLowerCase().trim() || '';
-      console.log('First value:', firstValue);
-      
-      // If first row looks like a header (contains common header keywords), skip it
-      const headerKeywords = ['company', 'name', 'position', 'type', 'state', 'city', 'date', 'mode', 'status'];
-      const isHeaderRow = headerKeywords.some(keyword => firstValue.includes(keyword));
-      console.log('Is header row:', isHeaderRow);
-      const startIndex = isHeaderRow ? 1 : 0;
-      console.log('Start index:', startIndex);
-      
-      if (lines.length <= startIndex) {
-        Alert.alert('Empty File', 'The CSV file has no data rows to import.');
+      if (dataRows.length <= startIndex) {
+        Alert.alert('Empty File', 'The file has no data rows to import.');
         setIsImporting(false);
         return;
       }
