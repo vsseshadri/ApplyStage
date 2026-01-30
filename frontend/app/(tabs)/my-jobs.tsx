@@ -489,9 +489,9 @@ export default function MyJobsScreen() {
     setIsPickerActive(true);
     
     try {
-      // Use document picker directly without Expo Go workaround
+      // Use document picker with generic type for better Expo Go compatibility
       const pickerResult = await DocumentPicker.getDocumentAsync({
-        type: Platform.OS === 'ios' ? 'public.comma-separated-values-text' : 'text/csv',
+        type: '*/*',
         copyToCacheDirectory: true,
         multiple: false,
       });
