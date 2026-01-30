@@ -670,8 +670,12 @@ export default function MyJobsScreen() {
         return;
       }
       
+      console.log('CSV Text preview:', csvText.substring(0, 200));
+      
       // Parse CSV - Direct positional parsing without header requirement
       const lines = csvText.split('\n').filter(line => line.trim());
+      console.log('Number of lines:', lines.length);
+      
       if (lines.length < 1) {
         Alert.alert('Empty File', 'The CSV file appears to be empty.');
         setIsImporting(false);
@@ -679,13 +683,18 @@ export default function MyJobsScreen() {
       }
       
       // Check first line to determine if it's a header row or data row
+      console.log('First line:', lines[0]);
       const firstLine = parseCSVLine(lines[0]);
+      console.log('First line parsed:', JSON.stringify(firstLine));
       const firstValue = firstLine[0]?.toLowerCase().trim() || '';
+      console.log('First value:', firstValue);
       
       // If first row looks like a header (contains common header keywords), skip it
       const headerKeywords = ['company', 'name', 'position', 'type', 'state', 'city', 'date', 'mode', 'status'];
       const isHeaderRow = headerKeywords.some(keyword => firstValue.includes(keyword));
+      console.log('Is header row:', isHeaderRow);
       const startIndex = isHeaderRow ? 1 : 0;
+      console.log('Start index:', startIndex);
       
       if (lines.length <= startIndex) {
         Alert.alert('Empty File', 'The CSV file has no data rows to import.');
