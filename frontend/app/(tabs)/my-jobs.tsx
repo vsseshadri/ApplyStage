@@ -598,56 +598,56 @@ export default function MyJobsScreen() {
       Alert.alert(
         'Invalid CSV Format',
         `CSV file must have 8 columns in this exact order:\n\n1. Company Name\n2. Position\n3. Position Type\n4. State\n5. City\n6. Date Applied\n7. Work Mode\n8. Application Status\n\nYour file has only ${headers.length} column(s).`
-        );
-        setIsImporting(false);
-        return;
-      }
-      
-      // Validate each header is in the correct position
-      const missingHeaders: string[] = [];
-      for (const required of requiredHeaders) {
-        const headerAtPosition = headers[required.position];
-        const isValid = required.aliases.some(alias => headerAtPosition === alias);
-        if (!isValid) {
-          missingHeaders.push(`Column ${required.position + 1}: Expected "${required.name}", found "${headerAtPosition || '(empty)'}"`);
-        }
-      }
-      
-      if (missingHeaders.length > 0) {
-        Alert.alert(
-          'Mandatory Values Missing',
-          `The CSV file has incorrect column headers.\n\nRequired format (columns 1-8):\nCompany Name, Position, Position Type, State, City, Date Applied, Work Mode, Application Status\n\nIssues found:\n${missingHeaders.join('\n')}`
-        );
-        setIsImporting(false);
-        return;
-      }
-      
-      // Parse data rows with strict column positions
-      const newJobsToCreate: any[] = [];
-      const existingCompanyPositions = new Set(
-        jobs.map(job => `${job.company_name?.toLowerCase()}-${job.position?.toLowerCase()}`)
       );
+      setIsImporting(false);
+      return;
+    }
+    
+    // Validate each header is in the correct position
+    const missingHeaders: string[] = [];
+    for (const required of requiredHeaders) {
+      const headerAtPosition = headers[required.position];
+      const isValid = required.aliases.some(alias => headerAtPosition === alias);
+      if (!isValid) {
+        missingHeaders.push(`Column ${required.position + 1}: Expected "${required.name}", found "${headerAtPosition || '(empty)'}"`);
+      }
+    }
+    
+    if (missingHeaders.length > 0) {
+      Alert.alert(
+        'Mandatory Values Missing',
+        `The CSV file has incorrect column headers.\n\nRequired format (columns 1-8):\nCompany Name, Position, Position Type, State, City, Date Applied, Work Mode, Application Status\n\nIssues found:\n${missingHeaders.join('\n')}`
+      );
+      setIsImporting(false);
+      return;
+    }
+    
+    // Parse data rows with strict column positions
+    const newJobsToCreate: any[] = [];
+    const existingCompanyPositions = new Set(
+      jobs.map(job => `${job.company_name?.toLowerCase()}-${job.position?.toLowerCase()}`)
+    );
+    
+    for (let i = 1; i < lines.length; i++) {
+      const line = lines[i].trim();
+      if (!line) continue;
       
-      for (let i = 1; i < lines.length; i++) {
-        const line = lines[i].trim();
-        if (!line) continue;
-        
-        const values = parseCSVLine(line);
-        
-        // Get values from fixed positions (0-7)
-        const companyName = values[0]?.trim() || '';
-        const position = values[1]?.trim() || '';
-        const jobType = values[2]?.trim() || '';
-        const state = values[3]?.trim() || '';
-        const city = values[4]?.trim() || '';
-        const dateAppliedRaw = values[5]?.trim() || '';
-        const workModeRaw = values[6]?.trim() || '';
-        const statusRaw = values[7]?.trim() || '';
-        
-        // Skip rows without company name or position
-        if (!companyName || !position) continue;
-        
-        // Check if this job already exists (by company + position)
+      const values = parseCSVLine(line);
+      
+      // Get values from fixed positions (0-7)
+      const companyName = values[0]?.trim() || '';
+      const position = values[1]?.trim() || '';
+      const jobType = values[2]?.trim() || '';
+      const state = values[3]?.trim() || '';
+      const city = values[4]?.trim() || '';
+      const dateAppliedRaw = values[5]?.trim() || '';
+      const workModeRaw = values[6]?.trim() || '';
+      const statusRaw = values[7]?.trim() || '';
+      
+      // Skip rows without company name or position
+      if (!companyName || !position) continue;
+      
+      // Check if this job already exists (by company + position)
         const key = `${companyName.toLowerCase()}-${position.toLowerCase()}`;
         if (existingCompanyPositions.has(key)) continue;
         
