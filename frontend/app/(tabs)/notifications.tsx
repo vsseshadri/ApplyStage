@@ -473,13 +473,43 @@ export default function NotificationsScreen() {
             </>
           ) : (
             notifications.length > 0 && (
-              <TouchableOpacity onPress={toggleSelectMode}>
-                <Text style={dynamicStyles.actionText}>Select</Text>
+              <TouchableOpacity 
+                style={dynamicStyles.optionsButton}
+                onPress={() => setShowOptionsMenu(true)}
+              >
+                <Ionicons name="ellipsis-vertical" size={20} color={colors.primary} />
               </TouchableOpacity>
             )
           )}
         </View>
       </View>
+      
+      {/* Options Menu Modal (Select only) */}
+      <Modal 
+        visible={showOptionsMenu} 
+        transparent 
+        animationType="fade" 
+        onRequestClose={() => setShowOptionsMenu(false)}
+      >
+        <TouchableOpacity 
+          style={dynamicStyles.optionsMenuOverlay} 
+          activeOpacity={1} 
+          onPress={() => setShowOptionsMenu(false)}
+        >
+          <View style={dynamicStyles.optionsMenuContainer}>
+            <TouchableOpacity 
+              style={dynamicStyles.optionsMenuItem}
+              onPress={() => {
+                setShowOptionsMenu(false);
+                toggleSelectMode();
+              }}
+            >
+              <Ionicons name="checkmark-circle-outline" size={22} color={colors.text} />
+              <Text style={dynamicStyles.optionsMenuText}>Select</Text>
+            </TouchableOpacity>
+          </View>
+        </TouchableOpacity>
+      </Modal>
 
       {notifications.length === 0 && reports.length === 0 ? (
         <View style={styles.emptyContainer}>
