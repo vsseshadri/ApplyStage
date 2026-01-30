@@ -474,14 +474,16 @@ export default function MyJobsScreen() {
   // CSV Import function
   const handleImportCSV = async () => {
     // Prevent multiple simultaneous calls
-    if (isImporting) {
+    if (isImporting || isPickerActive) {
       return;
     }
     
     setShowOptionsMenu(false);
     
     // Small delay to ensure menu closes properly before opening picker
-    await new Promise(resolve => setTimeout(resolve, 300));
+    await new Promise(resolve => setTimeout(resolve, 500));
+    
+    setIsPickerActive(true);
     
     try {
       // Use DocumentPicker with proper configuration for iOS
@@ -492,6 +494,8 @@ export default function MyJobsScreen() {
         copyToCacheDirectory: true,
         multiple: false,
       });
+      
+      setIsPickerActive(false);
       
       // Check if user cancelled
       if (result.canceled) {
