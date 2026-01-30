@@ -485,63 +485,31 @@ export default function MyJobsScreen() {
     // Wait for modal animation to complete
     await new Promise(resolve => setTimeout(resolve, 300));
     
-    // Check if running in Expo Go (has known issues with DocumentPicker on iOS)
-    const isExpoGo = Constants.appOwnership === 'expo';
-    
     // Set picker as active
     setIsPickerActive(true);
     
-    // Create a timeout promise for Expo Go (known to hang)
-    const timeoutPromise = new Promise<null>((resolve) => {
-      setTimeout(() => {
-        resolve(null);
-      }, isExpoGo ? 3000 : 30000); // 3 second timeout for Expo Go, 30 for production
-    });
-    
-    // Create the picker promise
-    const pickerPromise = DocumentPicker.getDocumentAsync({
-      type: Platform.OS === 'ios' ? 'public.comma-separated-values-text' : 'text/csv',
-      copyToCacheDirectory: true,
-      multiple: false,
-    }).catch((error) => {
-      console.error('DocumentPicker error:', error);
-      return null;
-    });
-    
-    // Race between picker and timeout
-    const pickerResult = await Promise.race([pickerPromise, timeoutPromise]);
-    
-    // Reset picker state
-    setIsPickerActive(false);
-    
-    // Handle timeout (Expo Go limitation)
-    if (pickerResult === null) {
-      if (isExpoGo) {
-        Alert.alert(
-          'Expo Go Limitation',
-          'File picking is not fully supported in Expo Go on iOS. This feature will work correctly in the production app build.\n\nTo test CSV import:\n1. Deploy the app via EAS Build, or\n2. Test on Android device/emulator',
-          [{ text: 'OK', style: 'default' }]
-        );
-      } else {
-        Alert.alert(
-          'File Picker Timeout',
-          'The file picker took too long to respond. Please try again.'
-        );
+    try {
+      // Use document picker directly without Expo Go workaround
+      const pickerResult = await DocumentPicker.getDocumentAsync({
+        type: Platform.OS === 'ios' ? 'public.comma-separated-values-text' : 'text/csv',
+        copyToCacheDirectory: true,
+        multiple: false,
+      });
+      
+      // Reset picker state
+      setIsPickerActive(false);
+      
+      // Check if user cancelled
+      if (pickerResult.canceled) {
+        console.log('User cancelled picker');
+        return;
       }
-      return;
-    }
-    
-    // Check if user cancelled
-    if (pickerResult.canceled) {
-      console.log('User cancelled picker');
-      return;
-    }
-    
-    // Check if we have assets
-    if (!pickerResult.assets || pickerResult.assets.length === 0) {
-      Alert.alert('Error', 'No file was selected. Please try again.');
-      return;
-    }
+      
+      // Check if we have assets
+      if (!pickerResult.assets || pickerResult.assets.length === 0) {
+        Alert.alert('Error', 'No file was selected. Please try again.');
+        return;
+      }
     
     const file = pickerResult.assets[0];
     console.log('Selected file:', file.name, file.uri);
