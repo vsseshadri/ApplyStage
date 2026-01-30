@@ -666,10 +666,9 @@ export default function MyJobsScreen() {
           job_type: jobType,  // Use original value directly
           location: { state, city },
           date_applied: dateApplied,
-          work_mode: workMode,
-          status: status,
-          min_salary: 0,
-          max_salary: 0,
+          work_mode: workMode || 'remote',
+          status: status || 'applied',
+          salary_range: { min: 0, max: 0 },
           job_url: '',
           recruiter_email: '',
           notes: '',
@@ -684,12 +683,15 @@ export default function MyJobsScreen() {
         return;
       }
       
+      console.log('Jobs to create:', JSON.stringify(newJobsToCreate, null, 2));
+      
       // Create jobs via API
       let successCount = 0;
       let failCount = 0;
       
       for (const job of newJobsToCreate) {
         try {
+          console.log('Creating job:', JSON.stringify(job));
           const response = await fetch(`${BACKEND_URL}/api/jobs`, {
             method: 'POST',
             headers: {
@@ -698,6 +700,11 @@ export default function MyJobsScreen() {
             },
             body: JSON.stringify(job)
           });
+          
+          if (!response.ok) {
+            const errorText = await response.text();
+            console.error('API error:', response.status, errorText);
+          }
           
           if (response.ok) {
             successCount++;
