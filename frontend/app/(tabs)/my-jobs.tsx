@@ -470,6 +470,124 @@ export default function MyJobsScreen() {
     );
   };
 
+  // ============ CSV HELPER FUNCTIONS ============
+  // Helper function to parse a CSV line handling quoted values
+  const parseCSVLine = (line: string): string[] => {
+    const result: string[] = [];
+    let current = '';
+    let inQuotes = false;
+    
+    for (let i = 0; i < line.length; i++) {
+      const char = line[i];
+      
+      if (char === '"') {
+        inQuotes = !inQuotes;
+      } else if (char === ',' && !inQuotes) {
+        result.push(current.trim());
+        current = '';
+      } else {
+        current += char;
+      }
+    }
+    result.push(current.trim());
+    
+    return result.map(val => val.replace(/^"|"$/g, '').trim());
+  };
+  
+  // Helper function to parse date from various CSV formats and convert to MM/DD/YYYY
+  const parseCSVDate = (dateStr: string): string => {
+    if (!dateStr) return format(new Date(), 'MM/dd/yyyy');
+    
+    const cleanDate = dateStr.trim();
+    
+    const datePatterns = [
+      { regex: /^(\d{1,2})\/(\d{1,2})\/(\d{4})$/, parse: (m: RegExpMatchArray) => ({ month: m[1], day: m[2], year: m[3] }) },
+      { regex: /^(\d{1,2})-(\d{1,2})-(\d{4})$/, parse: (m: RegExpMatchArray) => ({ month: m[1], day: m[2], year: m[3] }) },
+      { regex: /^(\d{4})-(\d{1,2})-(\d{1,2})$/, parse: (m: RegExpMatchArray) => ({ year: m[1], month: m[2], day: m[3] }) },
+      { regex: /^(\d{4})\/(\d{1,2})\/(\d{1,2})$/, parse: (m: RegExpMatchArray) => ({ year: m[1], month: m[2], day: m[3] }) },
+      { regex: /^(\d{1,2})\.(\d{1,2})\.(\d{4})$/, parse: (m: RegExpMatchArray) => ({ day: m[1], month: m[2], year: m[3] }) },
+      { regex: /^([A-Za-z]+)\s+(\d{1,2}),?\s+(\d{4})$/, parse: (m: RegExpMatchArray) => {
+        const monthNames: { [key: string]: string } = {
+          'january': '01', 'jan': '01', 'february': '02', 'feb': '02', 'march': '03', 'mar': '03',
+          'april': '04', 'apr': '04', 'may': '05', 'june': '06', 'jun': '06',
+          'july': '07', 'jul': '07', 'august': '08', 'aug': '08', 'september': '09', 'sep': '09', 'sept': '09',
+          'october': '10', 'oct': '10', 'november': '11', 'nov': '11', 'december': '12', 'dec': '12'
+        };
+        return { month: monthNames[m[1].toLowerCase()] || '01', day: m[2], year: m[3] };
+      }},
+      { regex: /^(\d{1,2})\s+([A-Za-z]+)\s+(\d{4})$/, parse: (m: RegExpMatchArray) => {
+        const monthNames: { [key: string]: string } = {
+          'january': '01', 'jan': '01', 'february': '02', 'feb': '02', 'march': '03', 'mar': '03',
+          'april': '04', 'apr': '04', 'may': '05', 'june': '06', 'jun': '06',
+          'july': '07', 'jul': '07', 'august': '08', 'aug': '08', 'september': '09', 'sep': '09', 'sept': '09',
+          'october': '10', 'oct': '10', 'november': '11', 'nov': '11', 'december': '12', 'dec': '12'
+        };
+        return { day: m[1], month: monthNames[m[2].toLowerCase()] || '01', year: m[3] };
+      }},
+    ];
+    
+    for (const pattern of datePatterns) {
+      const match = cleanDate.match(pattern.regex);
+      if (match) {
+        try {
+          const parsed = pattern.parse(match);
+          const month = parsed.month.toString().padStart(2, '0');
+          const day = parsed.day.toString().padStart(2, '0');
+          const year = parsed.year;
+          const dateObj = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
+          if (!isNaN(dateObj.getTime())) {
+            return `${month}/${day}/${year}`;
+          }
+        } catch { continue; }
+      }
+    }
+    
+    try {
+      const parsedDate = new Date(cleanDate);
+      if (!isNaN(parsedDate.getTime())) {
+        const month = (parsedDate.getMonth() + 1).toString().padStart(2, '0');
+        const day = parsedDate.getDate().toString().padStart(2, '0');
+        return `${month}/${day}/${parsedDate.getFullYear()}`;
+      }
+    } catch {}
+    
+    return format(new Date(), 'MM/dd/yyyy');
+  };
+  
+  // Flexible work mode normalizer (accepts any value)
+  const normalizeWorkModeFlexible = (mode: string): string => {
+    if (!mode) return 'remote';
+    const lower = mode.toLowerCase().trim();
+    if (lower.includes('remote') || lower.includes('wfh') || lower.includes('work from home')) return 'remote';
+    if (lower.includes('onsite') || lower.includes('on-site') || lower.includes('office')) return 'onsite';
+    if (lower.includes('hybrid')) return 'hybrid';
+    return mode.trim(); // Return original value if no match
+  };
+  
+  // Flexible status normalizer (accepts any value)
+  const normalizeStatusFlexible = (status: string): string => {
+    if (!status) return 'applied';
+    const lower = status.toLowerCase().replace(/[^a-z0-9]/g, '_');
+    
+    const statusMap: { [key: string]: string } = {
+      'applied': 'applied', 'recruiter_screening': 'recruiter_screening', 'recruiter': 'recruiter_screening',
+      'screening': 'recruiter_screening', 'phone_screen': 'phone_screen', 'phone': 'phone_screen',
+      'coding_round_1': 'coding_round_1', 'coding_1': 'coding_round_1', 'coding': 'coding_round_1',
+      'technical': 'coding_round_1', 'coding_round_2': 'coding_round_2', 'coding_2': 'coding_round_2',
+      'system_design': 'system_design', 'design': 'system_design', 'behavioural': 'behavioural',
+      'behavioral': 'behavioural', 'culture': 'behavioural', 'hiring_manager': 'hiring_manager',
+      'manager': 'hiring_manager', 'final_round': 'final_round', 'final': 'final_round',
+      'onsite': 'final_round', 'offer': 'offer', 'offered': 'offer', 'rejected': 'rejected', 'declined': 'rejected',
+    };
+    
+    for (const [key, value] of Object.entries(statusMap)) {
+      if (lower.includes(key)) return value;
+    }
+    
+    return status.trim().toLowerCase().replace(/\s+/g, '_').replace(/[^a-z0-9_]/g, '');
+  };
+  // ============ END CSV HELPER FUNCTIONS ============
+
   // CSV Import function
   const handleImportCSV = async () => {
     // Prevent multiple simultaneous calls
