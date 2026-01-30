@@ -1211,16 +1211,18 @@ const createStyles = (colors: any, isDark: boolean) => StyleSheet.create({
     marginBottom: 12,
     color: colors.text,
   },
-  // Chart Card
+  // Chart Card with Liquid Glass effect
   chartCard: { 
-    backgroundColor: colors.card,
-    borderRadius: 16, 
+    backgroundColor: isDark ? 'rgba(44, 44, 46, 0.6)' : 'rgba(255, 255, 255, 0.85)',
+    borderRadius: 18, 
     padding: 16, 
     shadowColor: '#000', 
-    shadowOffset: { width: 0, height: 2 }, 
-    shadowOpacity: 0.1, 
-    shadowRadius: 6, 
-    elevation: 3,
+    shadowOffset: { width: 0, height: 4 }, 
+    shadowOpacity: isDark ? 0.25 : 0.08, 
+    shadowRadius: 12, 
+    elevation: 4,
+    borderWidth: 0.5,
+    borderColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.04)',
   },
   barRow: {
     flexDirection: 'row',
