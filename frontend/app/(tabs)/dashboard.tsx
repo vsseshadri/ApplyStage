@@ -969,6 +969,27 @@ const createStyles = (colors: any, isDark: boolean) => StyleSheet.create({
   scrollContent: { 
     padding: 16 
   },
+  // Tablet Layout Styles
+  tabletContainer: {
+    flex: 1,
+    flexDirection: 'row',
+  },
+  tabletLeftColumn: {
+    flex: 0.6,
+    borderRightWidth: 1,
+    borderRightColor: isDark ? '#333' : '#E5E7EB',
+  },
+  tabletRightColumn: {
+    flex: 0.4,
+    backgroundColor: isDark ? '#1C1C1E' : '#F9FAFB',
+  },
+  tabletScrollContent: {
+    padding: 16,
+  },
+  tabletChartsRow: {
+    flexDirection: 'row',
+    gap: 16,
+  },
   // Stats Row
   statsRow: {
     flexDirection: 'row',
