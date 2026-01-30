@@ -567,37 +567,37 @@ export default function MyJobsScreen() {
       setIsImporting(false);
       return;
     }
-      
-      // Parse CSV
-      const lines = csvText.split('\n').filter(line => line.trim());
-      if (lines.length < 2) {
-        Alert.alert('Empty File', 'The CSV file appears to be empty or has no data rows.');
-        setIsImporting(false);
-        return;
-      }
-      
-      // Parse header (first line)
-      const headerLine = lines[0];
-      const headers = parseCSVLine(headerLine).map(h => h.toLowerCase().trim());
-      
-      // STRICT VALIDATION: Headers must be in exact positions (1-8)
-      // Expected order: Company Name, Position, Position Type, State, City, Date Applied, Work Mode, Application Status
-      const requiredHeaders = [
-        { position: 0, name: 'Company Name', aliases: ['company name', 'company', 'company_name'] },
-        { position: 1, name: 'Position', aliases: ['position', 'role', 'job title', 'title'] },
-        { position: 2, name: 'Position Type', aliases: ['position type', 'job type', 'type', 'job_type', 'position_type'] },
-        { position: 3, name: 'State', aliases: ['state', 'province', 'province/territory'] },
-        { position: 4, name: 'City', aliases: ['city', 'location'] },
-        { position: 5, name: 'Date Applied', aliases: ['date applied', 'date_applied', 'applied date', 'applied_date', 'date'] },
-        { position: 6, name: 'Work Mode', aliases: ['work mode', 'work_mode', 'mode', 'remote/onsite', 'workplace'] },
-        { position: 7, name: 'Application Status', aliases: ['application status', 'status', 'application_status', 'stage'] },
-      ];
-      
-      // Check if we have at least 8 columns
-      if (headers.length < 8) {
-        Alert.alert(
-          'Invalid CSV Format',
-          `CSV file must have 8 columns in this exact order:\n\n1. Company Name\n2. Position\n3. Position Type\n4. State\n5. City\n6. Date Applied\n7. Work Mode\n8. Application Status\n\nYour file has only ${headers.length} column(s).`
+    
+    // Parse CSV
+    const lines = csvText.split('\n').filter(line => line.trim());
+    if (lines.length < 2) {
+      Alert.alert('Empty File', 'The CSV file appears to be empty or has no data rows.');
+      setIsImporting(false);
+      return;
+    }
+    
+    // Parse header (first line)
+    const headerLine = lines[0];
+    const headers = parseCSVLine(headerLine).map(h => h.toLowerCase().trim());
+    
+    // STRICT VALIDATION: Headers must be in exact positions (1-8)
+    // Expected order: Company Name, Position, Position Type, State, City, Date Applied, Work Mode, Application Status
+    const requiredHeaders = [
+      { position: 0, name: 'Company Name', aliases: ['company name', 'company', 'company_name'] },
+      { position: 1, name: 'Position', aliases: ['position', 'role', 'job title', 'title'] },
+      { position: 2, name: 'Position Type', aliases: ['position type', 'job type', 'type', 'job_type', 'position_type'] },
+      { position: 3, name: 'State', aliases: ['state', 'province', 'province/territory'] },
+      { position: 4, name: 'City', aliases: ['city', 'location'] },
+      { position: 5, name: 'Date Applied', aliases: ['date applied', 'date_applied', 'applied date', 'applied_date', 'date'] },
+      { position: 6, name: 'Work Mode', aliases: ['work mode', 'work_mode', 'mode', 'remote/onsite', 'workplace'] },
+      { position: 7, name: 'Application Status', aliases: ['application status', 'status', 'application_status', 'stage'] },
+    ];
+    
+    // Check if we have at least 8 columns
+    if (headers.length < 8) {
+      Alert.alert(
+        'Invalid CSV Format',
+        `CSV file must have 8 columns in this exact order:\n\n1. Company Name\n2. Position\n3. Position Type\n4. State\n5. City\n6. Date Applied\n7. Work Mode\n8. Application Status\n\nYour file has only ${headers.length} column(s).`
         );
         setIsImporting(false);
         return;
