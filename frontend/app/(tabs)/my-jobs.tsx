@@ -688,9 +688,6 @@ export default function MyJobsScreen() {
           follow_up_days: 7,
           is_priority: false,
         });
-        
-        // Add to set to avoid duplicates within the same CSV
-        existingCompanyPositions.add(key);
       }
       
       if (newJobsToCreate.length === 0) {
