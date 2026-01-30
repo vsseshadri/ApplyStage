@@ -528,9 +528,10 @@ export default function MyJobsScreen() {
     
     setIsImporting(true);
     
-    // Read the file content
-    let csvText = '';
     try {
+      // Read the file content
+      let csvText = '';
+      try {
         console.log('Reading file content...');
         const response = await fetch(file.uri);
         if (!response.ok) {
