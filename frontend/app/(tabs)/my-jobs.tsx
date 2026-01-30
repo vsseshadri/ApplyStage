@@ -511,8 +511,8 @@ export default function MyJobsScreen() {
         return;
       }
     
-    const file = pickerResult.assets[0];
-    console.log('Selected file:', file.name, file.uri);
+      const file = pickerResult.assets[0];
+      console.log('Selected file:', file.name, file.uri);
     
     // Verify it's a CSV file
     if (!file.name.toLowerCase().endsWith('.csv')) {
