@@ -541,12 +541,12 @@ export default function MyJobsScreen() {
       if (match) {
         try {
           const parsed = pattern.parse(match);
-          const month = parsed.month.toString().padStart(2, '0');
-          const day = parsed.day.toString().padStart(2, '0');
-          const year = parsed.year;
-          const dateObj = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
+          const month = parseInt(parsed.month.toString());
+          const day = parseInt(parsed.day.toString());
+          const year = parseInt(parsed.year.toString());
+          const dateObj = new Date(year, month - 1, day);
           if (!isNaN(dateObj.getTime())) {
-            return `${month}/${day}/${year}`;
+            return dateObj.toISOString();
           }
         } catch { continue; }
       }
@@ -555,13 +555,11 @@ export default function MyJobsScreen() {
     try {
       const parsedDate = new Date(cleanDate);
       if (!isNaN(parsedDate.getTime())) {
-        const month = (parsedDate.getMonth() + 1).toString().padStart(2, '0');
-        const day = parsedDate.getDate().toString().padStart(2, '0');
-        return `${month}/${day}/${parsedDate.getFullYear()}`;
+        return parsedDate.toISOString();
       }
     } catch {}
     
-    return format(new Date(), 'MM/dd/yyyy');
+    return new Date().toISOString();
   };
   
   // Flexible work mode normalizer (accepts any value)
