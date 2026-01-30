@@ -495,11 +495,24 @@ export default function MyJobsScreen() {
     return result.map(val => val.replace(/^"|"$/g, '').trim());
   };
   
-  // Helper function to parse date from various CSV formats and convert to MM/DD/YYYY
+  // Helper function to parse date from various CSV/Excel formats and convert to MM/DD/YYYY
   const parseCSVDate = (dateStr: string): string => {
     if (!dateStr) return format(new Date(), 'MM/dd/yyyy');
     
-    const cleanDate = dateStr.trim();
+    const cleanDate = String(dateStr).trim();
+    
+    // Check if it's an Excel serial date number (number between ~1 and 100000)
+    const numericValue = parseFloat(cleanDate);
+    if (!isNaN(numericValue) && numericValue > 1 && numericValue < 100000 && /^\d+$/.test(cleanDate)) {
+      // Excel dates are number of days since December 30, 1899
+      // Excel has a bug where it thinks 1900 was a leap year, so we adjust for dates after Feb 28, 1900
+      const excelEpoch = new Date(1899, 11, 30); // Dec 30, 1899
+      const date = new Date(excelEpoch.getTime() + numericValue * 24 * 60 * 60 * 1000);
+      const month = (date.getMonth() + 1).toString().padStart(2, '0');
+      const day = date.getDate().toString().padStart(2, '0');
+      const year = date.getFullYear();
+      return `${month}/${day}/${year}`;
+    }
     
     const datePatterns = [
       { regex: /^(\d{1,2})\/(\d{1,2})\/(\d{4})$/, parse: (m: RegExpMatchArray) => ({ month: m[1], day: m[2], year: m[3] }) },
