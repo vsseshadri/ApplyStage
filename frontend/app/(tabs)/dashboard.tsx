@@ -727,8 +727,12 @@ export default function DashboardScreen() {
 
   return (
     <SafeAreaView style={dynamicStyles.container} edges={['top']}>
-      {/* Header with integrated date including day */}
-      <View style={dynamicStyles.header}>
+      {/* Header with Liquid Glass effect */}
+      <BlurView 
+        intensity={isDark ? 40 : 60} 
+        tint={isDark ? 'dark' : 'light'}
+        style={dynamicStyles.header}
+      >
         <View style={dynamicStyles.headerContent}>
           <View style={dynamicStyles.headerLeft}>
             <Text style={dynamicStyles.greeting}>{getGreeting()}</Text>
@@ -738,7 +742,7 @@ export default function DashboardScreen() {
           </View>
           <Text style={dynamicStyles.dateText}>{format(new Date(), 'EEE, MMM d, yyyy')}</Text>
         </View>
-      </View>
+      </BlurView>
 
       {/* Tablet Layout - Split View */}
       {isTablet ? (
