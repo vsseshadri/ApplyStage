@@ -1222,7 +1222,7 @@ const createStyles = (colors: any, isDark: boolean) => StyleSheet.create({
     color: colors.textSecondary,
   },
   barLabelWide: {
-    width: 120,
+    width: 140,
     fontSize: 11,
     color: colors.textSecondary,
   },
