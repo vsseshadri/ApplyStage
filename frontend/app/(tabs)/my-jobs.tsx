@@ -789,23 +789,16 @@ export default function MyJobsScreen() {
       // 4 → City, 5 → Date Applied, 6 → Work Mode, 7 → Application Status
       
       const newJobsToCreate: any[] = [];
+      const jobsToUpdate: { jobId: string; data: any }[] = [];
       
-      // Create a comprehensive key for each existing job using all 8 fields
-      const existingJobKeys = new Set(
-        jobs.map(job => {
-          const companyName = (job.company_name || '').toLowerCase().trim();
-          const position = (job.position || '').toLowerCase().trim();
-          const jobType = (job.job_type || '').toLowerCase().trim();
-          const state = (job.location?.state || '').toLowerCase().trim();
-          const city = (job.location?.city || '').toLowerCase().trim();
-          const dateApplied = (job.date_applied || '').toLowerCase().trim();
-          const workMode = (job.work_mode || '').toLowerCase().trim();
-          const status = (job.status || '').toLowerCase().trim();
-          return `${companyName}|${position}|${jobType}|${state}|${city}|${dateApplied}|${workMode}|${status}`;
-        })
-      );
+      // Create a map of existing jobs keyed by company+position+state+city for matching
+      const existingJobsMap = new Map<string, any>();
+      jobs.forEach(job => {
+        const key = `${(job.company_name || '').toLowerCase().trim()}|${(job.position || '').toLowerCase().trim()}|${(job.location?.state || '').toLowerCase().trim()}|${(job.location?.city || '').toLowerCase().trim()}`;
+        existingJobsMap.set(key, job);
+      });
       
-      // Track keys from import to avoid duplicates within the same import
+      // Track keys from import to avoid duplicates within the same import batch
       const importJobKeys = new Set<string>();
       
       for (let i = startIndex; i < dataRows.length; i++) {
@@ -831,43 +824,159 @@ export default function MyJobsScreen() {
           continue;
         }
         
-        // Convert/normalize values - accept original values if normalization doesn't match
+        // Convert/normalize values
         const dateApplied = parseCSVDate(dateAppliedRaw);
         const workMode = normalizeWorkModeFlexible(workModeRaw);
         const status = normalizeStatusFlexible(statusRaw);
         
-        // Create a unique key using all 8 fields for comparison
-        const jobKey = `${companyName.toLowerCase()}|${position.toLowerCase()}|${jobType.toLowerCase()}|${state.toLowerCase()}|${city.toLowerCase()}|${dateApplied.toLowerCase()}|${workMode.toLowerCase()}|${status.toLowerCase()}`;
+        // Create key using Company + Position + State + City for duplicate detection
+        const matchKey = `${companyName.toLowerCase()}|${position.toLowerCase()}|${state.toLowerCase()}|${city.toLowerCase()}`;
         
-        // Check if this exact job already exists in existing jobs
-        if (existingJobKeys.has(jobKey)) {
-          console.log(`Skipping duplicate (exists in My Jobs): ${companyName} - ${position}`);
-          continue;
-        }
-        
-        // Check if this exact job already exists in current import batch
-        if (importJobKeys.has(jobKey)) {
-          console.log(`Skipping duplicate (exists in import): ${companyName} - ${position}`);
+        // Check if this entry already exists in current import batch
+        if (importJobKeys.has(matchKey)) {
+          console.log(`Skipping duplicate in import batch: ${companyName} - ${position}`);
           continue;
         }
         
         // Add to import keys to track duplicates within the import
-        importJobKeys.add(jobKey);
+        importJobKeys.add(matchKey);
         
-        console.log(`Adding job: ${companyName} - ${position}, date: ${dateApplied}`);
+        // Check if existing job matches company + position + state + city
+        const existingJob = existingJobsMap.get(matchKey);
         
-        newJobsToCreate.push({
-          company_name: companyName,
-          position: position,
-          job_type: jobType,
-          location: { state: state || '', city: city || '' },
-          date_applied: dateApplied,
-          work_mode: workMode || 'remote',
-          status: status || 'applied',
-          salary_range: { min: 0, max: 0 },
-          job_url: '',
-          recruiter_email: '',
-          notes: '',
+        if (existingJob) {
+          // Same company + position + state + city exists → UPDATE the existing entry
+          console.log(`Updating existing job: ${companyName} - ${position}`);
+          jobsToUpdate.push({
+            jobId: existingJob.job_id,
+            data: {
+              job_type: jobType,
+              date_applied: dateApplied,
+              work_mode: workMode || 'remote',
+              status: status || 'applied',
+            }
+          });
+        } else {
+          // New company, or different position, or different state/city → CREATE new entry
+          console.log(`Creating new job: ${companyName} - ${position}, date: ${dateApplied}`);
+          newJobsToCreate.push({
+            company_name: companyName,
+            position: position,
+            job_type: jobType,
+            location: { state: state || '', city: city || '' },
+            date_applied: dateApplied,
+            work_mode: workMode || 'remote',
+            status: status || 'applied',
+            salary_range: { min: 0, max: 0 },
+            job_url: '',
+            recruiter_email: '',
+            notes: '',
+            follow_up_days: 7,
+            is_priority: false,
+          });
+        }
+      }
+      
+      if (newJobsToCreate.length === 0 && jobsToUpdate.length === 0) {
+        Alert.alert('No Changes', 'No new entries to create or existing entries to update.');
+        setIsImporting(false);
+        return;
+      }
+      
+      console.log(`Jobs to create: ${newJobsToCreate.length}, Jobs to update: ${jobsToUpdate.length}`);
+      
+      // Create new jobs via API
+      let createSuccessCount = 0;
+      let createFailCount = 0;
+      
+      for (const job of newJobsToCreate) {
+        try {
+          console.log('Creating job:', JSON.stringify(job));
+          const response = await fetch(`${BACKEND_URL}/api/jobs`, {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${sessionToken}`,
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(job)
+          });
+          
+          if (response.ok) {
+            createSuccessCount++;
+          } else {
+            const errorText = await response.text();
+            console.error('API create error:', response.status, errorText);
+            createFailCount++;
+          }
+        } catch (error) {
+          console.error('Create job error:', error);
+          createFailCount++;
+        }
+      }
+      
+      // Update existing jobs via API
+      let updateSuccessCount = 0;
+      let updateFailCount = 0;
+      
+      for (const { jobId, data } of jobsToUpdate) {
+        try {
+          console.log('Updating job:', jobId, JSON.stringify(data));
+          const response = await fetch(`${BACKEND_URL}/api/jobs/${jobId}`, {
+            method: 'PUT',
+            headers: {
+              'Authorization': `Bearer ${sessionToken}`,
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(data)
+          });
+          
+          if (response.ok) {
+            updateSuccessCount++;
+          } else {
+            const errorText = await response.text();
+            console.error('API update error:', response.status, errorText);
+            updateFailCount++;
+          }
+        } catch (error) {
+          console.error('Update job error:', error);
+          updateFailCount++;
+        }
+      }
+      
+      setIsImporting(false);
+      
+      // Refresh jobs list
+      await fetchJobs();
+      
+      // Trigger dashboard refresh
+      if (triggerDashboardRefresh) {
+        triggerDashboardRefresh();
+      }
+      
+      // Show result
+      const totalSuccess = createSuccessCount + updateSuccessCount;
+      const totalFail = createFailCount + updateFailCount;
+      
+      if (totalSuccess > 0 && totalFail === 0) {
+        let message = '';
+        if (createSuccessCount > 0) message += `${createSuccessCount} new job(s) created. `;
+        if (updateSuccessCount > 0) message += `${updateSuccessCount} existing job(s) updated.`;
+        Alert.alert('Import Successful', message.trim());
+      } else if (totalSuccess > 0 && totalFail > 0) {
+        let message = '';
+        if (createSuccessCount > 0) message += `${createSuccessCount} job(s) created. `;
+        if (updateSuccessCount > 0) message += `${updateSuccessCount} job(s) updated. `;
+        message += `${totalFail} operation(s) failed.`;
+        Alert.alert('Partial Import', message.trim());
+      } else {
+        Alert.alert('Import Failed', 'Failed to import/update jobs. Please try again.');
+      }
+    } catch (error) {
+      console.error('Import error:', error);
+      setIsImporting(false);
+      Alert.alert('Import Error', 'An error occurred while importing the file. Please try again.');
+    }
+  };
           follow_up_days: 7,
           is_priority: false,
         });
