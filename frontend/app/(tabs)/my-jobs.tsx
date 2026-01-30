@@ -776,16 +776,10 @@ export default function MyJobsScreen() {
         return;
       }
       
-      // Parse data rows with strict column positions
-      // Position mapping:
-      // 1 (index 0) → Company Name
-      // 2 (index 1) → Position
-      // 3 (index 2) → Position Type
-      // 4 (index 3) → State
-      // 5 (index 4) → City
-      // 6 (index 5) → Date Applied
-      // 7 (index 6) → Work Mode
-      // 8 (index 7) → Application Status
+      // Parse data rows using column mapping
+      // Column mapping (either from headers or positional):
+      // 0 → Company Name, 1 → Position, 2 → Position Type, 3 → State
+      // 4 → City, 5 → Date Applied, 6 → Work Mode, 7 → Application Status
       
       const newJobsToCreate: any[] = [];
       
@@ -804,33 +798,25 @@ export default function MyJobsScreen() {
         })
       );
       
-      // Track keys from CSV to avoid duplicates within the same import
-      const csvJobKeys = new Set<string>();
+      // Track keys from import to avoid duplicates within the same import
+      const importJobKeys = new Set<string>();
       
-      for (let i = startIndex; i < lines.length; i++) {
-        const line = lines[i].trim();
-        if (!line) continue;
-        
-        const values = parseCSVLine(line);
-        
-        // Validate minimum columns (at least 2 for company name and position)
-        if (values.length < 2) {
+      for (let i = startIndex; i < dataRows.length; i++) {
+        const row = dataRows[i];
+        if (!row || row.length < 2) {
           console.log(`Skipping row ${i + 1}: insufficient columns`);
           continue;
         }
         
-        // Get values from fixed positions (0-7)
-        // Position 1: Company Name, Position 2: Position, Position 3: Position Type
-        // Position 4: State, Position 5: City, Position 6: Date Applied
-        // Position 7: Work Mode, Position 8: Application Status
-        const companyName = values[0]?.trim() || '';
-        const position = values[1]?.trim() || '';
-        const jobType = values[2]?.trim() || '';  // Accept any value including new ones
-        const state = values[3]?.trim() || '';
-        const city = values[4]?.trim() || '';
-        const dateAppliedRaw = values[5]?.trim() || '';
-        const workModeRaw = values[6]?.trim() || '';  // Accept any value including new ones
-        const statusRaw = values[7]?.trim() || '';  // Accept any value including new ones
+        // Get values using column mapping
+        const companyName = String(row[columnMap[0]] || '').trim();
+        const position = String(row[columnMap[1]] || '').trim();
+        const jobType = String(row[columnMap[2]] || '').trim() || 'Full-Time';
+        const state = String(row[columnMap[3]] || '').trim();
+        const city = String(row[columnMap[4]] || '').trim();
+        const dateAppliedRaw = String(row[columnMap[5]] || '').trim();
+        const workModeRaw = String(row[columnMap[6]] || '').trim();
+        const statusRaw = String(row[columnMap[7]] || '').trim();
         
         // Skip rows without company name or position (minimum required fields)
         if (!companyName || !position) {
