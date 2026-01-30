@@ -838,21 +838,23 @@ export default function MyJobsScreen() {
           continue;
         }
         
-        // Check if this exact job already exists in current CSV import batch
-        if (csvJobKeys.has(jobKey)) {
-          console.log(`Skipping duplicate (exists in CSV): ${companyName} - ${position}`);
+        // Check if this exact job already exists in current import batch
+        if (importJobKeys.has(jobKey)) {
+          console.log(`Skipping duplicate (exists in import): ${companyName} - ${position}`);
           continue;
         }
         
-        // Add to CSV keys to track duplicates within the import
-        csvJobKeys.add(jobKey);
+        // Add to import keys to track duplicates within the import
+        importJobKeys.add(jobKey);
+        
+        console.log(`Adding job: ${companyName} - ${position}, date: ${dateApplied}`);
         
         newJobsToCreate.push({
           company_name: companyName,
           position: position,
-          job_type: jobType || 'Full-Time',  // Default to Full-Time if empty
+          job_type: jobType,
           location: { state: state || '', city: city || '' },
-          date_applied: dateApplied || '',
+          date_applied: dateApplied,
           work_mode: workMode || 'remote',
           status: status || 'applied',
           salary_range: { min: 0, max: 0 },
@@ -865,7 +867,7 @@ export default function MyJobsScreen() {
       }
       
       if (newJobsToCreate.length === 0) {
-        Alert.alert('No New Entries', 'All jobs in the CSV file already exist in your list or the file contains no valid entries.');
+        Alert.alert('No New Entries', 'All jobs in the file already exist in your list or the file contains no valid entries.');
         setIsImporting(false);
         return;
       }
