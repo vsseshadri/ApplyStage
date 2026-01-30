@@ -230,6 +230,12 @@ export default function MyJobsScreen() {
   const [selectMode, setSelectMode] = useState(false);
   const [selectedJobs, setSelectedJobs] = useState<Set<string>>(new Set());
   
+  // Three-dots menu state
+  const [showOptionsMenu, setShowOptionsMenu] = useState(false);
+  
+  // CSV Import state
+  const [isImporting, setIsImporting] = useState(false);
+  
   // Swipe action state
   const [swipedJobId, setSwipedJobId] = useState<string | null>(null);
   
