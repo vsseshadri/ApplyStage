@@ -1018,13 +1018,13 @@ const createStyles = (colors: any, isDark: boolean) => StyleSheet.create({
     marginBottom: 4,
   },
   statNumber: {
-    fontSize: 20,
+    fontSize: 16,
     fontWeight: 'bold',
     color: colors.text,
     fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace',
   },
   statLabel: {
-    fontSize: 10,
+    fontSize: 9,
     color: colors.textSecondary,
     marginTop: 2,
     textAlign: 'center',
