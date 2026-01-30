@@ -1022,17 +1022,22 @@ export default function MyJobsScreen() {
 
   const handlePickResume = async () => {
     try {
-      // Use document picker directly without Expo Go workaround
-      // The picker will handle its own UI and permissions
+      // Use document picker with generic type for better Expo Go compatibility
       const result = await DocumentPicker.getDocumentAsync({
-        type: Platform.OS === 'ios' 
-          ? ['com.adobe.pdf', 'org.openxmlformats.wordprocessingml.document', 'com.microsoft.word.doc']
-          : ['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'],
+        type: '*/*',
         copyToCacheDirectory: true,
       });
 
       if (!result.canceled && result.assets && result.assets.length > 0) {
         const file = result.assets[0];
+        
+        // Validate file type
+        const fileName = file.name.toLowerCase();
+        if (!fileName.endsWith('.pdf') && !fileName.endsWith('.doc') && !fileName.endsWith('.docx')) {
+          Alert.alert('Invalid File', 'Please select a PDF or Word document (.pdf, .doc, .docx)');
+          return;
+        }
+        
         const response = await fetch(file.uri);
         const blob = await response.blob();
         const reader = new FileReader();
