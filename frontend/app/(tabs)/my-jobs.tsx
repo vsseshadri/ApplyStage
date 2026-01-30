@@ -1048,43 +1048,14 @@ export default function MyJobsScreen() {
 
   const handlePickResume = async () => {
     try {
-      // Check if running in Expo Go (has known issues with DocumentPicker on iOS)
-      const isExpoGo = Constants.appOwnership === 'expo';
-      
-      // Create a timeout promise for Expo Go (known to hang on iOS)
-      const timeoutPromise = new Promise<null>((resolve) => {
-        setTimeout(() => {
-          resolve(null);
-        }, isExpoGo && Platform.OS === 'ios' ? 3000 : 30000);
-      });
-      
-      // Create the picker promise
-      const pickerPromise = DocumentPicker.getDocumentAsync({
+      // Use document picker directly without Expo Go workaround
+      // The picker will handle its own UI and permissions
+      const result = await DocumentPicker.getDocumentAsync({
         type: Platform.OS === 'ios' 
           ? ['com.adobe.pdf', 'org.openxmlformats.wordprocessingml.document', 'com.microsoft.word.doc']
           : ['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'],
         copyToCacheDirectory: true,
-      }).catch((error) => {
-        console.error('DocumentPicker error:', error);
-        return null;
       });
-      
-      // Race between picker and timeout
-      const result = await Promise.race([pickerPromise, timeoutPromise]);
-      
-      // Handle timeout (Expo Go iOS limitation)
-      if (result === null) {
-        if (isExpoGo && Platform.OS === 'ios') {
-          Alert.alert(
-            'Expo Go Limitation',
-            'File picking is not fully supported in Expo Go on iOS. This feature will work correctly in the production app build.\n\nTo test resume upload:\n1. Deploy the app via EAS Build, or\n2. Test on Android device/emulator',
-            [{ text: 'OK', style: 'default' }]
-          );
-        } else {
-          Alert.alert('Error', 'File picker timed out. Please try again.');
-        }
-        return;
-      }
 
       if (!result.canceled && result.assets && result.assets.length > 0) {
         const file = result.assets[0];
