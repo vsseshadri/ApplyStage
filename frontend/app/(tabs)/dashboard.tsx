@@ -350,6 +350,219 @@ export default function DashboardScreen() {
   
   const maxPositionValue = Math.max(...positionChartData.map(d => d.value), 1);
 
+  // Render the Insights Section (used in both layouts)
+  const renderInsightsSection = () => (
+    <>
+      {(insights.length > 0 || followUps.length > 0) && (
+        <View style={[dynamicStyles.section, isTablet && { marginBottom: 16 }]}>
+          {/* Insights - Beautiful Card Layout */}
+          <View style={dynamicStyles.sectionHeader}>
+            <Ionicons name="sparkles" size={18} color={colors.primary} />
+            <Text style={dynamicStyles.sectionTitle}>Insights</Text>
+          </View>
+          <View style={dynamicStyles.insightsGrid}>
+            {insights.slice(0, isTablet ? 6 : 4).map((insight: any, index: number) => (
+              <View 
+                key={index} 
+                style={[
+                  dynamicStyles.insightCard,
+                  insight.type === 'urgent' && dynamicStyles.insightCardUrgent,
+                  insight.type === 'celebration' && dynamicStyles.insightCardSuccess,
+                  insight.type === 'encouragement' && dynamicStyles.insightCardEncouragement,
+                ]}
+              >
+                <View style={[dynamicStyles.insightIconContainer, { backgroundColor: `${insight.color}20` }]}>
+                  <Ionicons 
+                    name={insight.icon || 'information-circle'} 
+                    size={20} 
+                    color={insight.color || colors.primary} 
+                  />
+                </View>
+                <Text style={dynamicStyles.insightCardText} numberOfLines={3}>
+                  {insight.text || insight}
+                </Text>
+              </View>
+            ))}
+          </View>
+          
+          {/* Follow-up Reminders - Compact UI with Swipe to Delete */}
+          {followUps.length > 0 && (
+            <View style={{ marginTop: 20 }}>
+              <View style={dynamicStyles.sectionHeader}>
+                <Ionicons name="notifications" size={18} color="#F59E0B" />
+                <Text style={dynamicStyles.sectionTitle}>Follow-up Reminders</Text>
+              </View>
+              <View style={dynamicStyles.followUpsContainer}>
+                {followUps.map((followUp: any, index: number) => {
+                  // Handle summary items
+                  if (followUp.summary) {
+                    return (
+                      <View key={index} style={dynamicStyles.followUpSummary}>
+                        <Text style={dynamicStyles.followUpSummaryText}>{followUp.text}</Text>
+                      </View>
+                    );
+                  }
+                  
+                  // Regular follow-up items - Compact design
+                  const urgencyColors: any = {
+                    critical: { bg: '#FEE2E2', border: '#EF4444', text: '#991B1B' },
+                    high: { bg: '#FEF3C7', border: '#F59E0B', text: '#92400E' },
+                    medium: { bg: '#E0E7FF', border: '#6366F1', text: '#3730A3' }
+                  };
+                  const urgencyStyle = urgencyColors[followUp.urgency] || urgencyColors.medium;
+                  
+                  // Get status color for badge
+                  const statusColors: any = {
+                    'Applied': '#3B82F6',
+                    'Recruiter Screening': '#8B5CF6',
+                    'Phone Screen': '#6366F1',
+                    'Coding Round 1': '#EC4899',
+                    'Coding Round 2': '#EC4899',
+                    'System Design': '#F59E0B',
+                    'Behavioural': '#10B981',
+                    'Hiring Manager': '#14B8A6',
+                    'Final Round': '#22C55E'
+                  };
+                  const statusColor = statusColors[followUp.status] || '#6B7280';
+                  
+                  // Handle send email - use recruiter_email if available
+                  const handleSendEmail = () => {
+                    const toEmail = followUp.recruiter_email || '';
+                    const subject = encodeURIComponent(`Follow-up: Application at ${followUp.company}`);
+                    const body = encodeURIComponent(
+                      `Dear Hiring Team,\n\nI hope this email finds you well. I wanted to follow up on my application at ${followUp.company}.\n\nI remain very interested in this opportunity and would appreciate any updates on the status of my application.\n\nThank you for your time and consideration.\n\nBest regards`
+                    );
+                    const emailUrl = `mailto:${toEmail}?subject=${subject}&body=${body}`;
+                    Linking.openURL(emailUrl).catch(() => {
+                      Alert.alert('Error', 'Unable to open email app.');
+                    });
+                  };
+                  
+                  // Handle delete on swipe
+                  const handleDelete = () => {
+                    setFollowUps(prev => prev.filter((_, i) => i !== index));
+                  };
+                  
+                  // Render delete action for swipe
+                  const renderRightActions = () => (
+                    <TouchableOpacity
+                      style={dynamicStyles.followUpDeleteAction}
+                      onPress={handleDelete}
+                    >
+                      <Ionicons name="trash-outline" size={20} color="#FFF" />
+                      <Text style={dynamicStyles.followUpDeleteActionText}>Delete</Text>
+                    </TouchableOpacity>
+                  );
+                  
+                  const cardContent = (
+                    <View style={[
+                      dynamicStyles.followUpCardCompact,
+                      { borderLeftColor: urgencyStyle.border }
+                    ]}>
+                      <View style={dynamicStyles.followUpCardContent}>
+                        <View style={dynamicStyles.followUpTopRow}>
+                          <Text style={[dynamicStyles.followUpCompanyCompact, followUp.is_priority && { fontWeight: '700' }]} numberOfLines={1}>
+                            {followUp.is_priority && <Text style={{ color: '#F59E0B' }}>★ </Text>}
+                            {followUp.company}
+                          </Text>
+                          <View style={dynamicStyles.followUpRightSection}>
+                            <TouchableOpacity onPress={handleSendEmail} style={dynamicStyles.followUpMailIcon}>
+                              <Ionicons name="mail-outline" size={20} color={colors.primary} />
+                            </TouchableOpacity>
+                            <View style={[dynamicStyles.followUpDaysCounter, { backgroundColor: urgencyStyle.border }]}>
+                              <Text style={dynamicStyles.followUpDaysNumber}>{followUp.overdue_days}</Text>
+                              <Text style={dynamicStyles.followUpDaysLabel}>days</Text>
+                            </View>
+                          </View>
+                        </View>
+                        <View style={dynamicStyles.followUpBottomRow}>
+                          <View style={[dynamicStyles.followUpStatusBadge, { backgroundColor: statusColor }]}>
+                            <Text style={dynamicStyles.followUpStatusText}>{followUp.status}</Text>
+                          </View>
+                          <Text style={dynamicStyles.followUpOverdueText}>overdue</Text>
+                        </View>
+                      </View>
+                    </View>
+                  );
+                  
+                  return (
+                    <Swipeable
+                      key={index}
+                      renderRightActions={renderRightActions}
+                      overshootRight={false}
+                    >
+                      {cardContent}
+                    </Swipeable>
+                  );
+                })}
+              </View>
+            </View>
+          )}
+        </View>
+      )}
+    </>
+  );
+
+  // Render the Upcoming Interviews Section (used in both layouts)
+  const renderUpcomingInterviewsSection = () => (
+    <>
+      {upcomingInterviews.length > 0 && (
+        <View style={[dynamicStyles.section, isTablet && { marginBottom: 16 }]}>
+          <Text style={dynamicStyles.sectionTitle}>
+            <Ionicons name="calendar" size={16} color="#8B5CF6" /> Upcoming Interviews
+          </Text>
+          <View style={dynamicStyles.upcomingContainer}>
+            {upcomingInterviews.map((interview, index) => {
+              // Get status color for badge
+              const statusColors: any = {
+                'applied': '#3B82F6',
+                'recruiter_screening': '#8B5CF6',
+                'phone_screen': '#6366F1',
+                'coding_round_1': '#EC4899',
+                'coding_round_2': '#EC4899',
+                'system_design': '#F59E0B',
+                'behavioural': '#10B981',
+                'hiring_manager': '#14B8A6',
+                'final_round': '#22C55E',
+                'offer': '#22C55E',
+                'rejected': '#EF4444'
+              };
+              const statusColor = statusColors[interview.status] || '#6B7280';
+              const formatStatus = (status: string) => status?.split('_').map((word: string) => word.charAt(0).toUpperCase() + word.slice(1)).join(' ') || 'Applied';
+              
+              return (
+                <View key={interview.job_id || index} style={dynamicStyles.upcomingCard}>
+                  <View style={dynamicStyles.upcomingDateBadge}>
+                    <Text style={dynamicStyles.upcomingDateDay}>
+                      {interview.schedule_date?.split(' ')[1]?.replace(',', '') || '--'}
+                    </Text>
+                    <Text style={dynamicStyles.upcomingDateMonth}>
+                      {interview.schedule_date?.split(' ')[0] || '--'}
+                    </Text>
+                  </View>
+                  <View style={dynamicStyles.upcomingDetails}>
+                    <Text style={dynamicStyles.upcomingCompany} numberOfLines={1}>
+                      {interview.company_name}
+                    </Text>
+                    <Text style={dynamicStyles.upcomingPosition} numberOfLines={1}>
+                      {interview.position}
+                    </Text>
+                  </View>
+                  <View style={dynamicStyles.upcomingStageBadgeRight}>
+                    <View style={[dynamicStyles.stageDot, { backgroundColor: STATUS_COLORS[interview.stage] || '#8B5CF6' }]} />
+                    <Text style={dynamicStyles.upcomingStageTextRight}>
+                      {interview.stage?.replace(/_/g, ' ').replace(/\b\w/g, (l: string) => l.toUpperCase())}
+                    </Text>
+                  </View>
+                </View>
+              );
+            })}
+          </View>
+        </View>
+      )}
+    </>
+  );
+
   return (
     <SafeAreaView style={dynamicStyles.container} edges={['top']}>
       {/* Header with integrated date including day */}
@@ -365,13 +578,18 @@ export default function DashboardScreen() {
         </View>
       </View>
 
-      <ScrollView
-        style={dynamicStyles.scrollView}
-        contentContainerStyle={dynamicStyles.scrollContent}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary} />}
-      >
-        {/* Summary Stats Row - Interactive with Navigation */}
-        <View style={dynamicStyles.statsRow}>
+      {/* Tablet Layout - Split View */}
+      {isTablet ? (
+        <View style={dynamicStyles.tabletContainer}>
+          {/* Left Column - Stats and Charts */}
+          <ScrollView
+            style={dynamicStyles.tabletLeftColumn}
+            contentContainerStyle={dynamicStyles.tabletScrollContent}
+            refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary} />}
+            showsVerticalScrollIndicator={false}
+          >
+            {/* Summary Stats Row */}
+            <View style={dynamicStyles.statsRow}>
           <TouchableOpacity 
             style={dynamicStyles.statCard}
             onPress={() => handleStatCardPress('all')}
