@@ -2378,6 +2378,50 @@ const createStyles = (colors: any, isDark: boolean, isTablet: boolean = false) =
     justifyContent: 'center',
     alignItems: 'center',
   },
+  // Options Menu Styles (Three-dots menu)
+  optionsMenuOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.4)',
+    justifyContent: 'flex-start',
+    alignItems: 'flex-end',
+    paddingTop: Platform.OS === 'ios' ? 120 : 100,
+    paddingRight: 16,
+  },
+  optionsMenuContainer: {
+    backgroundColor: isDark ? '#2C2C2E' : '#FFFFFF',
+    borderRadius: 14,
+    minWidth: 180,
+    paddingVertical: 8,
+    // iOS Liquid Glass effect simulation
+    ...(Platform.OS === 'ios' ? {
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 8 },
+      shadowOpacity: 0.15,
+      shadowRadius: 24,
+    } : {
+      elevation: 8,
+    }),
+    // Subtle border for depth
+    borderWidth: isDark ? 0.5 : 0,
+    borderColor: isDark ? 'rgba(255,255,255,0.1)' : 'transparent',
+  },
+  optionsMenuItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+    gap: 12,
+  },
+  optionsMenuText: {
+    fontSize: 16,
+    color: colors.text,
+    fontWeight: '400',
+  },
+  optionsMenuDivider: {
+    height: StyleSheet.hairlineWidth,
+    backgroundColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)',
+    marginHorizontal: 16,
+  },
   selectModeHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
