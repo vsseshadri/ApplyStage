@@ -475,12 +475,23 @@ export default function MyJobsScreen() {
     setShowOptionsMenu(false);
     
     try {
+      // Use DocumentPicker with proper configuration for iOS
       const result = await DocumentPicker.getDocumentAsync({
-        type: ['text/csv', 'text/comma-separated-values', 'application/csv', '*/*'],
+        type: Platform.OS === 'ios' 
+          ? ['public.comma-separated-values-text', 'public.text', 'public.data']
+          : ['text/csv', 'text/comma-separated-values', 'application/csv', 'text/plain', '*/*'],
         copyToCacheDirectory: true,
+        multiple: false,
       });
       
-      if (result.canceled || !result.assets || result.assets.length === 0) {
+      // Check if user cancelled
+      if (result.canceled) {
+        return;
+      }
+      
+      // Check if we have assets
+      if (!result.assets || result.assets.length === 0) {
+        Alert.alert('Error', 'No file was selected. Please try again.');
         return;
       }
       
@@ -488,15 +499,32 @@ export default function MyJobsScreen() {
       
       // Verify it's a CSV file
       if (!file.name.toLowerCase().endsWith('.csv')) {
-        Alert.alert('Invalid File', 'Please select a CSV file.');
+        Alert.alert('Invalid File', 'Please select a CSV file (.csv extension required).');
         return;
       }
       
       setIsImporting(true);
       
-      // Read and parse CSV file
-      const response = await fetch(file.uri);
-      const csvText = await response.text();
+      // Read the file content
+      let csvText = '';
+      try {
+        const response = await fetch(file.uri);
+        if (!response.ok) {
+          throw new Error('Failed to read file');
+        }
+        csvText = await response.text();
+      } catch (readError) {
+        console.error('Error reading file:', readError);
+        Alert.alert('Read Error', 'Could not read the file content. Please try again.');
+        setIsImporting(false);
+        return;
+      }
+      
+      if (!csvText || csvText.trim().length === 0) {
+        Alert.alert('Empty File', 'The selected file appears to be empty.');
+        setIsImporting(false);
+        return;
+      }
       
       // Parse CSV
       const lines = csvText.split('\n').filter(line => line.trim());
