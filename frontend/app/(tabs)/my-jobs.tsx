@@ -472,7 +472,15 @@ export default function MyJobsScreen() {
 
   // CSV Import function
   const handleImportCSV = async () => {
+    // Prevent multiple simultaneous calls
+    if (isImporting) {
+      return;
+    }
+    
     setShowOptionsMenu(false);
+    
+    // Small delay to ensure menu closes properly before opening picker
+    await new Promise(resolve => setTimeout(resolve, 300));
     
     try {
       // Use DocumentPicker with proper configuration for iOS
