@@ -663,9 +663,9 @@ export default function MyJobsScreen() {
         newJobsToCreate.push({
           company_name: companyName,
           position: position,
-          job_type: jobType,  // Use original value directly
-          location: { state, city },
-          date_applied: dateApplied,
+          job_type: jobType || 'Full-Time',  // Default to Full-Time if empty
+          location: { state: state || '', city: city || '' },
+          date_applied: dateApplied || '',
           work_mode: workMode || 'remote',
           status: status || 'applied',
           salary_range: { min: 0, max: 0 },
