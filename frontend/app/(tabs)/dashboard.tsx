@@ -530,12 +530,7 @@ export default function DashboardScreen() {
           </View>
         )}
 
-        {/* Tablet Split View: Insights + Upcoming on Right */}
-        {isTablet ? (
-          <View style={dynamicStyles.tabletSplitContainer}>
-            {/* Left Column - Charts */}
-            <View style={dynamicStyles.tabletLeftColumn}>
-              {/* Location Statistics - SVG Donut Chart */}
+        {/* Location Statistics - SVG Donut Chart */}
         {pieChartData.length > 0 && (
           <View style={dynamicStyles.section}>
             <Text style={dynamicStyles.sectionTitle}>By Location</Text>
