@@ -904,14 +904,15 @@ export default function DashboardScreen() {
             <View style={{ height: 40 }} />
           </ScrollView>
 
-          {/* Right Column - Insights and Upcoming */}
+          {/* Right Column - Follow-ups, Upcoming, then Insights */}
           <ScrollView
             style={dynamicStyles.tabletRightColumn}
             contentContainerStyle={dynamicStyles.tabletScrollContent}
             showsVerticalScrollIndicator={false}
           >
-            {renderInsightsSection()}
+            {renderFollowUpsOnlySection()}
             {renderUpcomingInterviewsSection()}
+            {renderInsightsOnlySection()}
             <View style={{ height: 40 }} />
           </ScrollView>
         </View>
