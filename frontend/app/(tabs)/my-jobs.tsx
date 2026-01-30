@@ -475,69 +475,98 @@ export default function MyJobsScreen() {
   const handleImportCSV = async () => {
     // Prevent multiple simultaneous calls
     if (isImporting || isPickerActive) {
+      console.log('Import already in progress, skipping');
       return;
     }
     
+    // Close the options menu first
     setShowOptionsMenu(false);
     
-    // Small delay to ensure menu closes properly before opening picker
-    await new Promise(resolve => setTimeout(resolve, 500));
+    // Wait for modal animation to complete
+    await new Promise(resolve => setTimeout(resolve, 400));
     
+    // Set picker as active
     setIsPickerActive(true);
     
+    let pickerResult: DocumentPicker.DocumentPickerResult | null = null;
+    
     try {
-      // Use DocumentPicker with proper configuration for iOS
-      const result = await DocumentPicker.getDocumentAsync({
-        type: Platform.OS === 'ios' 
-          ? ['public.comma-separated-values-text', 'public.text', 'public.data']
-          : ['text/csv', 'text/comma-separated-values', 'application/csv', 'text/plain', '*/*'],
+      console.log('Opening document picker...');
+      
+      // Use simpler MIME types that work on both platforms
+      pickerResult = await DocumentPicker.getDocumentAsync({
+        type: '*/*', // Accept all files, we'll validate extension manually
         copyToCacheDirectory: true,
         multiple: false,
       });
       
+      console.log('Picker result:', JSON.stringify(pickerResult));
+      
+    } catch (pickerError: any) {
+      console.error('DocumentPicker error:', pickerError);
       setIsPickerActive(false);
       
-      // Check if user cancelled
-      if (result.canceled) {
+      // Show user-friendly error
+      if (pickerError?.message?.includes('cancelled') || pickerError?.message?.includes('canceled')) {
+        // User cancelled - no need to show error
         return;
       }
       
-      // Check if we have assets
-      if (!result.assets || result.assets.length === 0) {
-        Alert.alert('Error', 'No file was selected. Please try again.');
-        return;
+      Alert.alert(
+        'Unable to Open File Picker',
+        'Please try again. If the issue persists, check that the app has permission to access files.'
+      );
+      return;
+    }
+    
+    // Reset picker state
+    setIsPickerActive(false);
+    
+    // Check if user cancelled
+    if (!pickerResult || pickerResult.canceled) {
+      console.log('User cancelled picker');
+      return;
+    }
+    
+    // Check if we have assets
+    if (!pickerResult.assets || pickerResult.assets.length === 0) {
+      Alert.alert('Error', 'No file was selected. Please try again.');
+      return;
+    }
+    
+    const file = pickerResult.assets[0];
+    console.log('Selected file:', file.name, file.uri);
+    
+    // Verify it's a CSV file
+    if (!file.name.toLowerCase().endsWith('.csv')) {
+      Alert.alert('Invalid File', 'Please select a CSV file (.csv extension required).');
+      return;
+    }
+    
+    setIsImporting(true);
+    
+    // Read the file content
+    let csvText = '';
+    try {
+      console.log('Reading file content...');
+      const response = await fetch(file.uri);
+      if (!response.ok) {
+        throw new Error('Failed to read file');
       }
-      
-      const file = result.assets[0];
-      
-      // Verify it's a CSV file
-      if (!file.name.toLowerCase().endsWith('.csv')) {
-        Alert.alert('Invalid File', 'Please select a CSV file (.csv extension required).');
-        return;
-      }
-      
-      setIsImporting(true);
-      
-      // Read the file content
-      let csvText = '';
-      try {
-        const response = await fetch(file.uri);
-        if (!response.ok) {
-          throw new Error('Failed to read file');
-        }
-        csvText = await response.text();
-      } catch (readError) {
-        console.error('Error reading file:', readError);
-        Alert.alert('Read Error', 'Could not read the file content. Please try again.');
-        setIsImporting(false);
-        return;
-      }
-      
-      if (!csvText || csvText.trim().length === 0) {
-        Alert.alert('Empty File', 'The selected file appears to be empty.');
-        setIsImporting(false);
-        return;
-      }
+      csvText = await response.text();
+      console.log('File content length:', csvText.length);
+    } catch (readError) {
+      console.error('Error reading file:', readError);
+      Alert.alert('Read Error', 'Could not read the file content. Please try again.');
+      setIsImporting(false);
+      return;
+    }
+    
+    if (!csvText || csvText.trim().length === 0) {
+      Alert.alert('Empty File', 'The selected file appears to be empty.');
+      setIsImporting(false);
+      return;
+    }
       
       // Parse CSV
       const lines = csvText.split('\n').filter(line => line.trim());
