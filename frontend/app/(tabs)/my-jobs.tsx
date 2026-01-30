@@ -699,7 +699,6 @@ export default function MyJobsScreen() {
       }
     } catch (error) {
       console.error('CSV Import error:', error);
-      setIsPickerActive(false);
       setIsImporting(false);
       Alert.alert('Import Error', 'An error occurred while importing the CSV file. Please try again.');
     }
