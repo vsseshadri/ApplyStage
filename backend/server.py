@@ -558,6 +558,7 @@ async def get_dashboard_stats(current_user: User = Depends(get_current_user)):
         {
             "_id": 0,
             "status": 1,
+            "position": 1,
             "location": 1,
             "work_mode": 1,
             "created_at": 1
@@ -582,7 +583,8 @@ async def get_dashboard_stats(current_user: User = Depends(get_current_user)):
             "remote": 0,
             "onsite": 0,
             "hybrid": 0
-        }
+        },
+        "by_position": {}
     }
     
     # State abbreviation mapping
@@ -606,6 +608,13 @@ async def get_dashboard_stats(current_user: User = Depends(get_current_user)):
         status = job.get("status", "applied")
         if status in stats:
             stats[status] += 1
+        
+        # Position aggregation
+        position = job.get("position", "Other")
+        if position:
+            if position not in stats["by_position"]:
+                stats["by_position"][position] = 0
+            stats["by_position"][position] += 1
         
         # Location aggregation with state abbreviation
         location = job.get("location", {})
