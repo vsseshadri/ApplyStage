@@ -813,19 +813,19 @@ export default function DashboardScreen() {
 
             {/* Two Column Layout for Work Mode and Position */}
             <View style={dynamicStyles.tabletChartsRow}>
-              {/* Work Mode Chart */}
-              <View style={[dynamicStyles.section, { flex: 1, marginRight: 8 }]}>
+              {/* Work Mode Chart - Compact */}
+              <View style={[dynamicStyles.section, { flex: 0.35, marginRight: 8 }]}>
                 <Text style={dynamicStyles.sectionTitle}>By Work Mode</Text>
                 <View style={dynamicStyles.chartCard}>
                   {maxWorkModeValue > 0 ? (
-                    <View style={dynamicStyles.workModeContainer}>
+                    <View style={dynamicStyles.workModeContainerCompact}>
                       {workModeBarData.map((item, index) => (
-                        <TouchableOpacity key={index} style={dynamicStyles.workModeRow} onPress={() => handleWorkModePress(item.label.toLowerCase())} activeOpacity={0.7}>
-                          <View style={dynamicStyles.workModeBarWrapper}>
+                        <TouchableOpacity key={index} style={dynamicStyles.workModeRowCompact} onPress={() => handleWorkModePress(item.label.toLowerCase())} activeOpacity={0.7}>
+                          <View style={dynamicStyles.workModeBarWrapperCompact}>
                             <View style={[dynamicStyles.workModeBar, { height: `${(item.value / maxWorkModeValue) * 100}%`, backgroundColor: item.frontColor }]} />
                           </View>
-                          <Text style={dynamicStyles.workModeValue}>{item.value}</Text>
-                          <Text style={dynamicStyles.workModeLabel}>{item.label}</Text>
+                          <Text style={dynamicStyles.workModeValueCompact}>{item.value}</Text>
+                          <Text style={dynamicStyles.workModeLabelCompact}>{item.label}</Text>
                         </TouchableOpacity>
                       ))}
                     </View>
@@ -838,9 +838,9 @@ export default function DashboardScreen() {
                 </View>
               </View>
 
-              {/* Position Chart */}
+              {/* Position Chart - Expanded */}
               {positionChartData.length > 0 && (
-                <View style={[dynamicStyles.section, { flex: 1, marginLeft: 8 }]}>
+                <View style={[dynamicStyles.section, { flex: 0.65, marginLeft: 8 }]}>
                   <Text style={dynamicStyles.sectionTitle}>By Position</Text>
                   <View style={dynamicStyles.chartCard}>
                     {positionChartData.map((item, index) => (
