@@ -235,7 +235,6 @@ export default function MyJobsScreen() {
   
   // CSV Import state
   const [isImporting, setIsImporting] = useState(false);
-  const [isPickerActive, setIsPickerActive] = useState(false);
   
   // Swipe action state
   const [swipedJobId, setSwipedJobId] = useState<string | null>(null);
