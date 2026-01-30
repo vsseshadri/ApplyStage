@@ -579,11 +579,13 @@ export default function MyJobsScreen() {
     
     const statusMap: { [key: string]: string } = {
       'applied': 'applied', 'recruiter_screening': 'recruiter_screening', 'recruiter': 'recruiter_screening',
-      'screening': 'recruiter_screening', 'phone_screen': 'phone_screen', 'phone': 'phone_screen',
+      'recruiter_screen': 'recruiter_screening', 'screening': 'recruiter_screening', 
+      'phone_screen': 'phone_screen', 'phone': 'phone_screen',
       'coding_round_1': 'coding_round_1', 'coding_1': 'coding_round_1', 'coding': 'coding_round_1',
       'technical': 'coding_round_1', 'coding_round_2': 'coding_round_2', 'coding_2': 'coding_round_2',
       'system_design': 'system_design', 'design': 'system_design', 'behavioural': 'behavioural',
       'behavioral': 'behavioural', 'culture': 'behavioural', 'hiring_manager': 'hiring_manager',
+      'hr_round': 'hiring_manager', 'hr': 'hiring_manager',
       'manager': 'hiring_manager', 'final_round': 'final_round', 'final': 'final_round',
       'onsite': 'final_round', 'offer': 'offer', 'offered': 'offer', 'rejected': 'rejected', 'declined': 'rejected',
     };
