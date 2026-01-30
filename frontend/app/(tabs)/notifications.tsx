@@ -685,6 +685,52 @@ const createDynamicStyles = (colors: any, isDark: boolean) => StyleSheet.create(
     alignItems: 'center',
     gap: 16,
   },
+  optionsButton: {
+    padding: 8,
+    backgroundColor: isDark ? '#2C2C2E' : '#F3F4F6',
+    borderRadius: 20,
+    minWidth: 40,
+    minHeight: 40,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  // Options Menu Styles
+  optionsMenuOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.4)',
+    justifyContent: 'flex-start',
+    alignItems: 'flex-end',
+    paddingTop: Platform.OS === 'ios' ? 100 : 80,
+    paddingRight: 16,
+  },
+  optionsMenuContainer: {
+    backgroundColor: isDark ? '#2C2C2E' : '#FFFFFF',
+    borderRadius: 14,
+    minWidth: 160,
+    paddingVertical: 8,
+    ...(Platform.OS === 'ios' ? {
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 8 },
+      shadowOpacity: 0.15,
+      shadowRadius: 24,
+    } : {
+      elevation: 8,
+    }),
+    borderWidth: isDark ? 0.5 : 0,
+    borderColor: isDark ? 'rgba(255,255,255,0.1)' : 'transparent',
+  },
+  optionsMenuItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+    gap: 12,
+  },
+  optionsMenuText: {
+    fontSize: 16,
+    color: colors.text,
+    fontWeight: '400',
+  },
   actionText: {
     color: colors.primary,
     fontSize: 16,
