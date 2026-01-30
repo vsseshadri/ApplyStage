@@ -608,9 +608,24 @@ export default function MyJobsScreen() {
       
       // Parse data rows with strict column positions
       const newJobsToCreate: any[] = [];
-      const existingCompanyPositions = new Set(
-        jobs.map(job => `${job.company_name?.toLowerCase()}-${job.position?.toLowerCase()}`)
+      
+      // Create a comprehensive key for each existing job using all 8 fields
+      const existingJobKeys = new Set(
+        jobs.map(job => {
+          const companyName = (job.company_name || '').toLowerCase().trim();
+          const position = (job.position || '').toLowerCase().trim();
+          const jobType = (job.job_type || '').toLowerCase().trim();
+          const state = (job.location?.state || '').toLowerCase().trim();
+          const city = (job.location?.city || '').toLowerCase().trim();
+          const dateApplied = (job.date_applied || '').toLowerCase().trim();
+          const workMode = (job.work_mode || '').toLowerCase().trim();
+          const status = (job.status || '').toLowerCase().trim();
+          return `${companyName}|${position}|${jobType}|${state}|${city}|${dateApplied}|${workMode}|${status}`;
+        })
       );
+      
+      // Track keys from CSV to avoid duplicates within the same import
+      const csvJobKeys = new Set<string>();
       
       for (let i = 1; i < lines.length; i++) {
         const line = lines[i].trim();
@@ -619,6 +634,9 @@ export default function MyJobsScreen() {
         const values = parseCSVLine(line);
         
         // Get values from fixed positions (0-7)
+        // Position 1: Company Name, Position 2: Position, Position 3: Position Type
+        // Position 4: State, Position 5: City, Position 6: Date Applied
+        // Position 7: Work Mode, Position 8: Application Status
         const companyName = values[0]?.trim() || '';
         const position = values[1]?.trim() || '';
         const jobType = values[2]?.trim() || '';
@@ -628,17 +646,31 @@ export default function MyJobsScreen() {
         const workModeRaw = values[6]?.trim() || '';
         const statusRaw = values[7]?.trim() || '';
         
-        // Skip rows without company name or position
+        // Skip rows without company name or position (minimum required fields)
         if (!companyName || !position) continue;
         
-        // Check if this job already exists (by company + position)
-        const key = `${companyName.toLowerCase()}-${position.toLowerCase()}`;
-        if (existingCompanyPositions.has(key)) continue;
-        
-        // Convert date to MM/DD/YYYY format automatically
+        // Convert/normalize values
         const dateApplied = parseCSVDate(dateAppliedRaw);
         const workMode = normalizeWorkMode(workModeRaw);
         const status = normalizeStatus(statusRaw);
+        
+        // Create a unique key using all 8 fields for comparison
+        const jobKey = `${companyName.toLowerCase()}|${position.toLowerCase()}|${jobType.toLowerCase()}|${state.toLowerCase()}|${city.toLowerCase()}|${dateApplied.toLowerCase()}|${workMode.toLowerCase()}|${status.toLowerCase()}`;
+        
+        // Check if this exact job already exists in existing jobs
+        if (existingJobKeys.has(jobKey)) {
+          console.log(`Skipping duplicate (exists in My Jobs): ${companyName} - ${position}`);
+          continue;
+        }
+        
+        // Check if this exact job already exists in current CSV import batch
+        if (csvJobKeys.has(jobKey)) {
+          console.log(`Skipping duplicate (exists in CSV): ${companyName} - ${position}`);
+          continue;
+        }
+        
+        // Add to CSV keys to track duplicates within the import
+        csvJobKeys.add(jobKey);
         
         newJobsToCreate.push({
           company_name: companyName,
