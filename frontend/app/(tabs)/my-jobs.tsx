@@ -552,61 +552,40 @@ export default function MyJobsScreen() {
         return;
       }
       
-      // Parse CSV
+      // Parse CSV - Direct positional parsing without header requirement
       const lines = csvText.split('\n').filter(line => line.trim());
-      if (lines.length < 2) {
-        Alert.alert('Empty File', 'The CSV file appears to be empty or has no data rows.');
+      if (lines.length < 1) {
+        Alert.alert('Empty File', 'The CSV file appears to be empty.');
         setIsImporting(false);
         return;
       }
       
-      // Parse header (first line)
-      const headerLine = lines[0];
-      const headers = parseCSVLine(headerLine).map(h => h.toLowerCase().trim());
+      // Check first line to determine if it's a header row or data row
+      const firstLine = parseCSVLine(lines[0]);
+      const firstValue = firstLine[0]?.toLowerCase().trim() || '';
       
-      // STRICT VALIDATION: Headers must be in exact positions (1-8)
-      // Expected order: Company Name, Position, Position Type, State, City, Date Applied, Work Mode, Application Status
-      const requiredHeaders = [
-        { position: 0, name: 'Company Name', aliases: ['company name', 'company', 'company_name'] },
-        { position: 1, name: 'Position', aliases: ['position', 'role', 'job title', 'title'] },
-        { position: 2, name: 'Position Type', aliases: ['position type', 'job type', 'type', 'job_type', 'position_type'] },
-        { position: 3, name: 'State', aliases: ['state', 'province', 'province/territory'] },
-        { position: 4, name: 'City', aliases: ['city', 'location'] },
-        { position: 5, name: 'Date Applied', aliases: ['date applied', 'date_applied', 'applied date', 'applied_date', 'date'] },
-        { position: 6, name: 'Work Mode', aliases: ['work mode', 'work_mode', 'mode', 'remote/onsite', 'workplace'] },
-        { position: 7, name: 'Application Status', aliases: ['application status', 'status', 'application_status', 'stage'] },
-      ];
+      // If first row looks like a header (contains common header keywords), skip it
+      const headerKeywords = ['company', 'name', 'position', 'type', 'state', 'city', 'date', 'mode', 'status'];
+      const isHeaderRow = headerKeywords.some(keyword => firstValue.includes(keyword));
+      const startIndex = isHeaderRow ? 1 : 0;
       
-      // Check if we have at least 8 columns
-      if (headers.length < 8) {
-        Alert.alert(
-          'Invalid CSV Format',
-          `CSV file must have 8 columns in this exact order:\n\n1. Company Name\n2. Position\n3. Position Type\n4. State\n5. City\n6. Date Applied\n7. Work Mode\n8. Application Status\n\nYour file has only ${headers.length} column(s).`
-        );
-        setIsImporting(false);
-        return;
-      }
-      
-      // Validate each header is in the correct position
-      const missingHeaders: string[] = [];
-      for (const required of requiredHeaders) {
-        const headerAtPosition = headers[required.position];
-        const isValid = required.aliases.some(alias => headerAtPosition === alias);
-        if (!isValid) {
-          missingHeaders.push(`Column ${required.position + 1}: Expected "${required.name}", found "${headerAtPosition || '(empty)'}"`);
-        }
-      }
-      
-      if (missingHeaders.length > 0) {
-        Alert.alert(
-          'Mandatory Values Missing',
-          `The CSV file has incorrect column headers.\n\nRequired format (columns 1-8):\nCompany Name, Position, Position Type, State, City, Date Applied, Work Mode, Application Status\n\nIssues found:\n${missingHeaders.join('\n')}`
-        );
+      if (lines.length <= startIndex) {
+        Alert.alert('Empty File', 'The CSV file has no data rows to import.');
         setIsImporting(false);
         return;
       }
       
       // Parse data rows with strict column positions
+      // Position mapping:
+      // 1 (index 0) → Company Name
+      // 2 (index 1) → Position
+      // 3 (index 2) → Position Type
+      // 4 (index 3) → State
+      // 5 (index 4) → City
+      // 6 (index 5) → Date Applied
+      // 7 (index 6) → Work Mode
+      // 8 (index 7) → Application Status
+      
       const newJobsToCreate: any[] = [];
       
       // Create a comprehensive key for each existing job using all 8 fields
@@ -627,11 +606,17 @@ export default function MyJobsScreen() {
       // Track keys from CSV to avoid duplicates within the same import
       const csvJobKeys = new Set<string>();
       
-      for (let i = 1; i < lines.length; i++) {
+      for (let i = startIndex; i < lines.length; i++) {
         const line = lines[i].trim();
         if (!line) continue;
         
         const values = parseCSVLine(line);
+        
+        // Validate minimum columns (at least 2 for company name and position)
+        if (values.length < 2) {
+          console.log(`Skipping row ${i + 1}: insufficient columns`);
+          continue;
+        }
         
         // Get values from fixed positions (0-7)
         // Position 1: Company Name, Position 2: Position, Position 3: Position Type
@@ -639,20 +624,23 @@ export default function MyJobsScreen() {
         // Position 7: Work Mode, Position 8: Application Status
         const companyName = values[0]?.trim() || '';
         const position = values[1]?.trim() || '';
-        const jobType = values[2]?.trim() || '';
+        const jobType = values[2]?.trim() || '';  // Accept any value including new ones
         const state = values[3]?.trim() || '';
         const city = values[4]?.trim() || '';
         const dateAppliedRaw = values[5]?.trim() || '';
-        const workModeRaw = values[6]?.trim() || '';
-        const statusRaw = values[7]?.trim() || '';
+        const workModeRaw = values[6]?.trim() || '';  // Accept any value including new ones
+        const statusRaw = values[7]?.trim() || '';  // Accept any value including new ones
         
         // Skip rows without company name or position (minimum required fields)
-        if (!companyName || !position) continue;
+        if (!companyName || !position) {
+          console.log(`Skipping row ${i + 1}: missing company name or position`);
+          continue;
+        }
         
-        // Convert/normalize values
+        // Convert/normalize values - accept original values if normalization doesn't match
         const dateApplied = parseCSVDate(dateAppliedRaw);
-        const workMode = normalizeWorkMode(workModeRaw);
-        const status = normalizeStatus(statusRaw);
+        const workMode = normalizeWorkModeFlexible(workModeRaw);
+        const status = normalizeStatusFlexible(statusRaw);
         
         // Create a unique key using all 8 fields for comparison
         const jobKey = `${companyName.toLowerCase()}|${position.toLowerCase()}|${jobType.toLowerCase()}|${state.toLowerCase()}|${city.toLowerCase()}|${dateApplied.toLowerCase()}|${workMode.toLowerCase()}|${status.toLowerCase()}`;
@@ -675,7 +663,7 @@ export default function MyJobsScreen() {
         newJobsToCreate.push({
           company_name: companyName,
           position: position,
-          job_type: jobType,
+          job_type: jobType,  // Use original value directly
           location: { state, city },
           date_applied: dateApplied,
           work_mode: workMode,
