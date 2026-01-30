@@ -687,33 +687,96 @@ export default function MyJobsScreen() {
     return result.map(val => val.replace(/^"|"$/g, '').trim());
   };
   
-  // Helper function to parse date from various CSV formats
+  // Helper function to parse date from various CSV formats and convert to MM/DD/YYYY
   const parseCSVDate = (dateStr: string): string => {
     if (!dateStr) return format(new Date(), 'MM/dd/yyyy');
     
-    // Try various date formats
-    const dateFormats = [
-      /^(\d{1,2})\/(\d{1,2})\/(\d{4})$/, // MM/DD/YYYY
-      /^(\d{1,2})-(\d{1,2})-(\d{4})$/, // MM-DD-YYYY
-      /^(\d{4})-(\d{1,2})-(\d{1,2})$/, // YYYY-MM-DD
-      /^(\d{4})\/(\d{1,2})\/(\d{1,2})$/, // YYYY/MM/DD
+    // Clean the date string
+    const cleanDate = dateStr.trim();
+    
+    // Define regex patterns for various date formats
+    const datePatterns = [
+      // MM/DD/YYYY or M/D/YYYY
+      { regex: /^(\d{1,2})\/(\d{1,2})\/(\d{4})$/, parse: (m: RegExpMatchArray) => ({ month: m[1], day: m[2], year: m[3] }) },
+      // MM-DD-YYYY or M-D-YYYY
+      { regex: /^(\d{1,2})-(\d{1,2})-(\d{4})$/, parse: (m: RegExpMatchArray) => ({ month: m[1], day: m[2], year: m[3] }) },
+      // YYYY-MM-DD (ISO format)
+      { regex: /^(\d{4})-(\d{1,2})-(\d{1,2})$/, parse: (m: RegExpMatchArray) => ({ year: m[1], month: m[2], day: m[3] }) },
+      // YYYY/MM/DD
+      { regex: /^(\d{4})\/(\d{1,2})\/(\d{1,2})$/, parse: (m: RegExpMatchArray) => ({ year: m[1], month: m[2], day: m[3] }) },
+      // DD/MM/YYYY (European format - day first when day > 12)
+      { regex: /^(\d{1,2})\/(\d{1,2})\/(\d{4})$/, parse: (m: RegExpMatchArray) => {
+        // If first number > 12, it's likely day (European format)
+        if (parseInt(m[1]) > 12) {
+          return { day: m[1], month: m[2], year: m[3] };
+        }
+        return { month: m[1], day: m[2], year: m[3] };
+      }},
+      // DD-MM-YYYY (European format with dash)
+      { regex: /^(\d{1,2})-(\d{1,2})-(\d{4})$/, parse: (m: RegExpMatchArray) => {
+        if (parseInt(m[1]) > 12) {
+          return { day: m[1], month: m[2], year: m[3] };
+        }
+        return { month: m[1], day: m[2], year: m[3] };
+      }},
+      // DD.MM.YYYY (European format with dots)
+      { regex: /^(\d{1,2})\.(\d{1,2})\.(\d{4})$/, parse: (m: RegExpMatchArray) => ({ day: m[1], month: m[2], year: m[3] }) },
+      // Month DD, YYYY (e.g., "January 15, 2024" or "Jan 15, 2024")
+      { regex: /^([A-Za-z]+)\s+(\d{1,2}),?\s+(\d{4})$/, parse: (m: RegExpMatchArray) => {
+        const monthNames: { [key: string]: string } = {
+          'january': '01', 'jan': '01', 'february': '02', 'feb': '02', 'march': '03', 'mar': '03',
+          'april': '04', 'apr': '04', 'may': '05', 'june': '06', 'jun': '06',
+          'july': '07', 'jul': '07', 'august': '08', 'aug': '08', 'september': '09', 'sep': '09', 'sept': '09',
+          'october': '10', 'oct': '10', 'november': '11', 'nov': '11', 'december': '12', 'dec': '12'
+        };
+        const monthNum = monthNames[m[1].toLowerCase()] || '01';
+        return { month: monthNum, day: m[2], year: m[3] };
+      }},
+      // DD Month YYYY (e.g., "15 January 2024" or "15 Jan 2024")
+      { regex: /^(\d{1,2})\s+([A-Za-z]+)\s+(\d{4})$/, parse: (m: RegExpMatchArray) => {
+        const monthNames: { [key: string]: string } = {
+          'january': '01', 'jan': '01', 'february': '02', 'feb': '02', 'march': '03', 'mar': '03',
+          'april': '04', 'apr': '04', 'may': '05', 'june': '06', 'jun': '06',
+          'july': '07', 'jul': '07', 'august': '08', 'aug': '08', 'september': '09', 'sep': '09', 'sept': '09',
+          'october': '10', 'oct': '10', 'november': '11', 'nov': '11', 'december': '12', 'dec': '12'
+        };
+        const monthNum = monthNames[m[2].toLowerCase()] || '01';
+        return { day: m[1], month: monthNum, year: m[3] };
+      }},
     ];
     
-    for (const fmt of dateFormats) {
-      const match = dateStr.match(fmt);
+    // Try each pattern
+    for (const pattern of datePatterns) {
+      const match = cleanDate.match(pattern.regex);
       if (match) {
         try {
-          if (fmt === dateFormats[0] || fmt === dateFormats[1]) {
-            // MM/DD/YYYY or MM-DD-YYYY
-            return `${match[1].padStart(2, '0')}/${match[2].padStart(2, '0')}/${match[3]}`;
-          } else {
-            // YYYY-MM-DD or YYYY/MM/DD
-            return `${match[2].padStart(2, '0')}/${match[3].padStart(2, '0')}/${match[1]}`;
+          const parsed = pattern.parse(match);
+          const month = parsed.month.toString().padStart(2, '0');
+          const day = parsed.day.toString().padStart(2, '0');
+          const year = parsed.year;
+          
+          // Validate the date
+          const dateObj = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
+          if (!isNaN(dateObj.getTime())) {
+            return `${month}/${day}/${year}`;
           }
         } catch {
           continue;
         }
       }
+    }
+    
+    // If no pattern matched, try JavaScript's Date parser as fallback
+    try {
+      const parsedDate = new Date(cleanDate);
+      if (!isNaN(parsedDate.getTime())) {
+        const month = (parsedDate.getMonth() + 1).toString().padStart(2, '0');
+        const day = parsedDate.getDate().toString().padStart(2, '0');
+        const year = parsedDate.getFullYear();
+        return `${month}/${day}/${year}`;
+      }
+    } catch {
+      // Fallback to current date
     }
     
     return format(new Date(), 'MM/dd/yyyy');
