@@ -990,19 +990,18 @@ const createStyles = (colors: any, isDark: boolean) => StyleSheet.create({
     flexDirection: 'row',
     gap: 16,
   },
-  // Stats Row
+  // Stats Row - All cards in single row
   statsRow: {
     flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
+    gap: 6,
     marginBottom: 20,
   },
   statCard: {
     flex: 1,
-    minWidth: '22%',
     backgroundColor: colors.card,
-    borderRadius: 12,
-    padding: 12,
+    borderRadius: 10,
+    paddingVertical: 10,
+    paddingHorizontal: 6,
     alignItems: 'center',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
@@ -1011,12 +1010,12 @@ const createStyles = (colors: any, isDark: boolean) => StyleSheet.create({
     elevation: 3,
   },
   statIcon: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 6,
+    marginBottom: 4,
   },
   statNumber: {
     fontSize: 20,
