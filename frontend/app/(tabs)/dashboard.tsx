@@ -1690,6 +1690,11 @@ const createStyles = (colors: any, isDark: boolean) => StyleSheet.create({
     padding: 12,
     borderLeftWidth: 4,
   },
+  followUpCardWithBorder: {
+    borderBottomWidth: 1,
+    borderBottomColor: isDark ? '#333' : '#E5E7EB',
+    marginBottom: 8,
+  },
   followUpCardContent: {
     flex: 1,
   },
