@@ -483,47 +483,56 @@ export default function MyJobsScreen() {
     setShowOptionsMenu(false);
     
     // Wait for modal animation to complete
-    await new Promise(resolve => setTimeout(resolve, 400));
+    await new Promise(resolve => setTimeout(resolve, 300));
+    
+    // Check if running in Expo Go (has known issues with DocumentPicker on iOS)
+    const isExpoGo = Constants.appOwnership === 'expo';
     
     // Set picker as active
     setIsPickerActive(true);
     
-    let pickerResult: DocumentPicker.DocumentPickerResult | null = null;
+    // Create a timeout promise for Expo Go (known to hang)
+    const timeoutPromise = new Promise<null>((resolve) => {
+      setTimeout(() => {
+        resolve(null);
+      }, isExpoGo ? 3000 : 30000); // 3 second timeout for Expo Go, 30 for production
+    });
     
-    try {
-      console.log('Opening document picker...');
-      
-      // Use simpler MIME types that work on both platforms
-      pickerResult = await DocumentPicker.getDocumentAsync({
-        type: '*/*', // Accept all files, we'll validate extension manually
-        copyToCacheDirectory: true,
-        multiple: false,
-      });
-      
-      console.log('Picker result:', JSON.stringify(pickerResult));
-      
-    } catch (pickerError: any) {
-      console.error('DocumentPicker error:', pickerError);
-      setIsPickerActive(false);
-      
-      // Show user-friendly error
-      if (pickerError?.message?.includes('cancelled') || pickerError?.message?.includes('canceled')) {
-        // User cancelled - no need to show error
-        return;
-      }
-      
-      Alert.alert(
-        'Unable to Open File Picker',
-        'Please try again. If the issue persists, check that the app has permission to access files.'
-      );
-      return;
-    }
+    // Create the picker promise
+    const pickerPromise = DocumentPicker.getDocumentAsync({
+      type: Platform.OS === 'ios' ? 'public.comma-separated-values-text' : 'text/csv',
+      copyToCacheDirectory: true,
+      multiple: false,
+    }).catch((error) => {
+      console.error('DocumentPicker error:', error);
+      return null;
+    });
+    
+    // Race between picker and timeout
+    const pickerResult = await Promise.race([pickerPromise, timeoutPromise]);
     
     // Reset picker state
     setIsPickerActive(false);
     
+    // Handle timeout (Expo Go limitation)
+    if (pickerResult === null) {
+      if (isExpoGo) {
+        Alert.alert(
+          'Expo Go Limitation',
+          'File picking is not fully supported in Expo Go on iOS. This feature will work correctly in the production app build.\n\nTo test CSV import:\n1. Deploy the app via EAS Build, or\n2. Test on Android device/emulator',
+          [{ text: 'OK', style: 'default' }]
+        );
+      } else {
+        Alert.alert(
+          'File Picker Timeout',
+          'The file picker took too long to respond. Please try again.'
+        );
+      }
+      return;
+    }
+    
     // Check if user cancelled
-    if (!pickerResult || pickerResult.canceled) {
+    if (pickerResult.canceled) {
       console.log('User cancelled picker');
       return;
     }
