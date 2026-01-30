@@ -2041,7 +2041,7 @@ export default function MyJobsScreen() {
                 <Ionicons name="cloud-upload-outline" size={22} color={colors.text} />
               )}
               <Text style={dynamicStyles.optionsMenuText}>
-                {isImporting ? 'Importing...' : 'Import from CSV'}
+                {isImporting ? 'Importing...' : 'Import from csv/excel'}
               </Text>
             </TouchableOpacity>
           </View>
