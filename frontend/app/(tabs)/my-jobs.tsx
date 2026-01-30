@@ -1978,15 +1978,15 @@ export default function MyJobsScreen() {
             <TouchableOpacity 
               style={dynamicStyles.optionsMenuItem}
               onPress={handleImportCSV}
-              disabled={isImporting}
+              disabled={isImporting || isPickerActive}
             >
-              {isImporting ? (
+              {(isImporting || isPickerActive) ? (
                 <ActivityIndicator size="small" color={colors.primary} />
               ) : (
                 <Ionicons name="cloud-upload-outline" size={22} color={colors.text} />
               )}
               <Text style={dynamicStyles.optionsMenuText}>
-                {isImporting ? 'Importing...' : 'Import from CSV'}
+                {isImporting ? 'Importing...' : isPickerActive ? 'Opening...' : 'Import from CSV'}
               </Text>
             </TouchableOpacity>
           </View>
