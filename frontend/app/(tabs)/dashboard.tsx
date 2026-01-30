@@ -504,6 +504,32 @@ export default function DashboardScreen() {
           </View>
         </View>
 
+        {/* Position Statistics - Horizontal Bar Chart */}
+        {positionChartData.length > 0 && (
+          <View style={dynamicStyles.section}>
+            <Text style={dynamicStyles.sectionTitle}>By Position</Text>
+            <View style={dynamicStyles.chartCard}>
+              {positionChartData.map((item, index) => (
+                <View key={index} style={dynamicStyles.barRow}>
+                  <Text style={dynamicStyles.barLabel} numberOfLines={1}>{item.label}</Text>
+                  <View style={dynamicStyles.barContainer}>
+                    <View 
+                      style={[
+                        dynamicStyles.bar, 
+                        { 
+                          width: `${(item.value / maxPositionValue) * 100}%`,
+                          backgroundColor: item.color 
+                        }
+                      ]} 
+                    />
+                  </View>
+                  <Text style={dynamicStyles.barValue}>{item.value}</Text>
+                </View>
+              ))}
+            </View>
+          </View>
+        )}
+
         {/* Location Statistics - SVG Donut Chart */}
         {pieChartData.length > 0 && (
           <View style={dynamicStyles.section}>
