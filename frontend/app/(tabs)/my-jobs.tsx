@@ -681,23 +681,23 @@ export default function MyJobsScreen() {
     return result.map(val => val.replace(/^"|"$/g, '').trim());
   };
   
-  // Helper function to parse date from various formats
-  const parseDate = (dateStr: string): string => {
+  // Helper function to parse date from various CSV formats
+  const parseCSVDate = (dateStr: string): string => {
     if (!dateStr) return format(new Date(), 'MM/dd/yyyy');
     
     // Try various date formats
-    const formats = [
+    const dateFormats = [
       /^(\d{1,2})\/(\d{1,2})\/(\d{4})$/, // MM/DD/YYYY
       /^(\d{1,2})-(\d{1,2})-(\d{4})$/, // MM-DD-YYYY
       /^(\d{4})-(\d{1,2})-(\d{1,2})$/, // YYYY-MM-DD
       /^(\d{4})\/(\d{1,2})\/(\d{1,2})$/, // YYYY/MM/DD
     ];
     
-    for (const fmt of formats) {
+    for (const fmt of dateFormats) {
       const match = dateStr.match(fmt);
       if (match) {
         try {
-          if (fmt === formats[0] || fmt === formats[1]) {
+          if (fmt === dateFormats[0] || fmt === dateFormats[1]) {
             // MM/DD/YYYY or MM-DD-YYYY
             return `${match[1].padStart(2, '0')}/${match[2].padStart(2, '0')}/${match[3]}`;
           } else {
