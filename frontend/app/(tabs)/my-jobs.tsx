@@ -1806,18 +1806,71 @@ export default function MyJobsScreen() {
           </TouchableOpacity>
         </ScrollView>
         
-        {/* Select/Delete Button */}
-        <TouchableOpacity 
-          style={dynamicStyles.selectButton}
-          onPress={selectMode ? (selectedJobs.size > 0 ? deleteSelectedJobs : toggleSelectMode) : toggleSelectMode}
-        >
-          <Ionicons 
-            name={selectMode ? (selectedJobs.size > 0 ? 'trash' : 'close') : 'checkmark-circle-outline'} 
-            size={20} 
-            color={selectMode && selectedJobs.size > 0 ? '#EF4444' : colors.primary} 
-          />
-        </TouchableOpacity>
+        {/* Three-dots Menu Button (replaces Select Button) */}
+        {selectMode ? (
+          <TouchableOpacity 
+            style={dynamicStyles.selectButton}
+            onPress={selectedJobs.size > 0 ? deleteSelectedJobs : toggleSelectMode}
+          >
+            <Ionicons 
+              name={selectedJobs.size > 0 ? 'trash' : 'close'} 
+              size={20} 
+              color={selectedJobs.size > 0 ? '#EF4444' : colors.primary} 
+            />
+          </TouchableOpacity>
+        ) : (
+          <TouchableOpacity 
+            style={dynamicStyles.selectButton}
+            onPress={() => setShowOptionsMenu(true)}
+          >
+            <Ionicons name="ellipsis-vertical" size={20} color={colors.primary} />
+          </TouchableOpacity>
+        )}
       </View>
+      
+      {/* Options Menu Modal */}
+      <Modal 
+        visible={showOptionsMenu} 
+        transparent 
+        animationType="fade" 
+        onRequestClose={() => setShowOptionsMenu(false)}
+      >
+        <TouchableOpacity 
+          style={dynamicStyles.optionsMenuOverlay} 
+          activeOpacity={1} 
+          onPress={() => setShowOptionsMenu(false)}
+        >
+          <View style={dynamicStyles.optionsMenuContainer}>
+            <TouchableOpacity 
+              style={dynamicStyles.optionsMenuItem}
+              onPress={() => {
+                setShowOptionsMenu(false);
+                toggleSelectMode();
+              }}
+            >
+              <Ionicons name="checkmark-circle-outline" size={22} color={colors.text} />
+              <Text style={dynamicStyles.optionsMenuText}>Select</Text>
+            </TouchableOpacity>
+            
+            <View style={dynamicStyles.optionsMenuDivider} />
+            
+            <TouchableOpacity 
+              style={dynamicStyles.optionsMenuItem}
+              onPress={handleImportCSV}
+              disabled={isImporting}
+            >
+              {isImporting ? (
+                <ActivityIndicator size="small" color={colors.primary} />
+              ) : (
+                <Ionicons name="cloud-upload-outline" size={22} color={colors.text} />
+              )}
+              <Text style={dynamicStyles.optionsMenuText}>
+                {isImporting ? 'Importing...' : 'Import from CSV'}
+              </Text>
+            </TouchableOpacity>
+          </View>
+        </TouchableOpacity>
+      </Modal>
       
       {/* Select Mode Header */}
       {selectMode && (
