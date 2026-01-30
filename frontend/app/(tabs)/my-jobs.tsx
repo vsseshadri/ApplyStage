@@ -563,7 +563,7 @@ export default function MyJobsScreen() {
         // Parse other fields
         const jobType = headerMap.job_type !== undefined ? values[headerMap.job_type]?.trim() : '';
         const location = headerMap.location !== undefined ? values[headerMap.location]?.trim() : '';
-        const dateApplied = headerMap.date_applied !== undefined ? parseDate(values[headerMap.date_applied]?.trim()) : format(new Date(), 'MM/dd/yyyy');
+        const dateApplied = headerMap.date_applied !== undefined ? parseCSVDate(values[headerMap.date_applied]?.trim()) : format(new Date(), 'MM/dd/yyyy');
         const workMode = headerMap.work_mode !== undefined ? normalizeWorkMode(values[headerMap.work_mode]?.trim()) : 'remote';
         const status = headerMap.status !== undefined ? normalizeStatus(values[headerMap.status]?.trim()) : 'applied';
         
