@@ -84,6 +84,9 @@ export default function NotificationsScreen() {
   const [selectedNotifications, setSelectedNotifications] = useState<Set<string>>(new Set());
   const [hasViewedTab, setHasViewedTab] = useState(false);
   
+  // Three-dots menu state
+  const [showOptionsMenu, setShowOptionsMenu] = useState(false);
+  
   // Report viewer state
   const [reportModalVisible, setReportModalVisible] = useState(false);
   const [selectedReport, setSelectedReport] = useState<Report | null>(null);
