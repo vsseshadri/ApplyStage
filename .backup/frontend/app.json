@@ -50,7 +50,7 @@
       "typedRoutes": true
     },
     "extra": {
-      "EXPO_PUBLIC_BACKEND_URL": "https://careertrail-4.preview.emergentagent.com"
+      "EXPO_PUBLIC_BACKEND_URL": "https://jobvault-2.preview.emergentagent.com"
     }
   }
 }
