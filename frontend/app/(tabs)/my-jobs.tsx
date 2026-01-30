@@ -470,6 +470,301 @@ export default function MyJobsScreen() {
     );
   };
 
+  // CSV Import function
+  const handleImportCSV = async () => {
+    setShowOptionsMenu(false);
+    
+    try {
+      const result = await DocumentPicker.getDocumentAsync({
+        type: ['text/csv', 'text/comma-separated-values', 'application/csv', '*/*'],
+        copyToCacheDirectory: true,
+      });
+      
+      if (result.canceled || !result.assets || result.assets.length === 0) {
+        return;
+      }
+      
+      const file = result.assets[0];
+      
+      // Verify it's a CSV file
+      if (!file.name.toLowerCase().endsWith('.csv')) {
+        Alert.alert('Invalid File', 'Please select a CSV file.');
+        return;
+      }
+      
+      setIsImporting(true);
+      
+      // Read and parse CSV file
+      const response = await fetch(file.uri);
+      const csvText = await response.text();
+      
+      // Parse CSV
+      const lines = csvText.split('\n').filter(line => line.trim());
+      if (lines.length < 2) {
+        Alert.alert('Empty File', 'The CSV file appears to be empty or has no data rows.');
+        setIsImporting(false);
+        return;
+      }
+      
+      // Parse header (first line)
+      const headerLine = lines[0];
+      const headers = parseCSVLine(headerLine).map(h => h.toLowerCase().trim());
+      
+      // Map expected headers
+      const headerMap: { [key: string]: number } = {};
+      const expectedHeaders = [
+        { key: 'company_name', aliases: ['company name', 'company', 'company_name'] },
+        { key: 'position', aliases: ['position', 'role', 'job title', 'title'] },
+        { key: 'job_type', aliases: ['position type', 'job type', 'type', 'job_type', 'position_type'] },
+        { key: 'location', aliases: ['location', 'city', 'state', 'place'] },
+        { key: 'date_applied', aliases: ['date applied', 'date_applied', 'applied date', 'applied_date', 'date'] },
+        { key: 'work_mode', aliases: ['work mode', 'work_mode', 'mode', 'remote/onsite', 'workplace'] },
+        { key: 'status', aliases: ['application status', 'status', 'application_status', 'stage'] },
+      ];
+      
+      expectedHeaders.forEach(expected => {
+        const foundIndex = headers.findIndex(h => expected.aliases.includes(h));
+        if (foundIndex !== -1) {
+          headerMap[expected.key] = foundIndex;
+        }
+      });
+      
+      // Validate we have at least company name and position
+      if (headerMap.company_name === undefined && headerMap.position === undefined) {
+        Alert.alert(
+          'Invalid CSV Format', 
+          'CSV must contain at least "Company Name" and "Position" columns.\n\nExpected format:\nCompany Name, Position, Position Type, Location, Date Applied, Work Mode, Application Status'
+        );
+        setIsImporting(false);
+        return;
+      }
+      
+      // Parse data rows
+      const newJobsToCreate: any[] = [];
+      const existingCompanyPositions = new Set(
+        jobs.map(job => `${job.company_name?.toLowerCase()}-${job.position?.toLowerCase()}`)
+      );
+      
+      for (let i = 1; i < lines.length; i++) {
+        const line = lines[i].trim();
+        if (!line) continue;
+        
+        const values = parseCSVLine(line);
+        
+        const companyName = headerMap.company_name !== undefined ? values[headerMap.company_name]?.trim() : '';
+        const position = headerMap.position !== undefined ? values[headerMap.position]?.trim() : '';
+        
+        if (!companyName || !position) continue;
+        
+        // Check if this job already exists (by company + position)
+        const key = `${companyName.toLowerCase()}-${position.toLowerCase()}`;
+        if (existingCompanyPositions.has(key)) continue;
+        
+        // Parse other fields
+        const jobType = headerMap.job_type !== undefined ? values[headerMap.job_type]?.trim() : '';
+        const location = headerMap.location !== undefined ? values[headerMap.location]?.trim() : '';
+        const dateApplied = headerMap.date_applied !== undefined ? parseDate(values[headerMap.date_applied]?.trim()) : format(new Date(), 'MM/dd/yyyy');
+        const workMode = headerMap.work_mode !== undefined ? normalizeWorkMode(values[headerMap.work_mode]?.trim()) : 'remote';
+        const status = headerMap.status !== undefined ? normalizeStatus(values[headerMap.status]?.trim()) : 'applied';
+        
+        // Parse location (could be "City, State" or just city)
+        let state = '';
+        let city = '';
+        if (location) {
+          const locationParts = location.split(',').map(p => p.trim());
+          if (locationParts.length >= 2) {
+            city = locationParts[0];
+            state = locationParts[1];
+          } else {
+            city = location;
+          }
+        }
+        
+        newJobsToCreate.push({
+          company_name: companyName,
+          position: position,
+          job_type: jobType,
+          location: { state, city },
+          date_applied: dateApplied,
+          work_mode: workMode,
+          status: status,
+          min_salary: 0,
+          max_salary: 0,
+          job_url: '',
+          recruiter_email: '',
+          notes: '',
+          follow_up_days: 7,
+          is_priority: false,
+        });
+        
+        // Add to set to avoid duplicates within the same CSV
+        existingCompanyPositions.add(key);
+      }
+      
+      if (newJobsToCreate.length === 0) {
+        Alert.alert('No New Entries', 'All jobs in the CSV file already exist in your list or the file contains no valid entries.');
+        setIsImporting(false);
+        return;
+      }
+      
+      // Create jobs via API
+      let successCount = 0;
+      let failCount = 0;
+      
+      for (const job of newJobsToCreate) {
+        try {
+          const response = await fetch(`${BACKEND_URL}/api/jobs`, {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${sessionToken}`,
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(job)
+          });
+          
+          if (response.ok) {
+            successCount++;
+          } else {
+            failCount++;
+          }
+        } catch (error) {
+          failCount++;
+        }
+      }
+      
+      setIsImporting(false);
+      
+      // Refresh jobs list
+      await fetchJobs();
+      
+      // Trigger dashboard refresh
+      if (triggerDashboardRefresh) {
+        triggerDashboardRefresh();
+      }
+      
+      // Show result
+      if (successCount > 0 && failCount === 0) {
+        Alert.alert('Import Successful', `${successCount} new job(s) have been imported.`);
+      } else if (successCount > 0 && failCount > 0) {
+        Alert.alert('Partial Import', `${successCount} job(s) imported successfully.\n${failCount} job(s) failed to import.`);
+      } else {
+        Alert.alert('Import Failed', 'Failed to import jobs. Please try again.');
+      }
+      
+    } catch (error) {
+      console.error('Error importing CSV:', error);
+      Alert.alert('Import Error', 'An error occurred while importing the CSV file. Please ensure the file format is correct.');
+      setIsImporting(false);
+    }
+  };
+  
+  // Helper function to parse CSV line (handles quoted values)
+  const parseCSVLine = (line: string): string[] => {
+    const result: string[] = [];
+    let current = '';
+    let inQuotes = false;
+    
+    for (let i = 0; i < line.length; i++) {
+      const char = line[i];
+      
+      if (char === '"') {
+        inQuotes = !inQuotes;
+      } else if (char === ',' && !inQuotes) {
+        result.push(current.trim());
+        current = '';
+      } else {
+        current += char;
+      }
+    }
+    result.push(current.trim());
+    
+    return result.map(val => val.replace(/^"|"$/g, '').trim());
+  };
+  
+  // Helper function to parse date from various formats
+  const parseDate = (dateStr: string): string => {
+    if (!dateStr) return format(new Date(), 'MM/dd/yyyy');
+    
+    // Try various date formats
+    const formats = [
+      /^(\d{1,2})\/(\d{1,2})\/(\d{4})$/, // MM/DD/YYYY
+      /^(\d{1,2})-(\d{1,2})-(\d{4})$/, // MM-DD-YYYY
+      /^(\d{4})-(\d{1,2})-(\d{1,2})$/, // YYYY-MM-DD
+      /^(\d{4})\/(\d{1,2})\/(\d{1,2})$/, // YYYY/MM/DD
+    ];
+    
+    for (const fmt of formats) {
+      const match = dateStr.match(fmt);
+      if (match) {
+        try {
+          if (fmt === formats[0] || fmt === formats[1]) {
+            // MM/DD/YYYY or MM-DD-YYYY
+            return `${match[1].padStart(2, '0')}/${match[2].padStart(2, '0')}/${match[3]}`;
+          } else {
+            // YYYY-MM-DD or YYYY/MM/DD
+            return `${match[2].padStart(2, '0')}/${match[3].padStart(2, '0')}/${match[1]}`;
+          }
+        } catch {
+          continue;
+        }
+      }
+    }
+    
+    return format(new Date(), 'MM/dd/yyyy');
+  };
+  
+  // Helper function to normalize work mode
+  const normalizeWorkMode = (mode: string): string => {
+    if (!mode) return 'remote';
+    const lower = mode.toLowerCase();
+    if (lower.includes('remote') || lower.includes('wfh') || lower.includes('work from home')) return 'remote';
+    if (lower.includes('onsite') || lower.includes('on-site') || lower.includes('office')) return 'onsite';
+    if (lower.includes('hybrid')) return 'hybrid';
+    return 'remote';
+  };
+  
+  // Helper function to normalize status
+  const normalizeStatus = (status: string): string => {
+    if (!status) return 'applied';
+    const lower = status.toLowerCase().replace(/[^a-z0-9]/g, '_');
+    
+    const statusMap: { [key: string]: string } = {
+      'applied': 'applied',
+      'recruiter_screening': 'recruiter_screening',
+      'recruiter': 'recruiter_screening',
+      'screening': 'recruiter_screening',
+      'phone_screen': 'phone_screen',
+      'phone': 'phone_screen',
+      'coding_round_1': 'coding_round_1',
+      'coding_1': 'coding_round_1',
+      'coding': 'coding_round_1',
+      'technical': 'coding_round_1',
+      'coding_round_2': 'coding_round_2',
+      'coding_2': 'coding_round_2',
+      'system_design': 'system_design',
+      'design': 'system_design',
+      'behavioural': 'behavioural',
+      'behavioral': 'behavioural',
+      'culture': 'behavioural',
+      'hiring_manager': 'hiring_manager',
+      'manager': 'hiring_manager',
+      'final_round': 'final_round',
+      'final': 'final_round',
+      'onsite': 'final_round',
+      'offer': 'offer',
+      'offered': 'offer',
+      'rejected': 'rejected',
+      'declined': 'rejected',
+    };
+    
+    // Find a matching status
+    for (const [key, value] of Object.entries(statusMap)) {
+      if (lower.includes(key)) return value;
+    }
+    
+    return 'applied';
+  };
+
   const handleAddCustomPosition = async () => {
     if (!newPosition.trim()) return;
     
