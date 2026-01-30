@@ -847,6 +847,12 @@ const styles = StyleSheet.create({
     marginBottom: 10,
     borderRadius: 12,
   },
+  deleteActionText: {
+    color: '#FFF',
+    fontSize: 11,
+    fontWeight: '600',
+    marginTop: 2,
+  },
   deleteText: {
     color: '#FFF',
     fontSize: 11,
