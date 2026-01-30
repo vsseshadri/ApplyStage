@@ -513,51 +513,51 @@ export default function MyJobsScreen() {
     
       const file = pickerResult.assets[0];
       console.log('Selected file:', file.name, file.uri);
-    
-    // Verify it's a CSV file
-    if (!file.name.toLowerCase().endsWith('.csv')) {
-      Alert.alert('Invalid File', 'Please select a CSV file (.csv extension required).');
-      return;
-    }
-    
-    setIsImporting(true);
-    
-    // Read the file content
-    let csvText = '';
-    try {
-      console.log('Reading file content...');
-      const response = await fetch(file.uri);
-      if (!response.ok) {
-        throw new Error('Failed to read file');
+      
+      // Verify it's a CSV file
+      if (!file.name.toLowerCase().endsWith('.csv')) {
+        Alert.alert('Invalid File', 'Please select a CSV file (.csv extension required).');
+        return;
       }
-      csvText = await response.text();
-      console.log('File content length:', csvText.length);
-    } catch (readError) {
-      console.error('Error reading file:', readError);
-      Alert.alert('Read Error', 'Could not read the file content. Please try again.');
-      setIsImporting(false);
-      return;
-    }
-    
-    if (!csvText || csvText.trim().length === 0) {
-      Alert.alert('Empty File', 'The selected file appears to be empty.');
-      setIsImporting(false);
-      return;
-    }
-    
-    // Parse CSV
-    const lines = csvText.split('\n').filter(line => line.trim());
-    if (lines.length < 2) {
-      Alert.alert('Empty File', 'The CSV file appears to be empty or has no data rows.');
-      setIsImporting(false);
-      return;
-    }
-    
-    // Parse header (first line)
-    const headerLine = lines[0];
-    const headers = parseCSVLine(headerLine).map(h => h.toLowerCase().trim());
-    
-    // STRICT VALIDATION: Headers must be in exact positions (1-8)
+      
+      setIsImporting(true);
+      
+      // Read the file content
+      let csvText = '';
+      try {
+        console.log('Reading file content...');
+        const response = await fetch(file.uri);
+        if (!response.ok) {
+          throw new Error('Failed to read file');
+        }
+        csvText = await response.text();
+        console.log('File content length:', csvText.length);
+      } catch (readError) {
+        console.error('Error reading file:', readError);
+        Alert.alert('Read Error', 'Could not read the file content. Please try again.');
+        setIsImporting(false);
+        return;
+      }
+      
+      if (!csvText || csvText.trim().length === 0) {
+        Alert.alert('Empty File', 'The selected file appears to be empty.');
+        setIsImporting(false);
+        return;
+      }
+      
+      // Parse CSV
+      const lines = csvText.split('\n').filter(line => line.trim());
+      if (lines.length < 2) {
+        Alert.alert('Empty File', 'The CSV file appears to be empty or has no data rows.');
+        setIsImporting(false);
+        return;
+      }
+      
+      // Parse header (first line)
+      const headerLine = lines[0];
+      const headers = parseCSVLine(headerLine).map(h => h.toLowerCase().trim());
+      
+      // STRICT VALIDATION: Headers must be in exact positions (1-8)
     // Expected order: Company Name, Position, Position Type, State, City, Date Applied, Work Mode, Application Status
     const requiredHeaders = [
       { position: 0, name: 'Company Name', aliases: ['company name', 'company', 'company_name'] },
