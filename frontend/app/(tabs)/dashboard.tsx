@@ -336,6 +336,20 @@ export default function DashboardScreen() {
 
   const maxWorkModeValue = Math.max(...workModeBarData.map(d => d.value), 1);
 
+  // Prepare position bar chart data (Top 6 positions)
+  const positionStats = stats?.by_position || {};
+  const positionChartData = Object.entries(positionStats)
+    .map(([position, count]) => ({
+      label: position.length > 15 ? position.substring(0, 15) + '...' : position,
+      fullLabel: position,
+      value: count as number,
+      color: PIE_COLORS[Object.keys(positionStats).indexOf(position) % PIE_COLORS.length],
+    }))
+    .sort((a, b) => b.value - a.value)
+    .slice(0, 6);
+  
+  const maxPositionValue = Math.max(...positionChartData.map(d => d.value), 1);
+
   return (
     <SafeAreaView style={dynamicStyles.container} edges={['top']}>
       {/* Header with integrated date including day */}
