@@ -340,7 +340,7 @@ export default function DashboardScreen() {
   const positionStats = stats?.by_position || {};
   const positionChartData = Object.entries(positionStats)
     .map(([position, count]) => ({
-      label: position.length > 22 ? position.substring(0, 22) + '...' : position,
+      label: position,
       fullLabel: position,
       value: count as number,
       color: PIE_COLORS[Object.keys(positionStats).indexOf(position) % PIE_COLORS.length],
