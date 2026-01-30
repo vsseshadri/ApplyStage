@@ -474,7 +474,7 @@ export default function MyJobsScreen() {
   // CSV Import function
   const handleImportCSV = async () => {
     // Prevent multiple simultaneous calls
-    if (isImporting || isPickerActive) {
+    if (isImporting) {
       console.log('Import already in progress, skipping');
       return;
     }
