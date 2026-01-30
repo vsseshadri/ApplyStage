@@ -627,81 +627,87 @@ export default function MyJobsScreen() {
         // Check if this job already exists (by company + position)
         const key = `${companyName.toLowerCase()}-${position.toLowerCase()}`;
         if (existingCompanyPositions.has(key)) continue;
-      
-      // Convert date to MM/DD/YYYY format automatically
-      const dateApplied = parseCSVDate(dateAppliedRaw);
-      const workMode = normalizeWorkMode(workModeRaw);
-      const status = normalizeStatus(statusRaw);
-      
-      newJobsToCreate.push({
-        company_name: companyName,
-        position: position,
-        job_type: jobType,
-        location: { state, city },
-        date_applied: dateApplied,
-        work_mode: workMode,
-        status: status,
-        min_salary: 0,
-        max_salary: 0,
-        job_url: '',
-        recruiter_email: '',
-        notes: '',
-        follow_up_days: 7,
-        is_priority: false,
-      });
-      
-      // Add to set to avoid duplicates within the same CSV
-      existingCompanyPositions.add(key);
-    }
-    
-    if (newJobsToCreate.length === 0) {
-      Alert.alert('No New Entries', 'All jobs in the CSV file already exist in your list or the file contains no valid entries.');
-      setIsImporting(false);
-      return;
-    }
-    
-    // Create jobs via API
-    let successCount = 0;
-    let failCount = 0;
-    
-    for (const job of newJobsToCreate) {
-      try {
-        const response = await fetch(`${BACKEND_URL}/api/jobs`, {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${sessionToken}`,
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify(job)
+        
+        // Convert date to MM/DD/YYYY format automatically
+        const dateApplied = parseCSVDate(dateAppliedRaw);
+        const workMode = normalizeWorkMode(workModeRaw);
+        const status = normalizeStatus(statusRaw);
+        
+        newJobsToCreate.push({
+          company_name: companyName,
+          position: position,
+          job_type: jobType,
+          location: { state, city },
+          date_applied: dateApplied,
+          work_mode: workMode,
+          status: status,
+          min_salary: 0,
+          max_salary: 0,
+          job_url: '',
+          recruiter_email: '',
+          notes: '',
+          follow_up_days: 7,
+          is_priority: false,
         });
         
-        if (response.ok) {
-          successCount++;
-        } else {
+        // Add to set to avoid duplicates within the same CSV
+        existingCompanyPositions.add(key);
+      }
+      
+      if (newJobsToCreate.length === 0) {
+        Alert.alert('No New Entries', 'All jobs in the CSV file already exist in your list or the file contains no valid entries.');
+        setIsImporting(false);
+        return;
+      }
+      
+      // Create jobs via API
+      let successCount = 0;
+      let failCount = 0;
+      
+      for (const job of newJobsToCreate) {
+        try {
+          const response = await fetch(`${BACKEND_URL}/api/jobs`, {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${sessionToken}`,
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(job)
+          });
+          
+          if (response.ok) {
+            successCount++;
+          } else {
+            failCount++;
+          }
+        } catch (error) {
           failCount++;
         }
-      } catch (error) {
-        failCount++;
       }
-    }
-    
-    setIsImporting(false);
-    
-    // Refresh jobs list
-    await fetchJobs();
-    
-    // Trigger dashboard refresh
-    if (triggerDashboardRefresh) {
-      triggerDashboardRefresh();
-    }
-    
-    // Show result
-    if (successCount > 0 && failCount === 0) {
-      Alert.alert('Import Successful', `${successCount} new job(s) have been imported.`);
-    } else if (successCount > 0 && failCount > 0) {
-      Alert.alert('Partial Import', `${successCount} job(s) imported successfully.\n${failCount} job(s) failed to import.`);
-    } else {
-      Alert.alert('Import Failed', 'Failed to import jobs. Please try again.');
+      
+      setIsImporting(false);
+      
+      // Refresh jobs list
+      await fetchJobs();
+      
+      // Trigger dashboard refresh
+      if (triggerDashboardRefresh) {
+        triggerDashboardRefresh();
+      }
+      
+      // Show result
+      if (successCount > 0 && failCount === 0) {
+        Alert.alert('Import Successful', `${successCount} new job(s) have been imported.`);
+      } else if (successCount > 0 && failCount > 0) {
+        Alert.alert('Partial Import', `${successCount} job(s) imported successfully.\n${failCount} job(s) failed to import.`);
+      } else {
+        Alert.alert('Import Failed', 'Failed to import jobs. Please try again.');
+      }
+    } catch (error) {
+      console.error('CSV Import error:', error);
+      setIsPickerActive(false);
+      setIsImporting(false);
+      Alert.alert('Import Error', 'An error occurred while importing the CSV file. Please try again.');
     }
   };
   
