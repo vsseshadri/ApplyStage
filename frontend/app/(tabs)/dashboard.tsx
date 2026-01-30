@@ -689,9 +689,10 @@ export default function DashboardScreen() {
               };
               const statusColor = statusColors[interview.status] || '#6B7280';
               const formatStatus = (status: string) => status?.split('_').map((word: string) => word.charAt(0).toUpperCase() + word.slice(1)).join(' ') || 'Applied';
+              const isLastItem = index === upcomingInterviews.length - 1;
               
               return (
-                <View key={interview.job_id || index} style={dynamicStyles.upcomingCard}>
+                <View key={interview.job_id || index} style={[dynamicStyles.upcomingCard, !isLastItem && dynamicStyles.upcomingCardWithBorder]}>
                   <View style={dynamicStyles.upcomingDateBadge}>
                     <Text style={dynamicStyles.upcomingDateDay}>
                       {interview.schedule_date?.split(' ')[1]?.replace(',', '') || '--'}
