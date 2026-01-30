@@ -698,10 +698,21 @@ export default function MyJobsScreen() {
         Alert.alert('Import Failed', 'Failed to import jobs. Please try again.');
       }
       
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error importing CSV:', error);
-      Alert.alert('Import Error', 'An error occurred while importing the CSV file. Please ensure the file format is correct.');
+      setIsPickerActive(false);
       setIsImporting(false);
+      
+      // Handle specific error messages
+      const errorMessage = error?.message || '';
+      if (errorMessage.includes('Different document picking in progress')) {
+        Alert.alert('Please Wait', 'A file picker is already open. Please wait and try again.');
+      } else if (errorMessage.includes('User cancelled')) {
+        // User cancelled - no need to show error
+        return;
+      } else {
+        Alert.alert('Import Error', 'An error occurred while importing the CSV file. Please ensure the file format is correct and try again.');
+      }
     }
   };
   
