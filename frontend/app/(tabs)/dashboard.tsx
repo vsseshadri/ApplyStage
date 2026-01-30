@@ -1160,7 +1160,7 @@ const createStyles = (colors: any, isDark: boolean) => StyleSheet.create({
     flexDirection: 'row',
     gap: 16,
   },
-  // Stats Row - All cards in single row
+  // Stats Row - All cards in single row with Liquid Glass effect
   statsRow: {
     flexDirection: 'row',
     gap: 6,
@@ -1168,16 +1168,18 @@ const createStyles = (colors: any, isDark: boolean) => StyleSheet.create({
   },
   statCard: {
     flex: 1,
-    backgroundColor: colors.card,
-    borderRadius: 10,
+    backgroundColor: isDark ? 'rgba(44, 44, 46, 0.6)' : 'rgba(255, 255, 255, 0.8)',
+    borderRadius: 14,
     paddingVertical: 10,
     paddingHorizontal: 6,
     alignItems: 'center',
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: isDark ? 0.3 : 0.08,
+    shadowRadius: 8,
     elevation: 3,
+    borderWidth: 0.5,
+    borderColor: isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.05)',
   },
   statIcon: {
     width: 32,
