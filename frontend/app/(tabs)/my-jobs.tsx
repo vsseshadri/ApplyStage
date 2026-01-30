@@ -558,75 +558,75 @@ export default function MyJobsScreen() {
       const headers = parseCSVLine(headerLine).map(h => h.toLowerCase().trim());
       
       // STRICT VALIDATION: Headers must be in exact positions (1-8)
-    // Expected order: Company Name, Position, Position Type, State, City, Date Applied, Work Mode, Application Status
-    const requiredHeaders = [
-      { position: 0, name: 'Company Name', aliases: ['company name', 'company', 'company_name'] },
-      { position: 1, name: 'Position', aliases: ['position', 'role', 'job title', 'title'] },
-      { position: 2, name: 'Position Type', aliases: ['position type', 'job type', 'type', 'job_type', 'position_type'] },
-      { position: 3, name: 'State', aliases: ['state', 'province', 'province/territory'] },
-      { position: 4, name: 'City', aliases: ['city', 'location'] },
-      { position: 5, name: 'Date Applied', aliases: ['date applied', 'date_applied', 'applied date', 'applied_date', 'date'] },
-      { position: 6, name: 'Work Mode', aliases: ['work mode', 'work_mode', 'mode', 'remote/onsite', 'workplace'] },
-      { position: 7, name: 'Application Status', aliases: ['application status', 'status', 'application_status', 'stage'] },
-    ];
-    
-    // Check if we have at least 8 columns
-    if (headers.length < 8) {
-      Alert.alert(
-        'Invalid CSV Format',
-        `CSV file must have 8 columns in this exact order:\n\n1. Company Name\n2. Position\n3. Position Type\n4. State\n5. City\n6. Date Applied\n7. Work Mode\n8. Application Status\n\nYour file has only ${headers.length} column(s).`
-      );
-      setIsImporting(false);
-      return;
-    }
-    
-    // Validate each header is in the correct position
-    const missingHeaders: string[] = [];
-    for (const required of requiredHeaders) {
-      const headerAtPosition = headers[required.position];
-      const isValid = required.aliases.some(alias => headerAtPosition === alias);
-      if (!isValid) {
-        missingHeaders.push(`Column ${required.position + 1}: Expected "${required.name}", found "${headerAtPosition || '(empty)'}"`);
+      // Expected order: Company Name, Position, Position Type, State, City, Date Applied, Work Mode, Application Status
+      const requiredHeaders = [
+        { position: 0, name: 'Company Name', aliases: ['company name', 'company', 'company_name'] },
+        { position: 1, name: 'Position', aliases: ['position', 'role', 'job title', 'title'] },
+        { position: 2, name: 'Position Type', aliases: ['position type', 'job type', 'type', 'job_type', 'position_type'] },
+        { position: 3, name: 'State', aliases: ['state', 'province', 'province/territory'] },
+        { position: 4, name: 'City', aliases: ['city', 'location'] },
+        { position: 5, name: 'Date Applied', aliases: ['date applied', 'date_applied', 'applied date', 'applied_date', 'date'] },
+        { position: 6, name: 'Work Mode', aliases: ['work mode', 'work_mode', 'mode', 'remote/onsite', 'workplace'] },
+        { position: 7, name: 'Application Status', aliases: ['application status', 'status', 'application_status', 'stage'] },
+      ];
+      
+      // Check if we have at least 8 columns
+      if (headers.length < 8) {
+        Alert.alert(
+          'Invalid CSV Format',
+          `CSV file must have 8 columns in this exact order:\n\n1. Company Name\n2. Position\n3. Position Type\n4. State\n5. City\n6. Date Applied\n7. Work Mode\n8. Application Status\n\nYour file has only ${headers.length} column(s).`
+        );
+        setIsImporting(false);
+        return;
       }
-    }
-    
-    if (missingHeaders.length > 0) {
-      Alert.alert(
-        'Mandatory Values Missing',
-        `The CSV file has incorrect column headers.\n\nRequired format (columns 1-8):\nCompany Name, Position, Position Type, State, City, Date Applied, Work Mode, Application Status\n\nIssues found:\n${missingHeaders.join('\n')}`
+      
+      // Validate each header is in the correct position
+      const missingHeaders: string[] = [];
+      for (const required of requiredHeaders) {
+        const headerAtPosition = headers[required.position];
+        const isValid = required.aliases.some(alias => headerAtPosition === alias);
+        if (!isValid) {
+          missingHeaders.push(`Column ${required.position + 1}: Expected "${required.name}", found "${headerAtPosition || '(empty)'}"`);
+        }
+      }
+      
+      if (missingHeaders.length > 0) {
+        Alert.alert(
+          'Mandatory Values Missing',
+          `The CSV file has incorrect column headers.\n\nRequired format (columns 1-8):\nCompany Name, Position, Position Type, State, City, Date Applied, Work Mode, Application Status\n\nIssues found:\n${missingHeaders.join('\n')}`
+        );
+        setIsImporting(false);
+        return;
+      }
+      
+      // Parse data rows with strict column positions
+      const newJobsToCreate: any[] = [];
+      const existingCompanyPositions = new Set(
+        jobs.map(job => `${job.company_name?.toLowerCase()}-${job.position?.toLowerCase()}`)
       );
-      setIsImporting(false);
-      return;
-    }
-    
-    // Parse data rows with strict column positions
-    const newJobsToCreate: any[] = [];
-    const existingCompanyPositions = new Set(
-      jobs.map(job => `${job.company_name?.toLowerCase()}-${job.position?.toLowerCase()}`)
-    );
-    
-    for (let i = 1; i < lines.length; i++) {
-      const line = lines[i].trim();
-      if (!line) continue;
       
-      const values = parseCSVLine(line);
-      
-      // Get values from fixed positions (0-7)
-      const companyName = values[0]?.trim() || '';
-      const position = values[1]?.trim() || '';
-      const jobType = values[2]?.trim() || '';
-      const state = values[3]?.trim() || '';
-      const city = values[4]?.trim() || '';
-      const dateAppliedRaw = values[5]?.trim() || '';
-      const workModeRaw = values[6]?.trim() || '';
-      const statusRaw = values[7]?.trim() || '';
-      
-      // Skip rows without company name or position
-      if (!companyName || !position) continue;
-      
-      // Check if this job already exists (by company + position)
-      const key = `${companyName.toLowerCase()}-${position.toLowerCase()}`;
-      if (existingCompanyPositions.has(key)) continue;
+      for (let i = 1; i < lines.length; i++) {
+        const line = lines[i].trim();
+        if (!line) continue;
+        
+        const values = parseCSVLine(line);
+        
+        // Get values from fixed positions (0-7)
+        const companyName = values[0]?.trim() || '';
+        const position = values[1]?.trim() || '';
+        const jobType = values[2]?.trim() || '';
+        const state = values[3]?.trim() || '';
+        const city = values[4]?.trim() || '';
+        const dateAppliedRaw = values[5]?.trim() || '';
+        const workModeRaw = values[6]?.trim() || '';
+        const statusRaw = values[7]?.trim() || '';
+        
+        // Skip rows without company name or position
+        if (!companyName || !position) continue;
+        
+        // Check if this job already exists (by company + position)
+        const key = `${companyName.toLowerCase()}-${position.toLowerCase()}`;
+        if (existingCompanyPositions.has(key)) continue;
       
       // Convert date to MM/DD/YYYY format automatically
       const dateApplied = parseCSVDate(dateAppliedRaw);
