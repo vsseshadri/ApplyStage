@@ -685,7 +685,7 @@ export default function DashboardScreen() {
                   <View style={dynamicStyles.chartCard}>
                     {positionChartData.map((item, index) => (
                       <View key={index} style={dynamicStyles.barRow}>
-                        <Text style={dynamicStyles.barLabel} numberOfLines={1}>{item.label}</Text>
+                        <Text style={dynamicStyles.barLabelWide} numberOfLines={1}>{item.label}</Text>
                         <View style={dynamicStyles.barContainer}>
                           <View style={[dynamicStyles.bar, { width: `${(item.value / maxPositionValue) * 100}%`, backgroundColor: item.color }]} />
                         </View>
