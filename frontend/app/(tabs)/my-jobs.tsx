@@ -862,6 +862,17 @@ export default function MyJobsScreen() {
     return 'remote';
   };
   
+  // Flexible version that accepts any value (for CSV import)
+  const normalizeWorkModeFlexible = (mode: string): string => {
+    if (!mode) return 'remote';
+    const lower = mode.toLowerCase().trim();
+    if (lower.includes('remote') || lower.includes('wfh') || lower.includes('work from home')) return 'remote';
+    if (lower.includes('onsite') || lower.includes('on-site') || lower.includes('office')) return 'onsite';
+    if (lower.includes('hybrid')) return 'hybrid';
+    // Return original value if no match - allows new/custom values
+    return mode.trim();
+  };
+  
   // Helper function to normalize status
   const normalizeStatus = (status: string): string => {
     if (!status) return 'applied';
@@ -902,6 +913,49 @@ export default function MyJobsScreen() {
     }
     
     return 'applied';
+  };
+  
+  // Flexible version that accepts any value (for CSV import)
+  const normalizeStatusFlexible = (status: string): string => {
+    if (!status) return 'applied';
+    const lower = status.toLowerCase().replace(/[^a-z0-9]/g, '_');
+    
+    const statusMap: { [key: string]: string } = {
+      'applied': 'applied',
+      'recruiter_screening': 'recruiter_screening',
+      'recruiter': 'recruiter_screening',
+      'screening': 'recruiter_screening',
+      'phone_screen': 'phone_screen',
+      'phone': 'phone_screen',
+      'coding_round_1': 'coding_round_1',
+      'coding_1': 'coding_round_1',
+      'coding': 'coding_round_1',
+      'technical': 'coding_round_1',
+      'coding_round_2': 'coding_round_2',
+      'coding_2': 'coding_round_2',
+      'system_design': 'system_design',
+      'design': 'system_design',
+      'behavioural': 'behavioural',
+      'behavioral': 'behavioural',
+      'culture': 'behavioural',
+      'hiring_manager': 'hiring_manager',
+      'manager': 'hiring_manager',
+      'final_round': 'final_round',
+      'final': 'final_round',
+      'onsite': 'final_round',
+      'offer': 'offer',
+      'offered': 'offer',
+      'rejected': 'rejected',
+      'declined': 'rejected',
+    };
+    
+    // Find a matching status
+    for (const [key, value] of Object.entries(statusMap)) {
+      if (lower.includes(key)) return value;
+    }
+    
+    // Return original value converted to snake_case if no match - allows new/custom values
+    return status.trim().toLowerCase().replace(/\s+/g, '_').replace(/[^a-z0-9_]/g, '');
   };
 
   const handleAddCustomPosition = async () => {
