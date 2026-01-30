@@ -590,440 +590,338 @@ export default function DashboardScreen() {
           >
             {/* Summary Stats Row */}
             <View style={dynamicStyles.statsRow}>
-          <TouchableOpacity 
-            style={dynamicStyles.statCard}
-            onPress={() => handleStatCardPress('all')}
-            activeOpacity={0.7}
-          >
-            <View style={[dynamicStyles.statIcon, { backgroundColor: colors.primary + '20' }]}>
-              <Ionicons name="briefcase" size={18} color={colors.primary} />
-            </View>
-            <Text style={dynamicStyles.statNumber}>{stats?.total || 0}</Text>
-            <Text style={dynamicStyles.statLabel}>Total</Text>
-          </TouchableOpacity>
-          
-          <TouchableOpacity 
-            style={dynamicStyles.statCard}
-            onPress={() => handleStatCardPress('last_10_days')}
-            activeOpacity={0.7}
-          >
-            <View style={[dynamicStyles.statIcon, { backgroundColor: '#10B98120' }]}>
-              <Ionicons name="trending-up" size={18} color="#10B981" />
-            </View>
-            <Text style={dynamicStyles.statNumber}>{stats?.last_10_days || 0}</Text>
-            <Text style={dynamicStyles.statLabel}>Last 10 Days</Text>
-          </TouchableOpacity>
-          
-          <TouchableOpacity 
-            style={dynamicStyles.statCard}
-            onPress={() => handleStatCardPress('final_round')}
-            activeOpacity={0.7}
-          >
-            <View style={[dynamicStyles.statIcon, { backgroundColor: '#8B5CF620' }]}>
-              <Ionicons name="flag" size={18} color="#8B5CF6" />
-            </View>
-            <Text style={dynamicStyles.statNumber}>{stats?.final_round || 0}</Text>
-            <Text style={dynamicStyles.statLabel}>Final Round</Text>
-          </TouchableOpacity>
-          
-          <TouchableOpacity 
-            style={dynamicStyles.statCard}
-            onPress={() => handleStatCardPress('offers')}
-            activeOpacity={0.7}
-          >
-            <View style={[dynamicStyles.statIcon, { backgroundColor: '#22C55E20' }]}>
-              <Ionicons name="checkmark-circle" size={18} color="#22C55E" />
-            </View>
-            <Text style={dynamicStyles.statNumber}>{stats?.offer || 0}</Text>
-            <Text style={dynamicStyles.statLabel}>Offers</Text>
-          </TouchableOpacity>
-          
-          <TouchableOpacity 
-            style={dynamicStyles.statCard}
-            onPress={() => handleStatCardPress('rejected')}
-            activeOpacity={0.7}
-          >
-            <View style={[dynamicStyles.statIcon, { backgroundColor: '#EF444420' }]}>
-              <Ionicons name="close-circle" size={18} color="#EF4444" />
-            </View>
-            <Text style={dynamicStyles.statNumber}>{stats?.rejected || 0}</Text>
-            <Text style={dynamicStyles.statLabel}>Rejected</Text>
-          </TouchableOpacity>
-        </View>
-
-        {/* Horizontal Bar Chart - By Application Status */}
-        <View style={dynamicStyles.section}>
-          <Text style={dynamicStyles.sectionTitle}>By Application Status</Text>
-          
-          {barChartData.length > 0 ? (
-            <View style={dynamicStyles.chartCard}>
-              {barChartData.map((item, index) => (
-                <View key={index} style={dynamicStyles.barRow}>
-                  <Text style={dynamicStyles.barLabel}>{item.label}</Text>
-                  <View style={dynamicStyles.barContainer}>
-                    <View 
-                      style={[
-                        dynamicStyles.bar, 
-                        { 
-                          width: `${(item.value / maxValue) * 100}%`,
-                          backgroundColor: item.color 
-                        }
-                      ]} 
-                    />
-                  </View>
-                  <Text style={dynamicStyles.barValue}>{item.value}</Text>
+              <TouchableOpacity style={dynamicStyles.statCard} onPress={() => handleStatCardPress('all')} activeOpacity={0.7}>
+                <View style={[dynamicStyles.statIcon, { backgroundColor: colors.primary + '20' }]}>
+                  <Ionicons name="briefcase" size={18} color={colors.primary} />
                 </View>
-              ))}
+                <Text style={dynamicStyles.statNumber}>{stats?.total || 0}</Text>
+                <Text style={dynamicStyles.statLabel}>Total</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={dynamicStyles.statCard} onPress={() => handleStatCardPress('last_10_days')} activeOpacity={0.7}>
+                <View style={[dynamicStyles.statIcon, { backgroundColor: '#10B98120' }]}>
+                  <Ionicons name="trending-up" size={18} color="#10B981" />
+                </View>
+                <Text style={dynamicStyles.statNumber}>{stats?.last_10_days || 0}</Text>
+                <Text style={dynamicStyles.statLabel}>Last 10 Days</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={dynamicStyles.statCard} onPress={() => handleStatCardPress('final_round')} activeOpacity={0.7}>
+                <View style={[dynamicStyles.statIcon, { backgroundColor: '#8B5CF620' }]}>
+                  <Ionicons name="flag" size={18} color="#8B5CF6" />
+                </View>
+                <Text style={dynamicStyles.statNumber}>{stats?.final_round || 0}</Text>
+                <Text style={dynamicStyles.statLabel}>Final Round</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={dynamicStyles.statCard} onPress={() => handleStatCardPress('offers')} activeOpacity={0.7}>
+                <View style={[dynamicStyles.statIcon, { backgroundColor: '#22C55E20' }]}>
+                  <Ionicons name="checkmark-circle" size={18} color="#22C55E" />
+                </View>
+                <Text style={dynamicStyles.statNumber}>{stats?.offer || 0}</Text>
+                <Text style={dynamicStyles.statLabel}>Offers</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={dynamicStyles.statCard} onPress={() => handleStatCardPress('rejected')} activeOpacity={0.7}>
+                <View style={[dynamicStyles.statIcon, { backgroundColor: '#EF444420' }]}>
+                  <Ionicons name="close-circle" size={18} color="#EF4444" />
+                </View>
+                <Text style={dynamicStyles.statNumber}>{stats?.rejected || 0}</Text>
+                <Text style={dynamicStyles.statLabel}>Rejected</Text>
+              </TouchableOpacity>
             </View>
-          ) : (
-            <View style={dynamicStyles.emptyChart}>
-              <Ionicons name="bar-chart-outline" size={48} color={colors.textSecondary} />
-              <Text style={dynamicStyles.emptyText}>No applications yet</Text>
-              <Text style={dynamicStyles.emptySubtext}>Add your first job to see stats</Text>
-            </View>
-          )}
-        </View>
 
-        {/* Work Mode Statistics - Simple Bar Chart */}
-        <View style={dynamicStyles.section}>
-          <Text style={dynamicStyles.sectionTitle}>By Work Mode</Text>
-          <View style={dynamicStyles.chartCard}>
-            {maxWorkModeValue > 0 ? (
-              <View style={dynamicStyles.workModeContainer}>
-                {workModeBarData.map((item, index) => (
-                  <TouchableOpacity 
-                    key={index} 
-                    style={dynamicStyles.workModeRow}
-                    onPress={() => handleWorkModePress(item.label.toLowerCase())}
-                    activeOpacity={0.7}
-                  >
-                    <View style={dynamicStyles.workModeBarWrapper}>
-                      <View 
-                        style={[
-                          dynamicStyles.workModeBar, 
-                          { 
-                            height: `${(item.value / maxWorkModeValue) * 100}%`,
-                            backgroundColor: item.frontColor 
-                          }
-                        ]} 
-                      />
+            {/* Application Status Chart */}
+            <View style={dynamicStyles.section}>
+              <Text style={dynamicStyles.sectionTitle}>By Application Status</Text>
+              {barChartData.length > 0 ? (
+                <View style={dynamicStyles.chartCard}>
+                  {barChartData.map((item, index) => (
+                    <View key={index} style={dynamicStyles.barRow}>
+                      <Text style={dynamicStyles.barLabel}>{item.label}</Text>
+                      <View style={dynamicStyles.barContainer}>
+                        <View style={[dynamicStyles.bar, { width: `${(item.value / maxValue) * 100}%`, backgroundColor: item.color }]} />
+                      </View>
+                      <Text style={dynamicStyles.barValue}>{item.value}</Text>
                     </View>
-                    <Text style={dynamicStyles.workModeValue}>{item.value}</Text>
-                    <Text style={dynamicStyles.workModeLabel}>{item.label}</Text>
-                  </TouchableOpacity>
+                  ))}
+                </View>
+              ) : (
+                <View style={dynamicStyles.emptyChart}>
+                  <Ionicons name="bar-chart-outline" size={48} color={colors.textSecondary} />
+                  <Text style={dynamicStyles.emptyText}>No applications yet</Text>
+                  <Text style={dynamicStyles.emptySubtext}>Add your first job to see stats</Text>
+                </View>
+              )}
+            </View>
+
+            {/* Two Column Layout for Work Mode and Position */}
+            <View style={dynamicStyles.tabletChartsRow}>
+              {/* Work Mode Chart */}
+              <View style={[dynamicStyles.section, { flex: 1, marginRight: 8 }]}>
+                <Text style={dynamicStyles.sectionTitle}>By Work Mode</Text>
+                <View style={dynamicStyles.chartCard}>
+                  {maxWorkModeValue > 0 ? (
+                    <View style={dynamicStyles.workModeContainer}>
+                      {workModeBarData.map((item, index) => (
+                        <TouchableOpacity key={index} style={dynamicStyles.workModeRow} onPress={() => handleWorkModePress(item.label.toLowerCase())} activeOpacity={0.7}>
+                          <View style={dynamicStyles.workModeBarWrapper}>
+                            <View style={[dynamicStyles.workModeBar, { height: `${(item.value / maxWorkModeValue) * 100}%`, backgroundColor: item.frontColor }]} />
+                          </View>
+                          <Text style={dynamicStyles.workModeValue}>{item.value}</Text>
+                          <Text style={dynamicStyles.workModeLabel}>{item.label}</Text>
+                        </TouchableOpacity>
+                      ))}
+                    </View>
+                  ) : (
+                    <View style={dynamicStyles.emptyChartSmall}>
+                      <Ionicons name="analytics-outline" size={32} color={colors.textSecondary} />
+                      <Text style={dynamicStyles.emptySubtext}>No work mode data</Text>
+                    </View>
+                  )}
+                </View>
+              </View>
+
+              {/* Position Chart */}
+              {positionChartData.length > 0 && (
+                <View style={[dynamicStyles.section, { flex: 1, marginLeft: 8 }]}>
+                  <Text style={dynamicStyles.sectionTitle}>By Position</Text>
+                  <View style={dynamicStyles.chartCard}>
+                    {positionChartData.map((item, index) => (
+                      <View key={index} style={dynamicStyles.barRow}>
+                        <Text style={dynamicStyles.barLabel} numberOfLines={1}>{item.label}</Text>
+                        <View style={dynamicStyles.barContainer}>
+                          <View style={[dynamicStyles.bar, { width: `${(item.value / maxPositionValue) * 100}%`, backgroundColor: item.color }]} />
+                        </View>
+                        <Text style={dynamicStyles.barValue}>{item.value}</Text>
+                      </View>
+                    ))}
+                  </View>
+                </View>
+              )}
+            </View>
+
+            {/* Location Chart */}
+            {pieChartData.length > 0 && (
+              <View style={dynamicStyles.section}>
+                <Text style={dynamicStyles.sectionTitle}>By Location</Text>
+                <View style={dynamicStyles.chartCard}>
+                  <View style={dynamicStyles.donutContainer}>
+                    <Svg width={160} height={160} viewBox="0 0 160 160">
+                      <G rotation={-90} origin="80, 80">
+                        {(() => {
+                          const total = pieChartData.reduce((sum, item) => sum + item.value, 0);
+                          let currentAngle = 0;
+                          const radius = 60;
+                          const strokeWidth = 24;
+                          const circumference = 2 * Math.PI * radius;
+                          return pieChartData.map((item, index) => {
+                            const percentage = item.value / total;
+                            const strokeDasharray = `${percentage * circumference} ${circumference}`;
+                            const strokeDashoffset = -currentAngle * circumference;
+                            currentAngle += percentage;
+                            return (
+                              <Circle key={index} cx="80" cy="80" r={radius} stroke={item.color} strokeWidth={strokeWidth} fill="transparent" strokeDasharray={strokeDasharray} strokeDashoffset={strokeDashoffset} strokeLinecap="round" />
+                            );
+                          });
+                        })()}
+                      </G>
+                      <Circle cx="80" cy="80" r="36" fill={colors.card} />
+                    </Svg>
+                    <View style={dynamicStyles.donutCenterText}>
+                      <Text style={[dynamicStyles.donutNumber, { color: colors.text }]}>{stats?.total || 0}</Text>
+                      <Text style={[dynamicStyles.donutLabel, { color: colors.textSecondary }]}>Total</Text>
+                    </View>
+                  </View>
+                  <View style={dynamicStyles.legendContainer}>
+                    {pieChartData.map((item, index) => (
+                      <View key={index} style={dynamicStyles.legendItem}>
+                        <View style={[dynamicStyles.legendDot, { backgroundColor: item.color }]} />
+                        <Text style={dynamicStyles.legendText} numberOfLines={1}>{item.label}</Text>
+                        <Text style={dynamicStyles.legendValue}>{item.value}</Text>
+                      </View>
+                    ))}
+                  </View>
+                </View>
+              </View>
+            )}
+            <View style={{ height: 40 }} />
+          </ScrollView>
+
+          {/* Right Column - Insights and Upcoming */}
+          <ScrollView
+            style={dynamicStyles.tabletRightColumn}
+            contentContainerStyle={dynamicStyles.tabletScrollContent}
+            showsVerticalScrollIndicator={false}
+          >
+            {renderInsightsSection()}
+            {renderUpcomingInterviewsSection()}
+            <View style={{ height: 40 }} />
+          </ScrollView>
+        </View>
+      ) : (
+        /* Mobile Layout - Single Column */
+        <ScrollView
+          style={dynamicStyles.scrollView}
+          contentContainerStyle={dynamicStyles.scrollContent}
+          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary} />}
+        >
+          {/* Summary Stats Row */}
+          <View style={dynamicStyles.statsRow}>
+            <TouchableOpacity style={dynamicStyles.statCard} onPress={() => handleStatCardPress('all')} activeOpacity={0.7}>
+              <View style={[dynamicStyles.statIcon, { backgroundColor: colors.primary + '20' }]}>
+                <Ionicons name="briefcase" size={18} color={colors.primary} />
+              </View>
+              <Text style={dynamicStyles.statNumber}>{stats?.total || 0}</Text>
+              <Text style={dynamicStyles.statLabel}>Total</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={dynamicStyles.statCard} onPress={() => handleStatCardPress('last_10_days')} activeOpacity={0.7}>
+              <View style={[dynamicStyles.statIcon, { backgroundColor: '#10B98120' }]}>
+                <Ionicons name="trending-up" size={18} color="#10B981" />
+              </View>
+              <Text style={dynamicStyles.statNumber}>{stats?.last_10_days || 0}</Text>
+              <Text style={dynamicStyles.statLabel}>Last 10 Days</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={dynamicStyles.statCard} onPress={() => handleStatCardPress('final_round')} activeOpacity={0.7}>
+              <View style={[dynamicStyles.statIcon, { backgroundColor: '#8B5CF620' }]}>
+                <Ionicons name="flag" size={18} color="#8B5CF6" />
+              </View>
+              <Text style={dynamicStyles.statNumber}>{stats?.final_round || 0}</Text>
+              <Text style={dynamicStyles.statLabel}>Final Round</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={dynamicStyles.statCard} onPress={() => handleStatCardPress('offers')} activeOpacity={0.7}>
+              <View style={[dynamicStyles.statIcon, { backgroundColor: '#22C55E20' }]}>
+                <Ionicons name="checkmark-circle" size={18} color="#22C55E" />
+              </View>
+              <Text style={dynamicStyles.statNumber}>{stats?.offer || 0}</Text>
+              <Text style={dynamicStyles.statLabel}>Offers</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={dynamicStyles.statCard} onPress={() => handleStatCardPress('rejected')} activeOpacity={0.7}>
+              <View style={[dynamicStyles.statIcon, { backgroundColor: '#EF444420' }]}>
+                <Ionicons name="close-circle" size={18} color="#EF4444" />
+              </View>
+              <Text style={dynamicStyles.statNumber}>{stats?.rejected || 0}</Text>
+              <Text style={dynamicStyles.statLabel}>Rejected</Text>
+            </TouchableOpacity>
+          </View>
+
+          {/* Application Status Chart */}
+          <View style={dynamicStyles.section}>
+            <Text style={dynamicStyles.sectionTitle}>By Application Status</Text>
+            {barChartData.length > 0 ? (
+              <View style={dynamicStyles.chartCard}>
+                {barChartData.map((item, index) => (
+                  <View key={index} style={dynamicStyles.barRow}>
+                    <Text style={dynamicStyles.barLabel}>{item.label}</Text>
+                    <View style={dynamicStyles.barContainer}>
+                      <View style={[dynamicStyles.bar, { width: `${(item.value / maxValue) * 100}%`, backgroundColor: item.color }]} />
+                    </View>
+                    <Text style={dynamicStyles.barValue}>{item.value}</Text>
+                  </View>
                 ))}
               </View>
             ) : (
-              <View style={dynamicStyles.emptyChartSmall}>
-                <Ionicons name="analytics-outline" size={32} color={colors.textSecondary} />
-                <Text style={dynamicStyles.emptySubtext}>No work mode data</Text>
+              <View style={dynamicStyles.emptyChart}>
+                <Ionicons name="bar-chart-outline" size={48} color={colors.textSecondary} />
+                <Text style={dynamicStyles.emptyText}>No applications yet</Text>
+                <Text style={dynamicStyles.emptySubtext}>Add your first job to see stats</Text>
               </View>
             )}
           </View>
-        </View>
 
-        {/* Position Statistics - Horizontal Bar Chart */}
-        {positionChartData.length > 0 && (
+          {/* Work Mode Chart */}
           <View style={dynamicStyles.section}>
-            <Text style={dynamicStyles.sectionTitle}>By Position</Text>
+            <Text style={dynamicStyles.sectionTitle}>By Work Mode</Text>
             <View style={dynamicStyles.chartCard}>
-              {positionChartData.map((item, index) => (
-                <View key={index} style={dynamicStyles.barRow}>
-                  <Text style={dynamicStyles.barLabel} numberOfLines={1}>{item.label}</Text>
-                  <View style={dynamicStyles.barContainer}>
-                    <View 
-                      style={[
-                        dynamicStyles.bar, 
-                        { 
-                          width: `${(item.value / maxPositionValue) * 100}%`,
-                          backgroundColor: item.color 
-                        }
-                      ]} 
-                    />
-                  </View>
-                  <Text style={dynamicStyles.barValue}>{item.value}</Text>
+              {maxWorkModeValue > 0 ? (
+                <View style={dynamicStyles.workModeContainer}>
+                  {workModeBarData.map((item, index) => (
+                    <TouchableOpacity key={index} style={dynamicStyles.workModeRow} onPress={() => handleWorkModePress(item.label.toLowerCase())} activeOpacity={0.7}>
+                      <View style={dynamicStyles.workModeBarWrapper}>
+                        <View style={[dynamicStyles.workModeBar, { height: `${(item.value / maxWorkModeValue) * 100}%`, backgroundColor: item.frontColor }]} />
+                      </View>
+                      <Text style={dynamicStyles.workModeValue}>{item.value}</Text>
+                      <Text style={dynamicStyles.workModeLabel}>{item.label}</Text>
+                    </TouchableOpacity>
+                  ))}
                 </View>
-              ))}
+              ) : (
+                <View style={dynamicStyles.emptyChartSmall}>
+                  <Ionicons name="analytics-outline" size={32} color={colors.textSecondary} />
+                  <Text style={dynamicStyles.emptySubtext}>No work mode data</Text>
+                </View>
+              )}
             </View>
           </View>
-        )}
 
-        {/* Location Statistics - SVG Donut Chart */}
-        {pieChartData.length > 0 && (
-          <View style={dynamicStyles.section}>
-            <Text style={dynamicStyles.sectionTitle}>By Location</Text>
-            <View style={dynamicStyles.chartCard}>
-              {/* SVG Donut Chart */}
-              <View style={dynamicStyles.donutContainer}>
-                <Svg width={160} height={160} viewBox="0 0 160 160">
-                  <G rotation={-90} origin="80, 80">
-                    {(() => {
-                      const total = pieChartData.reduce((sum, item) => sum + item.value, 0);
-                      let currentAngle = 0;
-                      const radius = 60;
-                      const strokeWidth = 24;
-                      const circumference = 2 * Math.PI * radius;
-                      
-                      return pieChartData.map((item, index) => {
-                        const percentage = item.value / total;
-                        const strokeDasharray = `${percentage * circumference} ${circumference}`;
-                        const strokeDashoffset = -currentAngle * circumference;
-                        currentAngle += percentage;
-                        
-                        return (
-                          <Circle
-                            key={index}
-                            cx="80"
-                            cy="80"
-                            r={radius}
-                            stroke={item.color}
-                            strokeWidth={strokeWidth}
-                            fill="transparent"
-                            strokeDasharray={strokeDasharray}
-                            strokeDashoffset={strokeDashoffset}
-                            strokeLinecap="round"
-                          />
-                        );
-                      });
-                    })()}
-                  </G>
-                  {/* Center circle for donut effect */}
-                  <Circle cx="80" cy="80" r="36" fill={colors.card} />
-                </Svg>
-                {/* Center text overlay */}
-                <View style={dynamicStyles.donutCenterText}>
-                  <Text style={[dynamicStyles.donutNumber, { color: colors.text }]}>
-                    {stats?.total || 0}
-                  </Text>
-                  <Text style={[dynamicStyles.donutLabel, { color: colors.textSecondary }]}>
-                    Total
-                  </Text>
-                </View>
-              </View>
-              
-              {/* Legend */}
-              <View style={dynamicStyles.legendContainer}>
-                {pieChartData.map((item, index) => (
-                  <View key={index} style={dynamicStyles.legendItem}>
-                    <View style={[dynamicStyles.legendDot, { backgroundColor: item.color }]} />
-                    <Text style={dynamicStyles.legendText} numberOfLines={1}>
-                      {item.label}
-                    </Text>
-                    <Text style={dynamicStyles.legendValue}>{item.value}</Text>
+          {/* Position Chart */}
+          {positionChartData.length > 0 && (
+            <View style={dynamicStyles.section}>
+              <Text style={dynamicStyles.sectionTitle}>By Position</Text>
+              <View style={dynamicStyles.chartCard}>
+                {positionChartData.map((item, index) => (
+                  <View key={index} style={dynamicStyles.barRow}>
+                    <Text style={dynamicStyles.barLabel} numberOfLines={1}>{item.label}</Text>
+                    <View style={dynamicStyles.barContainer}>
+                      <View style={[dynamicStyles.bar, { width: `${(item.value / maxPositionValue) * 100}%`, backgroundColor: item.color }]} />
+                    </View>
+                    <Text style={dynamicStyles.barValue}>{item.value}</Text>
                   </View>
                 ))}
               </View>
             </View>
-          </View>
-        )}
+          )}
 
-        {/* Insights - Split into Strategic and Follow-ups */}
-        {(insights.length > 0 || followUps.length > 0) && (
-          <View style={dynamicStyles.section}>
-            {/* Insights - Beautiful Card Layout */}
-            <View style={dynamicStyles.sectionHeader}>
-              <Ionicons name="sparkles" size={18} color={colors.primary} />
-              <Text style={dynamicStyles.sectionTitle}>Insights</Text>
-            </View>
-            <View style={dynamicStyles.insightsGrid}>
-              {insights.slice(0, isTablet ? 6 : 4).map((insight: any, index: number) => (
-                <View 
-                  key={index} 
-                  style={[
-                    dynamicStyles.insightCard,
-                    insight.type === 'urgent' && dynamicStyles.insightCardUrgent,
-                    insight.type === 'celebration' && dynamicStyles.insightCardSuccess,
-                    insight.type === 'encouragement' && dynamicStyles.insightCardEncouragement,
-                  ]}
-                >
-                  <View style={[dynamicStyles.insightIconContainer, { backgroundColor: `${insight.color}20` }]}>
-                    <Ionicons 
-                      name={insight.icon || 'information-circle'} 
-                      size={20} 
-                      color={insight.color || colors.primary} 
-                    />
+          {/* Location Chart */}
+          {pieChartData.length > 0 && (
+            <View style={dynamicStyles.section}>
+              <Text style={dynamicStyles.sectionTitle}>By Location</Text>
+              <View style={dynamicStyles.chartCard}>
+                <View style={dynamicStyles.donutContainer}>
+                  <Svg width={160} height={160} viewBox="0 0 160 160">
+                    <G rotation={-90} origin="80, 80">
+                      {(() => {
+                        const total = pieChartData.reduce((sum, item) => sum + item.value, 0);
+                        let currentAngle = 0;
+                        const radius = 60;
+                        const strokeWidth = 24;
+                        const circumference = 2 * Math.PI * radius;
+                        return pieChartData.map((item, index) => {
+                          const percentage = item.value / total;
+                          const strokeDasharray = `${percentage * circumference} ${circumference}`;
+                          const strokeDashoffset = -currentAngle * circumference;
+                          currentAngle += percentage;
+                          return (
+                            <Circle key={index} cx="80" cy="80" r={radius} stroke={item.color} strokeWidth={strokeWidth} fill="transparent" strokeDasharray={strokeDasharray} strokeDashoffset={strokeDashoffset} strokeLinecap="round" />
+                          );
+                        });
+                      })()}
+                    </G>
+                    <Circle cx="80" cy="80" r="36" fill={colors.card} />
+                  </Svg>
+                  <View style={dynamicStyles.donutCenterText}>
+                    <Text style={[dynamicStyles.donutNumber, { color: colors.text }]}>{stats?.total || 0}</Text>
+                    <Text style={[dynamicStyles.donutLabel, { color: colors.textSecondary }]}>Total</Text>
                   </View>
-                  <Text style={dynamicStyles.insightCardText} numberOfLines={3}>
-                    {insight.text || insight}
-                  </Text>
                 </View>
-              ))}
-            </View>
-            
-            {/* Follow-up Reminders - Compact UI with Swipe to Delete */}
-            {followUps.length > 0 && (
-              <View style={{ marginTop: 20 }}>
-                <View style={dynamicStyles.sectionHeader}>
-                  <Ionicons name="notifications" size={18} color="#F59E0B" />
-                  <Text style={dynamicStyles.sectionTitle}>Follow-up Reminders</Text>
-                </View>
-                <View style={dynamicStyles.followUpsContainer}>
-                  {followUps.map((followUp: any, index: number) => {
-                    // Handle summary items
-                    if (followUp.summary) {
-                      return (
-                        <View key={index} style={dynamicStyles.followUpSummary}>
-                          <Text style={dynamicStyles.followUpSummaryText}>{followUp.text}</Text>
-                        </View>
-                      );
-                    }
-                    
-                    // Regular follow-up items - Compact design
-                    const urgencyColors: any = {
-                      critical: { bg: '#FEE2E2', border: '#EF4444', text: '#991B1B' },
-                      high: { bg: '#FEF3C7', border: '#F59E0B', text: '#92400E' },
-                      medium: { bg: '#E0E7FF', border: '#6366F1', text: '#3730A3' }
-                    };
-                    const urgencyStyle = urgencyColors[followUp.urgency] || urgencyColors.medium;
-                    
-                    // Get status color for badge
-                    const statusColors: any = {
-                      'Applied': '#3B82F6',
-                      'Recruiter Screening': '#8B5CF6',
-                      'Phone Screen': '#6366F1',
-                      'Coding Round 1': '#EC4899',
-                      'Coding Round 2': '#EC4899',
-                      'System Design': '#F59E0B',
-                      'Behavioural': '#10B981',
-                      'Hiring Manager': '#14B8A6',
-                      'Final Round': '#22C55E'
-                    };
-                    const statusColor = statusColors[followUp.status] || '#6B7280';
-                    
-                    // Handle send email - use recruiter_email if available
-                    const handleSendEmail = () => {
-                      const toEmail = followUp.recruiter_email || '';
-                      const subject = encodeURIComponent(`Follow-up: Application at ${followUp.company}`);
-                      const body = encodeURIComponent(
-                        `Dear Hiring Team,\n\nI hope this email finds you well. I wanted to follow up on my application at ${followUp.company}.\n\nI remain very interested in this opportunity and would appreciate any updates on the status of my application.\n\nThank you for your time and consideration.\n\nBest regards`
-                      );
-                      const emailUrl = `mailto:${toEmail}?subject=${subject}&body=${body}`;
-                      Linking.openURL(emailUrl).catch(() => {
-                        Alert.alert('Error', 'Unable to open email app.');
-                      });
-                    };
-                    
-                    // Handle delete on swipe
-                    const handleDelete = () => {
-                      setFollowUps(prev => prev.filter((_, i) => i !== index));
-                    };
-                    
-                    // Render delete action for swipe
-                    const renderRightActions = () => (
-                      <TouchableOpacity
-                        style={dynamicStyles.followUpDeleteAction}
-                        onPress={handleDelete}
-                      >
-                        <Ionicons name="trash-outline" size={20} color="#FFF" />
-                        <Text style={dynamicStyles.followUpDeleteActionText}>Delete</Text>
-                      </TouchableOpacity>
-                    );
-                    
-                    const cardContent = (
-                      <View style={[
-                        dynamicStyles.followUpCardCompact,
-                        { borderLeftColor: urgencyStyle.border }
-                      ]}>
-                        <View style={dynamicStyles.followUpCardContent}>
-                          <View style={dynamicStyles.followUpTopRow}>
-                            <Text style={[dynamicStyles.followUpCompanyCompact, followUp.is_priority && { fontWeight: '700' }]} numberOfLines={1}>
-                              {followUp.is_priority && <Text style={{ color: '#F59E0B' }}>★ </Text>}
-                              {followUp.company}
-                            </Text>
-                            <View style={dynamicStyles.followUpRightSection}>
-                              <TouchableOpacity onPress={handleSendEmail} style={dynamicStyles.followUpMailIcon}>
-                                <Ionicons name="mail-outline" size={20} color={colors.primary} />
-                              </TouchableOpacity>
-                              <View style={[dynamicStyles.followUpDaysCounter, { backgroundColor: urgencyStyle.border }]}>
-                                <Text style={dynamicStyles.followUpDaysNumber}>{followUp.overdue_days}</Text>
-                                <Text style={dynamicStyles.followUpDaysLabel}>days</Text>
-                              </View>
-                            </View>
-                          </View>
-                          <View style={dynamicStyles.followUpBottomRow}>
-                            <View style={[dynamicStyles.followUpStatusBadge, { backgroundColor: statusColor }]}>
-                              <Text style={dynamicStyles.followUpStatusText}>{followUp.status}</Text>
-                            </View>
-                            <Text style={dynamicStyles.followUpOverdueText}>overdue</Text>
-                          </View>
-                        </View>
-                      </View>
-                    );
-                    
-                    return (
-                      <Swipeable
-                        key={index}
-                        renderRightActions={renderRightActions}
-                        overshootRight={false}
-                      >
-                        {cardContent}
-                      </Swipeable>
-                    );
-                  })}
+                <View style={dynamicStyles.legendContainer}>
+                  {pieChartData.map((item, index) => (
+                    <View key={index} style={dynamicStyles.legendItem}>
+                      <View style={[dynamicStyles.legendDot, { backgroundColor: item.color }]} />
+                      <Text style={dynamicStyles.legendText} numberOfLines={1}>{item.label}</Text>
+                      <Text style={dynamicStyles.legendValue}>{item.value}</Text>
+                    </View>
+                  ))}
                 </View>
               </View>
-            )}
-          </View>
-        )}
-
-        {/* Upcoming Interviews Section */}
-        {upcomingInterviews.length > 0 && (
-          <View style={dynamicStyles.section}>
-            <Text style={dynamicStyles.sectionTitle}>
-              <Ionicons name="calendar" size={16} color="#8B5CF6" /> Upcoming Interviews
-            </Text>
-            <View style={dynamicStyles.upcomingContainer}>
-              {upcomingInterviews.map((interview, index) => {
-                // Get status color for badge
-                const statusColors: any = {
-                  'applied': '#3B82F6',
-                  'recruiter_screening': '#8B5CF6',
-                  'phone_screen': '#6366F1',
-                  'coding_round_1': '#EC4899',
-                  'coding_round_2': '#EC4899',
-                  'system_design': '#F59E0B',
-                  'behavioural': '#10B981',
-                  'hiring_manager': '#14B8A6',
-                  'final_round': '#22C55E',
-                  'offer': '#22C55E',
-                  'rejected': '#EF4444'
-                };
-                const statusColor = statusColors[interview.status] || '#6B7280';
-                const formatStatus = (status: string) => status?.split('_').map((word: string) => word.charAt(0).toUpperCase() + word.slice(1)).join(' ') || 'Applied';
-                
-                return (
-                  <View key={interview.job_id || index} style={dynamicStyles.upcomingCard}>
-                    <View style={dynamicStyles.upcomingDateBadge}>
-                      <Text style={dynamicStyles.upcomingDateDay}>
-                        {interview.schedule_date?.split(' ')[1]?.replace(',', '') || '--'}
-                      </Text>
-                      <Text style={dynamicStyles.upcomingDateMonth}>
-                        {interview.schedule_date?.split(' ')[0] || '--'}
-                      </Text>
-                    </View>
-                    <View style={dynamicStyles.upcomingDetails}>
-                      <Text style={dynamicStyles.upcomingCompany} numberOfLines={1}>
-                        {interview.company_name}
-                      </Text>
-                      <Text style={dynamicStyles.upcomingPosition} numberOfLines={1}>
-                        {interview.position}
-                      </Text>
-                    </View>
-                    <View style={dynamicStyles.upcomingStageBadgeRight}>
-                      <View style={[dynamicStyles.stageDot, { backgroundColor: STATUS_COLORS[interview.stage] || '#8B5CF6' }]} />
-                      <Text style={dynamicStyles.upcomingStageTextRight}>
-                        {interview.stage?.replace(/_/g, ' ').replace(/\b\w/g, (l: string) => l.toUpperCase())}
-                      </Text>
-                    </View>
-                  </View>
-                );
-              })}
             </View>
-          </View>
-        )}
+          )}
 
-        <View style={{ height: 40 }} />
-      </ScrollView>
+          {/* Insights and Follow-ups */}
+          {renderInsightsSection()}
+
+          {/* Upcoming Interviews */}
+          {renderUpcomingInterviewsSection()}
+
+          <View style={{ height: 40 }} />
+        </ScrollView>
+      )}
     </SafeAreaView>
   );
 }
