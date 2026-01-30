@@ -66,12 +66,7 @@
       ],
       "@react-native-community/datetimepicker",
       "expo-apple-authentication",
-      [
-        "expo-document-picker",
-        {
-          "iCloudContainerEnvironment": "Production"
-        }
-      ]
+      "expo-document-picker"
     ],
     "experiments": {
       "typedRoutes": true
