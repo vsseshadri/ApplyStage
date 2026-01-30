@@ -1491,6 +1491,11 @@ const createStyles = (colors: any, isDark: boolean) => StyleSheet.create({
     borderLeftWidth: 3,
     borderLeftColor: '#8B5CF6',
   },
+  upcomingCardWithBorder: {
+    borderBottomWidth: 1,
+    borderBottomColor: isDark ? '#333' : '#E5E7EB',
+    marginBottom: 8,
+  },
   upcomingDateBadge: {
     width: 50,
     height: 50,
