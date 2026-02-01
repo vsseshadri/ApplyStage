@@ -61,7 +61,7 @@
       [
         "expo-calendar",
         {
-          "calendarPermission": "Allow Job Tracker to access your calendar to add interview events"
+          "calendarPermission": "Allow HireFlow to access your calendar to add interview events"
         }
       ],
       "@react-native-community/datetimepicker",
