@@ -23,7 +23,7 @@
         "backgroundColor": "#007AFF"
       },
       "edgeToEdgeEnabled": true,
-      "package": "com.hireflowpro.app",
+      "package": "com.stagemetrics.app",
       "permissions": [
         "android.permission.INTERNET",
         "android.permission.ACCESS_NETWORK_STATE",
@@ -61,7 +61,7 @@
       [
         "expo-calendar",
         {
-          "calendarPermission": "Allow HireFlow Pro to access your calendar to add interview events"
+          "calendarPermission": "Allow StageMetrics to access your calendar to add interview events"
         }
       ],
       "@react-native-community/datetimepicker",
