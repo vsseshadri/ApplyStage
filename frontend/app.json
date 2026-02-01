@@ -70,6 +70,17 @@
     ],
     "experiments": {
       "typedRoutes": true
+    },
+    "extra": {
+      "eas": {
+        "projectId": null
+      },
+      "appName": "StageMetrics",
+      "EXPO_PUBLIC_BACKEND_URL": "https://repo-viewer-37.preview.emergentagent.com"
+    },
+    "owner": "emergent002",
+    "runtimeVersion": {
+      "policy": "appVersion"
     }
   }
 }
