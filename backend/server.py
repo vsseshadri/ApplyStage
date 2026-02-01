@@ -245,9 +245,10 @@ async def get_current_user(authorization: Optional[str] = Header(None)) -> User:
 @api_router.post("/auth/exchange-session")
 async def exchange_session(session_id: str):
     try:
+        auth_service_url = os.environ.get('AUTH_SERVICE_URL', 'https://demobackend.emergentagent.com/auth/v1/env/oauth/session-data')
         async with httpx.AsyncClient() as client:
             response = await client.get(
-                "https://demobackend.emergentagent.com/auth/v1/env/oauth/session-data",
+                auth_service_url,
                 headers={"X-Session-ID": session_id},
                 timeout=10.0
             )
