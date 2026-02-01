@@ -1,11 +1,11 @@
 {
   "expo": {
-    "name": "HireFlow Pro",
-    "slug": "hireflow-pro",
+    "name": "StageMetrics",
+    "slug": "stagemetrics",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "hireflowpro",
+    "scheme": "stagemetrics",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
