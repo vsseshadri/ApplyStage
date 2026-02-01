@@ -1,11 +1,11 @@
 {
   "expo": {
-    "name": "Job Tracker",
-    "slug": "job-application-tracker",
+    "name": "HireFlow",
+    "slug": "hireflow",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "jobtracker",
+    "scheme": "hireflow",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
