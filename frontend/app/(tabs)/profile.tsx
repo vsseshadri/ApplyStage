@@ -12,8 +12,8 @@ import * as ImagePicker from 'expo-image-picker';
 const BACKEND_URL = Constants.expoConfig?.extra?.EXPO_PUBLIC_BACKEND_URL || process.env.EXPO_PUBLIC_BACKEND_URL;
 
 // Product IDs for in-app purchases (for App Store Connect / Google Play Console)
-const PRODUCT_ID_IOS = 'com.jobtracker.premium';
-const PRODUCT_ID_ANDROID = 'com.jobtracker.premium';
+const PRODUCT_ID_IOS = 'com.stagemetrics.premium';
+const PRODUCT_ID_ANDROID = 'com.stagemetrics.premium';
 const PRICE = '$2.99';
 
 export default function ProfileScreen() {
@@ -344,7 +344,7 @@ export default function ProfileScreen() {
               <Ionicons name="help-circle-outline" size={20} color={colors.textSecondary} />
               <View style={dynamicStyles.infoText}>
                 <Text style={dynamicStyles.infoLabel}>Support</Text>
-                <Text style={dynamicStyles.infoValue}>support@jobtracker.com</Text>
+                <Text style={dynamicStyles.infoValue}>support@stagemetrics.com</Text>
               </View>
             </View>
           </View>
