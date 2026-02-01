@@ -10,7 +10,7 @@
     "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.hireflowpro.app",
+      "bundleIdentifier": "app.emergent.repo-viewer-376c8015cc",
       "usesAppleSignIn": true,
       "infoPlist": {
         "NSUserTrackingUsageDescription": "Track your job applications and progress",
