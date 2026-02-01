@@ -10,7 +10,7 @@
     "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.jobtracker.app",
+      "bundleIdentifier": "com.hireflow.app",
       "usesAppleSignIn": true,
       "infoPlist": {
         "NSUserTrackingUsageDescription": "Track your job applications and progress",
@@ -23,7 +23,7 @@
         "backgroundColor": "#007AFF"
       },
       "edgeToEdgeEnabled": true,
-      "package": "com.jobtracker.app",
+      "package": "com.hireflow.app",
       "permissions": [
         "android.permission.INTERNET",
         "android.permission.ACCESS_NETWORK_STATE",
