@@ -10,7 +10,7 @@
     "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.hireflow.app",
+      "bundleIdentifier": "com.hireflowpro.app",
       "usesAppleSignIn": true,
       "infoPlist": {
         "NSUserTrackingUsageDescription": "Track your job applications and progress",
@@ -23,7 +23,7 @@
         "backgroundColor": "#007AFF"
       },
       "edgeToEdgeEnabled": true,
-      "package": "com.hireflow.app",
+      "package": "com.hireflowpro.app",
       "permissions": [
         "android.permission.INTERNET",
         "android.permission.ACCESS_NETWORK_STATE",
@@ -61,7 +61,7 @@
       [
         "expo-calendar",
         {
-          "calendarPermission": "Allow HireFlow to access your calendar to add interview events"
+          "calendarPermission": "Allow HireFlow Pro to access your calendar to add interview events"
         }
       ],
       "@react-native-community/datetimepicker",
