@@ -161,13 +161,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const login = async () => {
     try {
-      const redirectUrl = Platform.OS === 'web'
-        ? `${window.location.origin}/`
-        : Linking.createURL('/');
+      let redirectUrl: string;
+      if (Platform.OS === 'web' && typeof window !== 'undefined') {
+        redirectUrl = `${window.location.origin}/`;
+      } else {
+        redirectUrl = Linking.createURL('/');
+      }
 
       const authUrl = `https://auth.emergentagent.com/?redirect=${encodeURIComponent(redirectUrl)}`;
 
-      if (Platform.OS === 'web') {
+      if (Platform.OS === 'web' && typeof window !== 'undefined') {
         window.location.href = authUrl;
       } else {
         const result = await WebBrowser.openAuthSessionAsync(authUrl, redirectUrl);
