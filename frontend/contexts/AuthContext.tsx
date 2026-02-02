@@ -415,7 +415,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   // Handle web auth redirect
   useEffect(() => {
-    if (Platform.OS === 'web') {
+    if (Platform.OS === 'web' && typeof window !== 'undefined' && typeof document !== 'undefined') {
       const hash = window.location.hash;
       if (hash.includes('session_id')) {
         handleAuthRedirect(window.location.href);
