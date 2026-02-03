@@ -684,6 +684,7 @@ export default function SettingsScreen() {
       padding: 16,
       alignItems: 'center',
       marginTop: 20,
+      marginBottom: 40,
     },
     logoutButtonText: {
       color: '#fff',
