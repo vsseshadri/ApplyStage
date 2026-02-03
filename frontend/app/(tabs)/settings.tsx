@@ -377,9 +377,12 @@ export default function SettingsScreen() {
       fontWeight: '700',
       color: colors.text,
     },
+    scrollView: {
+      flex: 1,
+    },
     scrollContent: {
       padding: 16,
-      paddingBottom: 100,
+      paddingBottom: 120,
     },
     
     // Profile Section
