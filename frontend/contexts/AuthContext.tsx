@@ -161,6 +161,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const login = async () => {
     try {
+      console.log('Starting Google Sign-In...');
+      console.log('BACKEND_URL:', BACKEND_URL);
+      
       let redirectUrl: string;
       if (Platform.OS === 'web' && typeof window !== 'undefined') {
         redirectUrl = `${window.location.origin}/`;
@@ -168,19 +171,29 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         redirectUrl = Linking.createURL('/');
       }
 
+      console.log('Redirect URL:', redirectUrl);
       const authUrl = `https://auth.emergentagent.com/?redirect=${encodeURIComponent(redirectUrl)}`;
+      console.log('Auth URL:', authUrl);
 
       if (Platform.OS === 'web' && typeof window !== 'undefined') {
         window.location.href = authUrl;
       } else {
+        console.log('Opening auth session...');
         const result = await WebBrowser.openAuthSessionAsync(authUrl, redirectUrl);
+        console.log('Auth session result:', result.type);
 
         if (result.type === 'success' && result.url) {
+          console.log('Auth successful, handling redirect...');
           await handleAuthRedirect(result.url);
+        } else if (result.type === 'cancel') {
+          console.log('Auth cancelled by user');
+        } else {
+          console.log('Auth result:', result);
         }
       }
-    } catch (error) {
-      console.error('Login error:', error);
+    } catch (error: any) {
+      console.error('Login error:', error.message || error);
+      Alert.alert('Error', `Sign-in failed: ${error.message || 'Unknown error'}`);
     }
   };
 
