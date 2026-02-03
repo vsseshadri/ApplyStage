@@ -379,6 +379,7 @@ export default function SettingsScreen() {
     },
     scrollContent: {
       padding: 16,
+      paddingBottom: 100,
     },
     
     // Profile Section
