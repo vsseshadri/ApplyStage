@@ -73,7 +73,7 @@
     },
     "extra": {
       "appName": "StageMetrics",
-      "EXPO_PUBLIC_BACKEND_URL": "https://repo-viewer-37.app.emergentagent.com"
+      "EXPO_PUBLIC_BACKEND_URL": "https://repo-viewer-37.preview.emergentagent.com"
     }
   }
 }
