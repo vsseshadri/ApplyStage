@@ -186,6 +186,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const loginWithApple = async () => {
     try {
+      console.log('Starting Apple Sign-In...');
+      console.log('BACKEND_URL:', BACKEND_URL);
+      
       const credential = await AppleAuthentication.signInAsync({
         requestedScopes: [
           AppleAuthentication.AppleAuthenticationScope.FULL_NAME,
@@ -193,26 +196,35 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         ],
       });
 
+      console.log('Apple credential received, user:', credential.user);
+
       // Send Apple credential to backend for verification and user creation
       // Note: identityToken may be null on subsequent sign-ins (Apple only provides it on first sign-in)
+      const requestBody = {
+        identityToken: credential.identityToken || null,
+        email: credential.email || null,
+        fullName: credential.fullName ? {
+          givenName: credential.fullName.givenName || '',
+          familyName: credential.fullName.familyName || '',
+        } : null,
+        user: credential.user,
+      };
+      
+      console.log('Sending to backend:', `${BACKEND_URL}/api/auth/apple`);
+      
       const response = await fetch(`${BACKEND_URL}/api/auth/apple`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          identityToken: credential.identityToken || null,
-          email: credential.email || null,
-          fullName: credential.fullName ? {
-            givenName: credential.fullName.givenName || '',
-            familyName: credential.fullName.familyName || '',
-          } : null,
-          user: credential.user,
-        }),
+        body: JSON.stringify(requestBody),
       });
+
+      console.log('Backend response status:', response.status);
 
       if (response.ok) {
         const data = await response.json();
+        console.log('Apple auth success, session token received');
         const token = data.session_token;
         const newUser = data.is_new_user || false;
         
@@ -225,16 +237,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         await promptBiometricSetup();
       } else {
         const errorData = await response.text();
-        console.error('Apple auth failed:', errorData);
-        Alert.alert('Error', 'Failed to sign in with Apple. Please try again.');
+        console.error('Apple auth failed:', response.status, errorData);
+        Alert.alert('Error', `Failed to sign in with Apple (${response.status}). Please try again.`);
       }
     } catch (error: any) {
-      if (error.code === 'ERR_CANCELED') {
+      if (error.code === 'ERR_REQUEST_CANCELED' || error.code === 'ERR_CANCELED') {
         // User cancelled the sign-in
+        console.log('Apple Sign-In cancelled by user');
         return;
       }
-      console.error('Apple login error:', error);
-      Alert.alert('Error', 'Apple Sign-In failed. Please try again.');
+      console.error('Apple login error:', error.message || error);
+      Alert.alert('Error', `Apple Sign-In failed: ${error.message || 'Unknown error'}. Please try again.`);
     }
   };
 
