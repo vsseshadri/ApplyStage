@@ -138,7 +138,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const authenticateWithBiometric = async (): Promise<boolean> => {
     try {
       const result = await LocalAuthentication.authenticateAsync({
-        promptMessage: 'Login to StageMetrics',
+        promptMessage: 'Login to CareerFlow',
         cancelLabel: 'Cancel',
         disableDeviceFallback: false,
         fallbackLabel: 'Use passcode',
