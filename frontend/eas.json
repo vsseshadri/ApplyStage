@@ -31,7 +31,12 @@
     "production": {
       "ios": {
         "ascAppId": "YOUR_APP_STORE_CONNECT_APP_ID",
-        "appleTeamId": "YOUR_APPLE_TEAM_ID"
+        "appleTeamId": "YOUR_APPLE_TEAM_ID",
+        "bundleIdentifier": "com.vsseshadri.careerflow"
+      },
+      "android": {
+        "serviceAccountKeyPath": "./google-services.json",
+        "track": "internal"
       }
     }
   }
