@@ -30,8 +30,8 @@
   "submit": {
     "production": {
       "ios": {
-        "ascAppId": "YOUR_APP_STORE_CONNECT_APP_ID",
-        "appleTeamId": "YOUR_APPLE_TEAM_ID",
+        "ascAppId": "6758738779",
+        "appleTeamId": "Q7F5A3AFZ8",
         "bundleIdentifier": "com.vsseshadri.careerflow"
       },
       "android": {
