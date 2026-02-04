@@ -13,6 +13,7 @@
       "bundleIdentifier": "com.vsseshadri.careerflow",
       "usesAppleSignIn": true,
       "buildNumber": "1",
+      "icon": "./assets/images/icon.png",
       "config": {
         "usesNonExemptEncryption": false
       },
