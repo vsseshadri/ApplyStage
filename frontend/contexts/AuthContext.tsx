@@ -23,6 +23,7 @@ interface User {
   preferred_display_name?: string | null;
   domicile_country?: string | null;
   onboarding_completed?: boolean;
+  communication_email?: string;
 }
 
 interface AuthContextType {
@@ -43,11 +44,18 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-const BACKEND_URL = Constants.expoConfig?.extra?.EXPO_PUBLIC_BACKEND_URL || 
-  process.env.EXPO_PUBLIC_BACKEND_URL || 
-  'https://repo-preview-43.preview.emergentagent.com';
+// Get backend URL with proper fallbacks
+const getBackendUrl = (): string => {
+  const configUrl = Constants.expoConfig?.extra?.EXPO_PUBLIC_BACKEND_URL;
+  const envUrl = process.env.EXPO_PUBLIC_BACKEND_URL;
+  return configUrl || envUrl || '';
+};
 
-console.log('AuthContext BACKEND_URL:', BACKEND_URL);
+const BACKEND_URL = getBackendUrl();
+
+if (__DEV__) {
+  console.log('AuthContext BACKEND_URL:', BACKEND_URL);
+}
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
