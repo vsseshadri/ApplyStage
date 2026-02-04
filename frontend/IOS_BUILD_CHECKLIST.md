@@ -1,4 +1,4 @@
-# StageMetrics iOS Build Checklist
+# CareerFlow iOS Build Checklist
 
 ## 🚨 CRITICAL: Before Building for TestFlight/Production
 
@@ -8,7 +8,7 @@ The most important step - update the backend URL in `app.json`:
 ```json
 // In app.json -> expo -> extra
 "extra": {
-  "appName": "StageMetrics",
+  "appName": "CareerFlow",
   "EXPO_PUBLIC_BACKEND_URL": "https://YOUR-PRODUCTION-BACKEND-URL.com"
 }
 ```
