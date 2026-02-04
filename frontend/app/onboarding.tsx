@@ -9,7 +9,7 @@ import { COUNTRIES } from '../utils/countries';
 
 const BACKEND_URL = Constants.expoConfig?.extra?.EXPO_PUBLIC_BACKEND_URL || 
   process.env.EXPO_PUBLIC_BACKEND_URL || 
-  'https://repo-viewer-37.preview.emergentagent.com';
+  'https://repo-preview-43.preview.emergentagent.com';
 
 export default function OnboardingScreen() {
   const { user, sessionToken, refreshUser } = useAuth();

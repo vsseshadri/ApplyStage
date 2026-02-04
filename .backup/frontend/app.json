@@ -50,7 +50,7 @@
       "typedRoutes": true
     },
     "extra": {
-      "EXPO_PUBLIC_BACKEND_URL": "https://repo-viewer-37.preview.emergentagent.com"
+      "EXPO_PUBLIC_BACKEND_URL": "https://repo-preview-43.preview.emergentagent.com"
     }
   }
 }

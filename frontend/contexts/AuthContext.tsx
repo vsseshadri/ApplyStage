@@ -45,7 +45,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 const BACKEND_URL = Constants.expoConfig?.extra?.EXPO_PUBLIC_BACKEND_URL || 
   process.env.EXPO_PUBLIC_BACKEND_URL || 
-  'https://repo-viewer-37.preview.emergentagent.com';
+  'https://repo-preview-43.preview.emergentagent.com';
 
 console.log('AuthContext BACKEND_URL:', BACKEND_URL);
 

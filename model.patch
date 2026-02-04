@@ -418,7 +418,7 @@ index d4768051..e69de29b 100644
 ------------------------------------+load_dotenv('/app/frontend/.env')
 ------------------------------------+
 ------------------------------------+# Configuration
-------------------------------------+BACKEND_URL = os.environ.get('EXPO_PUBLIC_BACKEND_URL', 'https://repo-viewer-37.preview.emergentagent.com')
+------------------------------------+BACKEND_URL = os.environ.get('EXPO_PUBLIC_BACKEND_URL', 'https://repo-preview-43.preview.emergentagent.com')
 ------------------------------------+API_BASE = f"{BACKEND_URL}/api"
 ------------------------------------+MONGO_URL = os.environ.get('MONGO_URL', 'mongodb://localhost:27017')
 ------------------------------------+DB_NAME = os.environ.get('DB_NAME', 'test_database')
@@ -1126,7 +1126,7 @@ index d4768051..e69de29b 100644
 -----------------------------------------------+load_dotenv('/app/frontend/.env')
 -----------------------------------------------+
 -----------------------------------------------+# Configuration
------------------------------------------------+BACKEND_URL = os.environ.get('EXPO_PUBLIC_BACKEND_URL', 'https://repo-viewer-37.preview.emergentagent.com')
+-----------------------------------------------+BACKEND_URL = os.environ.get('EXPO_PUBLIC_BACKEND_URL', 'https://repo-preview-43.preview.emergentagent.com')
 -----------------------------------------------+API_BASE = f"{BACKEND_URL}/api"
 -----------------------------------------------+MONGO_URL = os.environ.get('MONGO_URL', 'mongodb://localhost:27017')
 -----------------------------------------------+DB_NAME = os.environ.get('DB_NAME', 'test_database')
