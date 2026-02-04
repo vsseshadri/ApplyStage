@@ -1,16 +1,16 @@
 {
   "expo": {
-    "name": "StageMetrics",
-    "slug": "stagemetrics",
+    "name": "CareerFlow:Application Tracker",
+    "slug": "careerflow",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "stagemetrics",
+    "scheme": "careerflow",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "app.emergent.repo-viewer-376c8015cc",
+      "bundleIdentifier": "com.vsseshadri.careerflow",
       "usesAppleSignIn": true,
       "buildNumber": "1",
       "config": {
@@ -22,7 +22,8 @@
         "NSPhotoLibraryUsageDescription": "Select a profile photo from your library",
         "NSCameraUsageDescription": "Take a profile photo",
         "NSFaceIDUsageDescription": "Use Face ID to login securely",
-        "ITSAppUsesNonExemptEncryption": false
+        "ITSAppUsesNonExemptEncryption": false,
+        "CFBundleDisplayName": "CareerFlow"
       }
     },
     "android": {
@@ -31,7 +32,7 @@
         "backgroundColor": "#007AFF"
       },
       "edgeToEdgeEnabled": true,
-      "package": "com.stagemetrics.app",
+      "package": "com.vsseshadri.careerflow",
       "permissions": [
         "android.permission.INTERNET",
         "android.permission.ACCESS_NETWORK_STATE",
@@ -69,7 +70,7 @@
       [
         "expo-calendar",
         {
-          "calendarPermission": "Allow StageMetrics to access your calendar to add interview events"
+          "calendarPermission": "Allow CareerFlow to access your calendar to add interview events"
         }
       ],
       "@react-native-community/datetimepicker",
@@ -80,7 +81,7 @@
       "typedRoutes": true
     },
     "extra": {
-      "appName": "StageMetrics",
+      "appName": "CareerFlow",
       "EXPO_PUBLIC_BACKEND_URL": "https://repo-preview-43.preview.emergentagent.com"
     }
   }
