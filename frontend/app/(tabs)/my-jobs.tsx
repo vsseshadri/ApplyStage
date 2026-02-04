@@ -15,9 +15,13 @@ import { CANADA_PROVINCES_AND_CITIES, CANADA_PROVINCES } from '../../utils/canad
 import { INDIA_STATES_AND_CITIES, INDIA_STATES } from '../../utils/indiaStatesAndCities';
 import * as XLSX from 'xlsx';
 
-const BACKEND_URL = Constants.expoConfig?.extra?.EXPO_PUBLIC_BACKEND_URL || 
-  process.env.EXPO_PUBLIC_BACKEND_URL || 
-  'https://repo-preview-43.preview.emergentagent.com';
+// Get backend URL from configuration
+const getBackendUrl = (): string => {
+  const configUrl = Constants.expoConfig?.extra?.EXPO_PUBLIC_BACKEND_URL;
+  const envUrl = process.env.EXPO_PUBLIC_BACKEND_URL;
+  return configUrl || envUrl || '';
+};
+const BACKEND_URL = getBackendUrl();
 
 const STATUSES = ['applied', 'recruiter_screening', 'phone_screen', 'coding_round_1', 'coding_round_2', 'system_design', 'behavioural', 'hiring_manager', 'final_round', 'offer', 'rejected'];
 const DEFAULT_POSITIONS = ['Software Engineer', 'Senior Software Engineer', 'Frontend Developer', 'Backend Developer', 'Full Stack Developer', 'DevOps Engineer', 'Data Scientist', 'Product Manager', 'UI/UX Designer'];
