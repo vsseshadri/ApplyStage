@@ -7,9 +7,13 @@ import { useAuth } from '../contexts/AuthContext';
 import Constants from 'expo-constants';
 import { COUNTRIES } from '../utils/countries';
 
-const BACKEND_URL = Constants.expoConfig?.extra?.EXPO_PUBLIC_BACKEND_URL || 
-  process.env.EXPO_PUBLIC_BACKEND_URL || 
-  'https://repo-preview-43.preview.emergentagent.com';
+// Get backend URL from configuration
+const getBackendUrl = (): string => {
+  const configUrl = Constants.expoConfig?.extra?.EXPO_PUBLIC_BACKEND_URL;
+  const envUrl = process.env.EXPO_PUBLIC_BACKEND_URL;
+  return configUrl || envUrl || '';
+};
+const BACKEND_URL = getBackendUrl();
 
 export default function OnboardingScreen() {
   const { user, sessionToken, refreshUser } = useAuth();

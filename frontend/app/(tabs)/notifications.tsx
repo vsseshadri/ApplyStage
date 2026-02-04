@@ -24,9 +24,13 @@ import { WebView } from 'react-native-webview';
 // Export notification count for tab badge - will be set from component
 export let notificationCount = 0;
 
-const BACKEND_URL = Constants.expoConfig?.extra?.EXPO_PUBLIC_BACKEND_URL || 
-  process.env.EXPO_PUBLIC_BACKEND_URL || 
-  'https://repo-preview-43.preview.emergentagent.com';
+// Get backend URL from configuration
+const getBackendUrl = (): string => {
+  const configUrl = Constants.expoConfig?.extra?.EXPO_PUBLIC_BACKEND_URL;
+  const envUrl = process.env.EXPO_PUBLIC_BACKEND_URL;
+  return configUrl || envUrl || '';
+};
+const BACKEND_URL = getBackendUrl();
 
 // Report interface
 interface Report {

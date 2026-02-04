@@ -9,9 +9,13 @@ import { differenceInDays, format } from 'date-fns';
 import Constants from 'expo-constants';
 import * as ImagePicker from 'expo-image-picker';
 
-const BACKEND_URL = Constants.expoConfig?.extra?.EXPO_PUBLIC_BACKEND_URL || 
-  process.env.EXPO_PUBLIC_BACKEND_URL || 
-  'https://repo-preview-43.preview.emergentagent.com';
+// Get backend URL from configuration
+const getBackendUrl = (): string => {
+  const configUrl = Constants.expoConfig?.extra?.EXPO_PUBLIC_BACKEND_URL;
+  const envUrl = process.env.EXPO_PUBLIC_BACKEND_URL;
+  return configUrl || envUrl || '';
+};
+const BACKEND_URL = getBackendUrl();
 
 // Product IDs for in-app purchases (for App Store Connect / Google Play Console)
 const PRODUCT_ID_IOS = 'com.stagemetrics.premium';
