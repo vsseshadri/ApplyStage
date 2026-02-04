@@ -6,7 +6,9 @@ import { Ionicons } from '@expo/vector-icons';
 import * as AppleAuthentication from 'expo-apple-authentication';
 import Constants from 'expo-constants';
 
-const BACKEND_URL = Constants.expoConfig?.extra?.EXPO_PUBLIC_BACKEND_URL || process.env.EXPO_PUBLIC_BACKEND_URL;
+const BACKEND_URL = Constants.expoConfig?.extra?.EXPO_PUBLIC_BACKEND_URL || 
+  process.env.EXPO_PUBLIC_BACKEND_URL || 
+  'https://repo-viewer-37.preview.emergentagent.com';
 
 export default function LoginScreen() {
   const { user, loading, login, loginWithApple, sessionToken } = useAuth();
