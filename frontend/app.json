@@ -12,9 +12,17 @@
       "supportsTablet": true,
       "bundleIdentifier": "app.emergent.repo-viewer-376c8015cc",
       "usesAppleSignIn": true,
+      "buildNumber": "1",
+      "config": {
+        "usesNonExemptEncryption": false
+      },
       "infoPlist": {
         "NSUserTrackingUsageDescription": "Track your job applications and progress",
-        "NSCalendarsUsageDescription": "Schedule reminders for job follow-ups"
+        "NSCalendarsUsageDescription": "Schedule reminders for job follow-ups",
+        "NSPhotoLibraryUsageDescription": "Select a profile photo from your library",
+        "NSCameraUsageDescription": "Take a profile photo",
+        "NSFaceIDUsageDescription": "Use Face ID to login securely",
+        "ITSAppUsesNonExemptEncryption": false
       }
     },
     "android": {
