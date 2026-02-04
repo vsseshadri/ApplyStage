@@ -1842,6 +1842,28 @@ async def generate_report(report_type: str, current_user: User = Depends(get_cur
     return {"message": f"{report_type.title()} report generated", "report_id": report_doc["report_id"], "title": title}
 
 
+# Health check endpoint for production monitoring
+@api_router.get("/health")
+async def health_check():
+    """Health check endpoint for load balancers and monitoring"""
+    try:
+        # Verify database connection
+        await db.command('ping')
+        return {
+            "status": "healthy",
+            "database": "connected",
+            "timestamp": datetime.now(timezone.utc).isoformat()
+        }
+    except Exception as e:
+        logger.error(f"Health check failed: {e}")
+        return {
+            "status": "unhealthy",
+            "database": "disconnected",
+            "error": str(e),
+            "timestamp": datetime.now(timezone.utc).isoformat()
+        }
+
+
 app.include_router(api_router)
 
 app.add_middleware(
