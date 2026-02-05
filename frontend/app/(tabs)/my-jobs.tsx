@@ -14,6 +14,23 @@ import { US_STATES_AND_CITIES, US_STATES } from '../../utils/usStatesAndCities';
 import { CANADA_PROVINCES_AND_CITIES, CANADA_PROVINCES } from '../../utils/canadaProvincesAndCities';
 import { INDIA_STATES_AND_CITIES, INDIA_STATES } from '../../utils/indiaStatesAndCities';
 import * as XLSX from 'xlsx';
+import DateTimePicker from '@react-native-community/datetimepicker';
+
+// Currency mapping based on country
+const COUNTRY_CURRENCY: {[key: string]: { code: string, symbol: string }} = {
+  'United States': { code: 'USD', symbol: '$' },
+  'US': { code: 'USD', symbol: '$' },
+  'Canada': { code: 'CAD', symbol: 'C$' },
+  'CA': { code: 'CAD', symbol: 'C$' },
+  'India': { code: 'INR', symbol: '₹' },
+  'IN': { code: 'INR', symbol: '₹' },
+  'United Kingdom': { code: 'GBP', symbol: '£' },
+  'UK': { code: 'GBP', symbol: '£' },
+  'Australia': { code: 'AUD', symbol: 'A$' },
+  'AU': { code: 'AUD', symbol: 'A$' },
+  'Germany': { code: 'EUR', symbol: '€' },
+  'France': { code: 'EUR', symbol: '€' },
+};
 
 // Get backend URL from configuration
 const getBackendUrl = (): string => {
