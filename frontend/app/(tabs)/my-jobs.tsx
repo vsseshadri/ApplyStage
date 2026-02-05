@@ -249,7 +249,7 @@ export default function MyJobsScreen() {
   
   // Get currency based on user's country
   const userCountry = user?.domicile_country || 'United States';
-  const currencyInfo = COUNTRY_CURRENCY[userCountry] || COUNTRY_CURRENCY['United States'];
+  const currencyInfo = (COUNTRY_CURRENCY as any)[userCountry] || COUNTRY_CURRENCY['United States'];
   
   // Filter states
   const [localFilter, setLocalFilter] = useState<string>('all');
