@@ -2544,7 +2544,7 @@ export default function MyJobsScreen() {
                   >
                     <Ionicons name="calendar-outline" size={20} color={colors.primary} />
                     <Text style={[dynamicStyles.datePickerText, !upcomingScheduleDate && { color: colors.textSecondary }]}>
-                      {upcomingScheduleDate || 'Select Date'}
+                      {upcomingScheduleDate || 'Select Business Day'}
                     </Text>
                   </TouchableOpacity>
                   <CalendarPicker
@@ -2559,6 +2559,7 @@ export default function MyJobsScreen() {
                     }}
                     selectedDate={scheduledOnValue}
                     minDate={new Date()}
+                    businessDaysOnly={true}
                     colors={colors}
                   />
                 </View>
