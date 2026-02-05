@@ -241,6 +241,16 @@ export default function MyJobsScreen() {
   const [dateAppliedText, setDateAppliedText] = useState('');
   const [screenWidth, setScreenWidth] = useState(Dimensions.get('window').width);
   
+  // Date picker states
+  const [showDateAppliedPicker, setShowDateAppliedPicker] = useState(false);
+  const [showScheduledOnPicker, setShowScheduledOnPicker] = useState(false);
+  const [dateAppliedValue, setDateAppliedValue] = useState<Date>(new Date());
+  const [scheduledOnValue, setScheduledOnValue] = useState<Date>(new Date());
+  
+  // Get currency based on user's country
+  const userCountry = user?.domicile_country || 'United States';
+  const currencyInfo = COUNTRY_CURRENCY[userCountry] || COUNTRY_CURRENCY['United States'];
+  
   // Filter states
   const [localFilter, setLocalFilter] = useState<string>('all');
   const [workModeFilter, setWorkModeFilter] = useState<string>('all');
