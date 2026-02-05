@@ -2813,7 +2813,7 @@ const createStyles = (colors: any, isDark: boolean, isTablet: boolean = false) =
     backgroundColor: colors.primary,
     justifyContent: 'center',
     alignItems: 'center',
-    elevation: 4,
+    elevation: 8,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.25,
