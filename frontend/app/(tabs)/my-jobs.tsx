@@ -30,7 +30,7 @@ const COUNTRY_CURRENCY = {
   'AU': { code: 'AUD', symbol: 'A$' },
   'Germany': { code: 'EUR', symbol: '€' },
   'France': { code: 'EUR', symbol: '€' },
-} as const;
+};
 
 // Get backend URL from configuration
 const getBackendUrl = (): string => {
