@@ -2368,18 +2368,34 @@ export default function MyJobsScreen() {
                 </View>
               </View>
 
-              {/* Date Applied - Auto-formatting Text Input */}
+              {/* Date Applied - Calendar Modal Date Picker */}
               <View style={dynamicStyles.formSection}>
                 <Text style={dynamicStyles.label}>Date Applied *</Text>
-                <TextInput
-                  style={dynamicStyles.input}
-                  value={dateAppliedText}
-                  onChangeText={handleDateChange}
-                  placeholder="MM/DD/YYYY"
-                  placeholderTextColor={colors.textSecondary}
-                  keyboardType="numeric"
-                  maxLength={10}
-                />
+                <TouchableOpacity 
+                  style={dynamicStyles.datePickerButton}
+                  onPress={() => setShowDateAppliedPicker(true)}
+                >
+                  <Ionicons name="calendar-outline" size={20} color={colors.primary} />
+                  <Text style={[dynamicStyles.datePickerText, !dateAppliedText && { color: colors.textSecondary }]}>
+                    {dateAppliedText || 'Select Date'}
+                  </Text>
+                </TouchableOpacity>
+                {showDateAppliedPicker && (
+                  <DateTimePicker
+                    value={dateAppliedValue}
+                    mode="date"
+                    display={Platform.OS === 'ios' ? 'spinner' : 'calendar'}
+                    onChange={(event, selectedDate) => {
+                      setShowDateAppliedPicker(Platform.OS === 'ios');
+                      if (selectedDate) {
+                        setDateAppliedValue(selectedDate);
+                        const formatted = format(selectedDate, 'MM/dd/yyyy');
+                        setDateAppliedText(formatted);
+                      }
+                    }}
+                    maximumDate={new Date()}
+                  />
+                )}
               </View>
 
               {/* Work Mode */}
