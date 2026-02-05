@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { View, Text, TouchableOpacity, Modal, StyleSheet, ScrollView } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay, isSameMonth, addMonths, subMonths, isToday, isBefore, isAfter, startOfWeek, endOfWeek } from 'date-fns';
+import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay, isSameMonth, addMonths, subMonths, isToday, isBefore, isAfter, startOfWeek, endOfWeek, isWeekend } from 'date-fns';
 
 interface CalendarPickerProps {
   visible: boolean;
@@ -10,6 +10,7 @@ interface CalendarPickerProps {
   selectedDate?: Date;
   minDate?: Date;
   maxDate?: Date;
+  businessDaysOnly?: boolean;
   colors: {
     background: string;
     card: string;
@@ -27,6 +28,7 @@ const CalendarPicker: React.FC<CalendarPickerProps> = ({
   selectedDate,
   minDate,
   maxDate,
+  businessDaysOnly = false,
   colors,
 }) => {
   const [currentMonth, setCurrentMonth] = useState(selectedDate || new Date());
