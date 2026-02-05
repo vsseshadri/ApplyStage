@@ -14,7 +14,7 @@ import { US_STATES_AND_CITIES, US_STATES } from '../../utils/usStatesAndCities';
 import { CANADA_PROVINCES_AND_CITIES, CANADA_PROVINCES } from '../../utils/canadaProvincesAndCities';
 import { INDIA_STATES_AND_CITIES, INDIA_STATES } from '../../utils/indiaStatesAndCities';
 import * as XLSX from 'xlsx';
-import DateTimePicker from '@react-native-community/datetimepicker';
+import CalendarPicker from '../../components/CalendarPicker';
 
 // Currency mapping based on country
 const COUNTRY_CURRENCY = {
