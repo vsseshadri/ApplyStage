@@ -1869,7 +1869,7 @@ export default function MyJobsScreen() {
     </Modal>
   );
 
-  // Upcoming Stage Dropdown
+  // Upcoming Stage Dropdown - syncs with Application Status
   const renderUpcomingStageDropdown = () => (
     <Modal visible={showUpcomingStageDropdown} transparent animationType="fade" onRequestClose={() => setShowUpcomingStageDropdown(false)}>
       <View style={dynamicStyles.dropdownOverlay}>
@@ -1899,7 +1899,8 @@ export default function MyJobsScreen() {
                 key={status}
                 style={[dynamicStyles.dropdownItem, formData.upcoming_stage === status && dynamicStyles.dropdownItemSelected]}
                 onPress={() => {
-                  setFormData({ ...formData, upcoming_stage: status });
+                  // Sync Upcoming Stage with Application Status
+                  setFormData({ ...formData, upcoming_stage: status, status: status });
                   setShowUpcomingStageDropdown(false);
                 }}
               >
