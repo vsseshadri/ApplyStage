@@ -3193,6 +3193,21 @@ const createStyles = (colors: any, isDark: boolean, isTablet: boolean = false) =
     color: colors.inputText,
     borderColor: colors.inputBorder,
   },
+  datePickerButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderRadius: 8,
+    padding: 12,
+    borderWidth: 1,
+    backgroundColor: colors.inputBackground,
+    borderColor: colors.inputBorder,
+    gap: 10,
+  },
+  datePickerText: {
+    fontSize: 15,
+    color: colors.inputText,
+    flex: 1,
+  },
   notesInput: {
     minHeight: 100,
     textAlignVertical: 'top',
