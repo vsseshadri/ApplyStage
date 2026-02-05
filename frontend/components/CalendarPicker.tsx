@@ -61,6 +61,8 @@ const CalendarPicker: React.FC<CalendarPickerProps> = ({
   const isDateDisabled = (date: Date): boolean => {
     if (minDate && isBefore(date, minDate)) return true;
     if (maxDate && isAfter(date, maxDate)) return true;
+    // Disable weekends if businessDaysOnly is enabled
+    if (businessDaysOnly && isWeekend(date)) return true;
     return false;
   };
   
@@ -69,6 +71,7 @@ const CalendarPicker: React.FC<CalendarPickerProps> = ({
     const isSelected = selectedDate && isSameDay(date, selectedDate);
     const isTodayDate = isToday(date);
     const disabled = isDateDisabled(date);
+    const isWeekendDay = isWeekend(date);
     
     return (
       <TouchableOpacity
@@ -77,6 +80,7 @@ const CalendarPicker: React.FC<CalendarPickerProps> = ({
           styles.dayCell,
           isSelected && { backgroundColor: colors.primary },
           isTodayDate && !isSelected && styles.todayCell,
+          businessDaysOnly && isWeekendDay && styles.weekendCell,
         ]}
         onPress={() => !disabled && handleSelectDate(date)}
         disabled={disabled}
@@ -88,6 +92,7 @@ const CalendarPicker: React.FC<CalendarPickerProps> = ({
             isSelected && styles.selectedDayText,
             isTodayDate && !isSelected && { color: colors.primary, fontWeight: '700' },
             disabled && { color: colors.textSecondary + '30' },
+            businessDaysOnly && isWeekendDay && { color: colors.textSecondary + '40' },
           ]}
         >
           {format(date, 'd')}
