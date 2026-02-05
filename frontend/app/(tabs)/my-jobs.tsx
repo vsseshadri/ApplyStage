@@ -2463,15 +2463,15 @@ export default function MyJobsScreen() {
                 )}
               </View>
 
-              {/* Salary Range */}
+              {/* Salary Range - Dynamic Currency */}
               <View style={dynamicStyles.formSection}>
-                <Text style={dynamicStyles.label}>Salary Range (USD)</Text>
+                <Text style={dynamicStyles.label}>Salary Range ({currencyInfo.code})</Text>
                 <View style={dynamicStyles.salaryRow}>
                   <TextInput
                     style={[dynamicStyles.input, dynamicStyles.halfInput]}
                     value={formData.min_salary}
                     onChangeText={(text) => setFormData({ ...formData, min_salary: text })}
-                    placeholder="Min (e.g., 100000)"
+                    placeholder={`Min (e.g., ${currencyInfo.code === 'INR' ? '1000000' : '100000'})`}
                     keyboardType="numeric"
                     placeholderTextColor={colors.textSecondary}
                   />
@@ -2479,7 +2479,7 @@ export default function MyJobsScreen() {
                     style={[dynamicStyles.input, dynamicStyles.halfInput]}
                     value={formData.max_salary}
                     onChangeText={(text) => setFormData({ ...formData, max_salary: text })}
-                    placeholder="Max (e.g., 150000)"
+                    placeholder={`Max (e.g., ${currencyInfo.code === 'INR' ? '1500000' : '150000'})`}
                     keyboardType="numeric"
                     placeholderTextColor={colors.textSecondary}
                   />
