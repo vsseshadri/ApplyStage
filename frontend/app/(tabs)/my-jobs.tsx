@@ -2380,22 +2380,18 @@ export default function MyJobsScreen() {
                     {dateAppliedText || 'Select Date'}
                   </Text>
                 </TouchableOpacity>
-                {showDateAppliedPicker && (
-                  <DateTimePicker
-                    value={dateAppliedValue}
-                    mode="date"
-                    display={Platform.OS === 'ios' ? 'spinner' : 'calendar'}
-                    onChange={(event, selectedDate) => {
-                      setShowDateAppliedPicker(Platform.OS === 'ios');
-                      if (selectedDate) {
-                        setDateAppliedValue(selectedDate);
-                        const formatted = format(selectedDate, 'MM/dd/yyyy');
-                        setDateAppliedText(formatted);
-                      }
-                    }}
-                    maximumDate={new Date()}
-                  />
-                )}
+                <CalendarPicker
+                  visible={showDateAppliedPicker}
+                  onClose={() => setShowDateAppliedPicker(false)}
+                  onSelectDate={(selectedDate) => {
+                    setDateAppliedValue(selectedDate);
+                    const formatted = format(selectedDate, 'MM/dd/yyyy');
+                    setDateAppliedText(formatted);
+                  }}
+                  selectedDate={dateAppliedValue}
+                  maxDate={new Date()}
+                  colors={colors}
+                />
               </View>
 
               {/* Work Mode */}
