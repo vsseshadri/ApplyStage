@@ -758,7 +758,11 @@ const createDynamicStyles = (colors: any, isDark: boolean) => StyleSheet.create(
 
 const styles = StyleSheet.create({
   scrollContent: {
+    flex: 1,
+  },
+  scrollContentContainer: {
     padding: 12,
+    paddingBottom: 100,
   },
   notificationCard: {
     borderRadius: 12,
