@@ -2538,19 +2538,37 @@ export default function MyJobsScreen() {
                 </TouchableOpacity>
               </View>
 
-              {/* Scheduled On - Only visible when Upcoming Stage is selected */}
+              {/* Scheduled On - Calendar Modal Date Picker - Only visible when Upcoming Stage is selected */}
               {formData.upcoming_stage ? (
                 <View style={dynamicStyles.formSection}>
                   <Text style={dynamicStyles.label}>Scheduled On *</Text>
-                  <TextInput
-                    style={dynamicStyles.input}
-                    value={upcomingScheduleDate}
-                    onChangeText={handleUpcomingScheduleChange}
-                    placeholder="MM/DD/YYYY"
-                    placeholderTextColor={colors.textSecondary}
-                    keyboardType="numeric"
-                    maxLength={10}
-                  />
+                  <TouchableOpacity 
+                    style={dynamicStyles.datePickerButton}
+                    onPress={() => setShowScheduledOnPicker(true)}
+                  >
+                    <Ionicons name="calendar-outline" size={20} color={colors.primary} />
+                    <Text style={[dynamicStyles.datePickerText, !upcomingScheduleDate && { color: colors.textSecondary }]}>
+                      {upcomingScheduleDate || 'Select Date'}
+                    </Text>
+                  </TouchableOpacity>
+                  {showScheduledOnPicker && (
+                    <DateTimePicker
+                      value={scheduledOnValue}
+                      mode="date"
+                      display={Platform.OS === 'ios' ? 'spinner' : 'calendar'}
+                      onChange={(event, selectedDate) => {
+                        setShowScheduledOnPicker(Platform.OS === 'ios');
+                        if (selectedDate) {
+                          setScheduledOnValue(selectedDate);
+                          const formatted = format(selectedDate, 'MM/dd/yyyy');
+                          setUpcomingScheduleDate(formatted);
+                          setFormData({ ...formData, upcoming_schedule: formatted });
+                          setScheduledOnEdited(true);
+                        }
+                      }}
+                      minimumDate={new Date()}
+                    />
+                  )}
                 </View>
               ) : null}
 
