@@ -2818,6 +2818,7 @@ const createStyles = (colors: any, isDark: boolean, isTablet: boolean = false) =
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.25,
     shadowRadius: 4,
+    zIndex: 1000,
   },
   // Job Card Styles
   jobCard: { 
