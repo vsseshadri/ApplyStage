@@ -17,7 +17,7 @@ import * as XLSX from 'xlsx';
 import DateTimePicker from '@react-native-community/datetimepicker';
 
 // Currency mapping based on country
-const COUNTRY_CURRENCY: {[key: string]: { code: string, symbol: string }} = {
+const COUNTRY_CURRENCY = {
   'United States': { code: 'USD', symbol: '$' },
   'US': { code: 'USD', symbol: '$' },
   'Canada': { code: 'CAD', symbol: 'C$' },
@@ -30,7 +30,7 @@ const COUNTRY_CURRENCY: {[key: string]: { code: string, symbol: string }} = {
   'AU': { code: 'AUD', symbol: 'A$' },
   'Germany': { code: 'EUR', symbol: '€' },
   'France': { code: 'EUR', symbol: '€' },
-};
+} as const;
 
 // Get backend URL from configuration
 const getBackendUrl = (): string => {
