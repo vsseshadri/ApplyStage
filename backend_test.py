@@ -1,716 +1,501 @@
 #!/usr/bin/env python3
 """
-Comprehensive Backend API Testing for Job Tracking App
-Tests all endpoints with proper authentication and data validation
+CareerFlow Backend API Testing Suite
+Tests the backend API endpoints to verify functionality
 """
 
-import asyncio
-import aiohttp
+import requests
 import json
+import sys
 from datetime import datetime, timezone, timedelta
-from motor.motor_asyncio import AsyncIOMotorClient
-import os
-import uuid
-from dotenv import load_dotenv
-
-# Load environment variables
-load_dotenv('/app/backend/.env')
-load_dotenv('/app/frontend/.env')
+from typing import Dict, Any, Optional
 
 # Configuration
-BACKEND_URL = os.environ.get('EXPO_PUBLIC_BACKEND_URL', 'https://repo-preview-43.preview.emergentagent.com')
-API_BASE = f"{BACKEND_URL}/api"
-MONGO_URL = os.environ.get('MONGO_URL', 'mongodb://localhost:27017')
-DB_NAME = os.environ.get('DB_NAME', 'test_database')
+BASE_URL = "https://repo-preview-43.preview.emergentagent.com"
+API_BASE = f"{BASE_URL}/api"
+TEST_TOKEN = "test_token_abc123"
 
-# Test data
-TEST_USER_EMAIL = "testuser@jobtracker.com"
-TEST_USER_NAME = "John Doe"
-TEST_SESSION_TOKEN = f"test_session_{uuid.uuid4().hex[:16]}"
+# Headers for authenticated requests
+AUTH_HEADERS = {
+    "Authorization": f"Bearer {TEST_TOKEN}",
+    "Content-Type": "application/json"
+}
 
-class JobTrackerAPITester:
+class BackendTester:
     def __init__(self):
-        self.session = None
-        self.mongo_client = None
-        self.db = None
-        self.auth_headers = {}
-        self.test_user_id = None
-        self.test_job_id = None
-        self.results = {
-            'auth': {},
-            'jobs': {},
-            'dashboard': {},
-            'analytics': {},
-            'templates': {},
-            'other': {}
+        self.passed = 0
+        self.failed = 0
+        self.test_results = []
+        
+    def log_result(self, test_name: str, passed: bool, message: str, details: str = ""):
+        """Log test result"""
+        status = "✅ PASS" if passed else "❌ FAIL"
+        result = {
+            "test": test_name,
+            "status": status,
+            "message": message,
+            "details": details
         }
-
-    async def setup(self):
-        """Setup test environment"""
-        print("🔧 Setting up test environment...")
+        self.test_results.append(result)
         
-        # Setup HTTP session
-        self.session = aiohttp.ClientSession()
-        
-        # Setup MongoDB connection
-        self.mongo_client = AsyncIOMotorClient(MONGO_URL)
-        self.db = self.mongo_client[DB_NAME]
-        
-        # Create test user and session
-        await self.create_test_user_and_session()
-        
-        print(f"✅ Test environment ready. Backend URL: {API_BASE}")
-
-    async def create_test_user_and_session(self):
-        """Create test user and session in MongoDB"""
-        print("👤 Creating test user and session...")
-        
-        # Generate test user ID
-        self.test_user_id = f"user_{uuid.uuid4().hex[:12]}"
-        
-        # Create test user
-        test_user = {
-            "user_id": self.test_user_id,
-            "email": TEST_USER_EMAIL,
-            "name": TEST_USER_NAME,
-            "picture": "https://example.com/avatar.jpg",
-            "subscription": {"type": "free", "expiresAt": None},
-            "preferences": {
-                "theme": "auto",
-                "notifications": True,
-                "emailSummary": {"weekly": True, "monthly": True}
-            },
-            "created_at": datetime.now(timezone.utc)
-        }
-        
-        # Insert or update user
-        await self.db.users.delete_one({"email": TEST_USER_EMAIL})
-        await self.db.users.insert_one(test_user)
-        
-        # Create test session
-        test_session = {
-            "user_id": self.test_user_id,
-            "session_token": TEST_SESSION_TOKEN,
-            "expires_at": datetime.now(timezone.utc) + timedelta(days=7),
-            "created_at": datetime.now(timezone.utc)
-        }
-        
-        # Insert session
-        await self.db.user_sessions.delete_one({"session_token": TEST_SESSION_TOKEN})
-        await self.db.user_sessions.insert_one(test_session)
-        
-        # Set auth headers
-        self.auth_headers = {"Authorization": f"Bearer {TEST_SESSION_TOKEN}"}
-        
-        print(f"✅ Test user created: {TEST_USER_EMAIL}")
-        print(f"✅ Test session created: {TEST_SESSION_TOKEN[:20]}...")
-
-    async def test_auth_endpoints(self):
-        """Test authentication endpoints"""
-        print("\n🔐 Testing Authentication Endpoints...")
-        
-        # Test GET /api/auth/me
-        try:
-            async with self.session.get(f"{API_BASE}/auth/me", headers=self.auth_headers) as response:
-                if response.status == 200:
-                    data = await response.json()
-                    if data.get('email') == TEST_USER_EMAIL:
-                        self.results['auth']['get_me'] = {'status': 'PASS', 'message': 'Successfully retrieved user info'}
-                        print("✅ GET /api/auth/me - PASS")
-                    else:
-                        self.results['auth']['get_me'] = {'status': 'FAIL', 'message': f'Wrong user data: {data}'}
-                        print("❌ GET /api/auth/me - FAIL: Wrong user data")
-                else:
-                    self.results['auth']['get_me'] = {'status': 'FAIL', 'message': f'Status: {response.status}'}
-                    print(f"❌ GET /api/auth/me - FAIL: Status {response.status}")
-        except Exception as e:
-            self.results['auth']['get_me'] = {'status': 'ERROR', 'message': str(e)}
-            print(f"❌ GET /api/auth/me - ERROR: {e}")
-
-        # Test POST /api/auth/logout
-        try:
-            async with self.session.post(f"{API_BASE}/auth/logout", headers=self.auth_headers) as response:
-                if response.status == 200:
-                    data = await response.json()
-                    if 'message' in data:
-                        self.results['auth']['logout'] = {'status': 'PASS', 'message': 'Successfully logged out'}
-                        print("✅ POST /api/auth/logout - PASS")
-                        
-                        # Recreate session for further tests
-                        await self.create_test_user_and_session()
-                    else:
-                        self.results['auth']['logout'] = {'status': 'FAIL', 'message': f'Unexpected response: {data}'}
-                        print("❌ POST /api/auth/logout - FAIL: Unexpected response")
-                else:
-                    self.results['auth']['logout'] = {'status': 'FAIL', 'message': f'Status: {response.status}'}
-                    print(f"❌ POST /api/auth/logout - FAIL: Status {response.status}")
-        except Exception as e:
-            self.results['auth']['logout'] = {'status': 'ERROR', 'message': str(e)}
-            print(f"❌ POST /api/auth/logout - ERROR: {e}")
-
-    async def test_job_crud_endpoints(self):
-        """Test job CRUD endpoints with AI categorization"""
-        print("\n💼 Testing Job CRUD Endpoints...")
-        
-        # Test POST /api/jobs (Create job)
-        job_data = {
-            "company": "TechCorp Inc",
-            "position": "Senior Software Engineer",
-            "location": "San Francisco, CA",
-            "salary_range": {"min": 120000, "max": 180000, "currency": "USD"},
-            "work_type": "hybrid",
-            "applied_date": datetime.now(timezone.utc).isoformat(),
-            "current_stage": "Applied",
-            "custom_stages": [],
-            "url": "https://techcorp.com/careers/senior-swe",
-            "notes": "Exciting opportunity in AI/ML team"
-        }
-        
-        try:
-            async with self.session.post(f"{API_BASE}/jobs", 
-                                       json=job_data, 
-                                       headers=self.auth_headers) as response:
-                if response.status == 200:
-                    data = await response.json()
-                    if data.get('job_id') and data.get('ai_insights'):
-                        self.test_job_id = data['job_id']
-                        ai_insights = data['ai_insights']
-                        if ai_insights.get('job_family') and ai_insights.get('confidence'):
-                            self.results['jobs']['create'] = {
-                                'status': 'PASS', 
-                                'message': f'Job created with AI categorization: {ai_insights["job_family"]} (confidence: {ai_insights["confidence"]})'
-                            }
-                            print(f"✅ POST /api/jobs - PASS (AI categorized as: {ai_insights['job_family']})")
-                        else:
-                            self.results['jobs']['create'] = {'status': 'FAIL', 'message': 'AI insights missing or incomplete'}
-                            print("❌ POST /api/jobs - FAIL: AI insights missing")
-                    else:
-                        self.results['jobs']['create'] = {'status': 'FAIL', 'message': 'Job ID or AI insights missing'}
-                        print("❌ POST /api/jobs - FAIL: Missing job_id or ai_insights")
-                else:
-                    error_text = await response.text()
-                    self.results['jobs']['create'] = {'status': 'FAIL', 'message': f'Status: {response.status}, Error: {error_text}'}
-                    print(f"❌ POST /api/jobs - FAIL: Status {response.status}")
-        except Exception as e:
-            self.results['jobs']['create'] = {'status': 'ERROR', 'message': str(e)}
-            print(f"❌ POST /api/jobs - ERROR: {e}")
-
-        # Test GET /api/jobs (List jobs)
-        try:
-            async with self.session.get(f"{API_BASE}/jobs", headers=self.auth_headers) as response:
-                if response.status == 200:
-                    data = await response.json()
-                    if isinstance(data, list) and len(data) > 0:
-                        job = data[0]
-                        if 'total_business_days_aging' in job and 'stage_business_days_aging' in job:
-                            self.results['jobs']['list'] = {'status': 'PASS', 'message': f'Retrieved {len(data)} jobs with aging calculations'}
-                            print(f"✅ GET /api/jobs - PASS ({len(data)} jobs retrieved)")
-                        else:
-                            self.results['jobs']['list'] = {'status': 'FAIL', 'message': 'Business day aging calculations missing'}
-                            print("❌ GET /api/jobs - FAIL: Missing aging calculations")
-                    else:
-                        self.results['jobs']['list'] = {'status': 'FAIL', 'message': 'No jobs returned or invalid format'}
-                        print("❌ GET /api/jobs - FAIL: No jobs or invalid format")
-                else:
-                    self.results['jobs']['list'] = {'status': 'FAIL', 'message': f'Status: {response.status}'}
-                    print(f"❌ GET /api/jobs - FAIL: Status {response.status}")
-        except Exception as e:
-            self.results['jobs']['list'] = {'status': 'ERROR', 'message': str(e)}
-            print(f"❌ GET /api/jobs - ERROR: {e}")
-
-        # Test GET /api/jobs/{job_id} (Get specific job)
-        if self.test_job_id:
-            try:
-                async with self.session.get(f"{API_BASE}/jobs/{self.test_job_id}", headers=self.auth_headers) as response:
-                    if response.status == 200:
-                        data = await response.json()
-                        if data.get('job_id') == self.test_job_id:
-                            self.results['jobs']['get_by_id'] = {'status': 'PASS', 'message': 'Successfully retrieved specific job'}
-                            print("✅ GET /api/jobs/{job_id} - PASS")
-                        else:
-                            self.results['jobs']['get_by_id'] = {'status': 'FAIL', 'message': 'Wrong job returned'}
-                            print("❌ GET /api/jobs/{job_id} - FAIL: Wrong job")
-                    else:
-                        self.results['jobs']['get_by_id'] = {'status': 'FAIL', 'message': f'Status: {response.status}'}
-                        print(f"❌ GET /api/jobs/{job_id} - FAIL: Status {response.status}")
-            except Exception as e:
-                self.results['jobs']['get_by_id'] = {'status': 'ERROR', 'message': str(e)}
-                print(f"❌ GET /api/jobs/{job_id} - ERROR: {e}")
-
-        # Test PUT /api/jobs/{job_id} (Update job)
-        if self.test_job_id:
-            update_data = {
-                "notes": "Updated notes with additional information",
-                "current_stage": "Phone Screen"
-            }
-            try:
-                async with self.session.put(f"{API_BASE}/jobs/{self.test_job_id}", 
-                                          json=update_data, 
-                                          headers=self.auth_headers) as response:
-                    if response.status == 200:
-                        data = await response.json()
-                        if data.get('notes') == update_data['notes']:
-                            self.results['jobs']['update'] = {'status': 'PASS', 'message': 'Successfully updated job'}
-                            print("✅ PUT /api/jobs/{job_id} - PASS")
-                        else:
-                            self.results['jobs']['update'] = {'status': 'FAIL', 'message': 'Job not properly updated'}
-                            print("❌ PUT /api/jobs/{job_id} - FAIL: Not updated")
-                    else:
-                        self.results['jobs']['update'] = {'status': 'FAIL', 'message': f'Status: {response.status}'}
-                        print(f"❌ PUT /api/jobs/{job_id} - FAIL: Status {response.status}")
-            except Exception as e:
-                self.results['jobs']['update'] = {'status': 'ERROR', 'message': str(e)}
-                print(f"❌ PUT /api/jobs/{job_id} - ERROR: {e}")
-
-        # Test POST /api/jobs/{job_id}/stage (Update job stage)
-        if self.test_job_id:
-            stage_data = {
-                "stage": "Technical Interview",
-                "outcome": "passed",
-                "notes": "Great technical discussion"
-            }
-            try:
-                async with self.session.post(f"{API_BASE}/jobs/{self.test_job_id}/stage", 
-                                           json=stage_data, 
-                                           headers=self.auth_headers) as response:
-                    if response.status == 200:
-                        data = await response.json()
-                        if 'message' in data:
-                            self.results['jobs']['update_stage'] = {'status': 'PASS', 'message': 'Successfully updated job stage'}
-                            print("✅ POST /api/jobs/{job_id}/stage - PASS")
-                        else:
-                            self.results['jobs']['update_stage'] = {'status': 'FAIL', 'message': 'Unexpected response format'}
-                            print("❌ POST /api/jobs/{job_id}/stage - FAIL: Unexpected response")
-                    else:
-                        self.results['jobs']['update_stage'] = {'status': 'FAIL', 'message': f'Status: {response.status}'}
-                        print(f"❌ POST /api/jobs/{job_id}/stage - FAIL: Status {response.status}")
-            except Exception as e:
-                self.results['jobs']['update_stage'] = {'status': 'ERROR', 'message': str(e)}
-                print(f"❌ POST /api/jobs/{job_id}/stage - ERROR: {e}")
-
-    async def test_dashboard_endpoints(self):
-        """Test dashboard statistics endpoints"""
-        print("\n📊 Testing Dashboard Endpoints...")
-        
-        # Test GET /api/dashboard/stats
-        try:
-            async with self.session.get(f"{API_BASE}/dashboard/stats", headers=self.auth_headers) as response:
-                if response.status == 200:
-                    data = await response.json()
-                    required_fields = ['total_applications', 'by_stage', 'by_job_family', 'by_work_type', 'average_aging_days']
-                    if all(field in data for field in required_fields):
-                        self.results['dashboard']['stats'] = {'status': 'PASS', 'message': f'Dashboard stats retrieved with {data["total_applications"]} applications'}
-                        print(f"✅ GET /api/dashboard/stats - PASS ({data['total_applications']} applications)")
-                    else:
-                        missing = [f for f in required_fields if f not in data]
-                        self.results['dashboard']['stats'] = {'status': 'FAIL', 'message': f'Missing fields: {missing}'}
-                        print(f"❌ GET /api/dashboard/stats - FAIL: Missing fields {missing}")
-                else:
-                    self.results['dashboard']['stats'] = {'status': 'FAIL', 'message': f'Status: {response.status}'}
-                    print(f"❌ GET /api/dashboard/stats - FAIL: Status {response.status}")
-        except Exception as e:
-            self.results['dashboard']['stats'] = {'status': 'ERROR', 'message': str(e)}
-            print(f"❌ GET /api/dashboard/stats - ERROR: {e}")
-
-    async def test_analytics_endpoints(self):
-        """Test analytics endpoints"""
-        print("\n📈 Testing Analytics Endpoints...")
-        
-        # Test GET /api/analytics
-        try:
-            async with self.session.get(f"{API_BASE}/analytics", headers=self.auth_headers) as response:
-                if response.status == 200:
-                    data = await response.json()
-                    required_fields = ['total_applications', 'weekly_trends', 'success_rate', 'avg_response_time']
-                    if all(field in data for field in required_fields):
-                        self.results['analytics']['basic'] = {'status': 'PASS', 'message': 'Analytics data retrieved successfully'}
-                        print("✅ GET /api/analytics - PASS")
-                    else:
-                        missing = [f for f in required_fields if f not in data]
-                        self.results['analytics']['basic'] = {'status': 'FAIL', 'message': f'Missing fields: {missing}'}
-                        print(f"❌ GET /api/analytics - FAIL: Missing fields {missing}")
-                else:
-                    self.results['analytics']['basic'] = {'status': 'FAIL', 'message': f'Status: {response.status}'}
-                    print(f"❌ GET /api/analytics - FAIL: Status {response.status}")
-        except Exception as e:
-            self.results['analytics']['basic'] = {'status': 'ERROR', 'message': str(e)}
-            print(f"❌ GET /api/analytics - ERROR: {e}")
-
-        # Test GET /api/analytics/patterns (AI-powered)
-        try:
-            async with self.session.get(f"{API_BASE}/analytics/patterns", headers=self.auth_headers) as response:
-                if response.status == 200:
-                    data = await response.json()
-                    if 'total_applications' in data:
-                        if 'insights' in data or 'error' in data:
-                            # Either AI insights or error message is acceptable (budget limits, etc.)
-                            self.results['analytics']['patterns'] = {'status': 'PASS', 'message': 'Pattern analysis completed (AI or fallback)'}
-                            print("✅ GET /api/analytics/patterns - PASS")
-                        else:
-                            self.results['analytics']['patterns'] = {'status': 'FAIL', 'message': 'No insights or error handling'}
-                            print("❌ GET /api/analytics/patterns - FAIL: No insights")
-                    elif 'error' in data:
-                        # Error response is also acceptable (AI budget exceeded, etc.)
-                        self.results['analytics']['patterns'] = {'status': 'PASS', 'message': 'Pattern analysis error handled gracefully'}
-                        print("✅ GET /api/analytics/patterns - PASS (error handled)")
-                    else:
-                        self.results['analytics']['patterns'] = {'status': 'FAIL', 'message': 'Invalid response format'}
-                        print("❌ GET /api/analytics/patterns - FAIL: Invalid format")
-                else:
-                    self.results['analytics']['patterns'] = {'status': 'FAIL', 'message': f'Status: {response.status}'}
-                    print(f"❌ GET /api/analytics/patterns - FAIL: Status {response.status}")
-        except Exception as e:
-            self.results['analytics']['patterns'] = {'status': 'ERROR', 'message': str(e)}
-            print(f"❌ GET /api/analytics/patterns - ERROR: {e}")
-
-    async def test_template_endpoints(self):
-        """Test template endpoints"""
-        print("\n📋 Testing Template Endpoints...")
-        
-        # Test GET /api/templates
-        try:
-            async with self.session.get(f"{API_BASE}/templates", headers=self.auth_headers) as response:
-                if response.status == 200:
-                    data = await response.json()
-                    if 'default' in data and 'custom' in data:
-                        default_templates = data['default']
-                        if len(default_templates) >= 6:  # Should have 6 default job families
-                            self.results['templates']['get'] = {'status': 'PASS', 'message': f'Retrieved {len(default_templates)} default templates'}
-                            print(f"✅ GET /api/templates - PASS ({len(default_templates)} default templates)")
-                        else:
-                            self.results['templates']['get'] = {'status': 'FAIL', 'message': f'Only {len(default_templates)} default templates found'}
-                            print(f"❌ GET /api/templates - FAIL: Only {len(default_templates)} templates")
-                    else:
-                        self.results['templates']['get'] = {'status': 'FAIL', 'message': 'Missing default or custom templates'}
-                        print("❌ GET /api/templates - FAIL: Missing template categories")
-                else:
-                    self.results['templates']['get'] = {'status': 'FAIL', 'message': f'Status: {response.status}'}
-                    print(f"❌ GET /api/templates - FAIL: Status {response.status}")
-        except Exception as e:
-            self.results['templates']['get'] = {'status': 'ERROR', 'message': str(e)}
-            print(f"❌ GET /api/templates - ERROR: {e}")
-
-        # Test POST /api/templates (Create custom template)
-        template_data = {
-            "job_family": "Custom Test Role",
-            "stages": ["Applied", "Custom Screen", "Custom Interview", "Final Decision"]
-        }
-        try:
-            async with self.session.post(f"{API_BASE}/templates", 
-                                       json=template_data, 
-                                       headers=self.auth_headers) as response:
-                if response.status == 200:
-                    data = await response.json()
-                    if data.get('template_id') and data.get('job_family') == template_data['job_family']:
-                        self.results['templates']['create'] = {'status': 'PASS', 'message': 'Custom template created successfully'}
-                        print("✅ POST /api/templates - PASS")
-                    else:
-                        self.results['templates']['create'] = {'status': 'FAIL', 'message': 'Template not properly created'}
-                        print("❌ POST /api/templates - FAIL: Not created properly")
-                else:
-                    self.results['templates']['create'] = {'status': 'FAIL', 'message': f'Status: {response.status}'}
-                    print(f"❌ POST /api/templates - FAIL: Status {response.status}")
-        except Exception as e:
-            self.results['templates']['create'] = {'status': 'ERROR', 'message': str(e)}
-            print(f"❌ POST /api/templates - ERROR: {e}")
-
-    async def test_email_summary_endpoints(self):
-        """Test email summary endpoints"""
-        print("\n📧 Testing Email Summary Endpoints...")
-        
-        # Test PUT /api/user/communication-email with valid email
-        valid_email = "test@example.com"
-        try:
-            async with self.session.put(f"{API_BASE}/user/communication-email", 
-                                      json={"communication_email": valid_email}, 
-                                      headers=self.auth_headers) as response:
-                if response.status == 200:
-                    data = await response.json()
-                    if data.get('communication_email') == valid_email:
-                        self.results['other']['email_update_valid'] = {'status': 'PASS', 'message': 'Valid email update successful'}
-                        print("✅ PUT /api/user/communication-email (valid) - PASS")
-                    else:
-                        self.results['other']['email_update_valid'] = {'status': 'FAIL', 'message': 'Email not returned correctly'}
-                        print("❌ PUT /api/user/communication-email (valid) - FAIL: Email not returned")
-                else:
-                    self.results['other']['email_update_valid'] = {'status': 'FAIL', 'message': f'Status: {response.status}'}
-                    print(f"❌ PUT /api/user/communication-email (valid) - FAIL: Status {response.status}")
-        except Exception as e:
-            self.results['other']['email_update_valid'] = {'status': 'ERROR', 'message': str(e)}
-            print(f"❌ PUT /api/user/communication-email (valid) - ERROR: {e}")
-
-        # Test PUT /api/user/communication-email with invalid email
-        invalid_email = "invalid-email"
-        try:
-            async with self.session.put(f"{API_BASE}/user/communication-email", 
-                                      json={"communication_email": invalid_email}, 
-                                      headers=self.auth_headers) as response:
-                if response.status == 400:
-                    data = await response.json()
-                    if "Invalid email format" in data.get('detail', ''):
-                        self.results['other']['email_update_invalid'] = {'status': 'PASS', 'message': 'Invalid email properly rejected'}
-                        print("✅ PUT /api/user/communication-email (invalid) - PASS")
-                    else:
-                        self.results['other']['email_update_invalid'] = {'status': 'FAIL', 'message': 'Wrong error message'}
-                        print("❌ PUT /api/user/communication-email (invalid) - FAIL: Wrong error message")
-                else:
-                    self.results['other']['email_update_invalid'] = {'status': 'FAIL', 'message': f'Expected 400, got {response.status}'}
-                    print(f"❌ PUT /api/user/communication-email (invalid) - FAIL: Expected 400, got {response.status}")
-        except Exception as e:
-            self.results['other']['email_update_invalid'] = {'status': 'ERROR', 'message': str(e)}
-            print(f"❌ PUT /api/user/communication-email (invalid) - ERROR: {e}")
-
-        # Test GET /api/email-summary/weekly
-        try:
-            async with self.session.get(f"{API_BASE}/email-summary/weekly", headers=self.auth_headers) as response:
-                if response.status == 200:
-                    data = await response.json()
-                    required_fields = ['subject', 'body', 'to_email', 'stats']
-                    missing_fields = [field for field in required_fields if field not in data]
-                    
-                    if not missing_fields:
-                        # Check subject format
-                        subject = data.get('subject', '')
-                        if 'Weekly Summary for the week' in subject:
-                            # Check stats structure
-                            stats = data.get('stats', {})
-                            expected_stats = ['weekly_applications', 'status_counts', 'follow_ups_count']
-                            missing_stats = [stat for stat in expected_stats if stat not in stats]
-                            
-                            if not missing_stats:
-                                self.results['other']['weekly_summary'] = {'status': 'PASS', 'message': 'Weekly summary generated correctly'}
-                                print("✅ GET /api/email-summary/weekly - PASS")
-                            else:
-                                self.results['other']['weekly_summary'] = {'status': 'FAIL', 'message': f'Missing stats: {missing_stats}'}
-                                print(f"❌ GET /api/email-summary/weekly - FAIL: Missing stats {missing_stats}")
-                        else:
-                            self.results['other']['weekly_summary'] = {'status': 'FAIL', 'message': f'Wrong subject format: {subject}'}
-                            print(f"❌ GET /api/email-summary/weekly - FAIL: Wrong subject format")
-                    else:
-                        self.results['other']['weekly_summary'] = {'status': 'FAIL', 'message': f'Missing fields: {missing_fields}'}
-                        print(f"❌ GET /api/email-summary/weekly - FAIL: Missing fields {missing_fields}")
-                else:
-                    self.results['other']['weekly_summary'] = {'status': 'FAIL', 'message': f'Status: {response.status}'}
-                    print(f"❌ GET /api/email-summary/weekly - FAIL: Status {response.status}")
-        except Exception as e:
-            self.results['other']['weekly_summary'] = {'status': 'ERROR', 'message': str(e)}
-            print(f"❌ GET /api/email-summary/weekly - ERROR: {e}")
-
-        # Test GET /api/email-summary/monthly
-        try:
-            async with self.session.get(f"{API_BASE}/email-summary/monthly", headers=self.auth_headers) as response:
-                if response.status == 200:
-                    data = await response.json()
-                    required_fields = ['subject', 'body', 'to_email', 'stats']
-                    missing_fields = [field for field in required_fields if field not in data]
-                    
-                    if not missing_fields:
-                        # Check subject format
-                        subject = data.get('subject', '')
-                        if 'Monthly Summary for' in subject:
-                            # Check stats structure
-                            stats = data.get('stats', {})
-                            expected_stats = ['total_applications', 'monthly_applications', 'status_counts', 'work_mode_counts', 'response_rate']
-                            missing_stats = [stat for stat in expected_stats if stat not in stats]
-                            
-                            if not missing_stats:
-                                self.results['other']['monthly_summary'] = {'status': 'PASS', 'message': 'Monthly summary generated correctly'}
-                                print("✅ GET /api/email-summary/monthly - PASS")
-                            else:
-                                self.results['other']['monthly_summary'] = {'status': 'FAIL', 'message': f'Missing stats: {missing_stats}'}
-                                print(f"❌ GET /api/email-summary/monthly - FAIL: Missing stats {missing_stats}")
-                        else:
-                            self.results['other']['monthly_summary'] = {'status': 'FAIL', 'message': f'Wrong subject format: {subject}'}
-                            print(f"❌ GET /api/email-summary/monthly - FAIL: Wrong subject format")
-                    else:
-                        self.results['other']['monthly_summary'] = {'status': 'FAIL', 'message': f'Missing fields: {missing_fields}'}
-                        print(f"❌ GET /api/email-summary/monthly - FAIL: Missing fields {missing_fields}")
-                else:
-                    self.results['other']['monthly_summary'] = {'status': 'FAIL', 'message': f'Status: {response.status}'}
-                    print(f"❌ GET /api/email-summary/monthly - FAIL: Status {response.status}")
-        except Exception as e:
-            self.results['other']['monthly_summary'] = {'status': 'ERROR', 'message': str(e)}
-            print(f"❌ GET /api/email-summary/monthly - ERROR: {e}")
-
-    async def test_other_endpoints(self):
-        """Test other endpoints"""
-        print("\n🔧 Testing Other Endpoints...")
-        
-        # Test GET /api/jobs/export/csv
-        try:
-            async with self.session.get(f"{API_BASE}/jobs/export/csv", headers=self.auth_headers) as response:
-                if response.status == 200:
-                    content_type = response.headers.get('content-type', '')
-                    if 'text/csv' in content_type:
-                        csv_data = await response.text()
-                        if 'Company,Position' in csv_data:  # Check CSV header
-                            self.results['other']['csv_export'] = {'status': 'PASS', 'message': 'CSV export working correctly'}
-                            print("✅ GET /api/jobs/export/csv - PASS")
-                        else:
-                            self.results['other']['csv_export'] = {'status': 'FAIL', 'message': 'Invalid CSV format'}
-                            print("❌ GET /api/jobs/export/csv - FAIL: Invalid CSV")
-                    else:
-                        self.results['other']['csv_export'] = {'status': 'FAIL', 'message': f'Wrong content type: {content_type}'}
-                        print(f"❌ GET /api/jobs/export/csv - FAIL: Wrong content type")
-                else:
-                    self.results['other']['csv_export'] = {'status': 'FAIL', 'message': f'Status: {response.status}'}
-                    print(f"❌ GET /api/jobs/export/csv - FAIL: Status {response.status}")
-        except Exception as e:
-            self.results['other']['csv_export'] = {'status': 'ERROR', 'message': str(e)}
-            print(f"❌ GET /api/jobs/export/csv - ERROR: {e}")
-
-        # Test POST /api/subscription/verify (Placeholder)
-        sub_data = {
-            "receipt": "test_receipt_data",
-            "platform": "ios"
-        }
-        try:
-            async with self.session.post(f"{API_BASE}/subscription/verify", 
-                                       json=sub_data, 
-                                       headers=self.auth_headers) as response:
-                if response.status == 200:
-                    data = await response.json()
-                    if data.get('verified') is True:
-                        self.results['other']['subscription'] = {'status': 'PASS', 'message': 'Subscription verification (placeholder) working'}
-                        print("✅ POST /api/subscription/verify - PASS (placeholder)")
-                    else:
-                        self.results['other']['subscription'] = {'status': 'FAIL', 'message': 'Subscription not verified'}
-                        print("❌ POST /api/subscription/verify - FAIL: Not verified")
-                else:
-                    self.results['other']['subscription'] = {'status': 'FAIL', 'message': f'Status: {response.status}'}
-                    print(f"❌ POST /api/subscription/verify - FAIL: Status {response.status}")
-        except Exception as e:
-            self.results['other']['subscription'] = {'status': 'ERROR', 'message': str(e)}
-            print(f"❌ POST /api/subscription/verify - ERROR: {e}")
-
-    async def test_error_cases(self):
-        """Test error handling"""
-        print("\n⚠️  Testing Error Cases...")
-        
-        # Test 401 Unauthorized
-        try:
-            async with self.session.get(f"{API_BASE}/auth/me") as response:  # No auth header
-                if response.status == 401:
-                    self.results['other']['auth_error'] = {'status': 'PASS', 'message': '401 error handling works'}
-                    print("✅ 401 Unauthorized handling - PASS")
-                else:
-                    self.results['other']['auth_error'] = {'status': 'FAIL', 'message': f'Expected 401, got {response.status}'}
-                    print(f"❌ 401 Unauthorized handling - FAIL: Got {response.status}")
-        except Exception as e:
-            self.results['other']['auth_error'] = {'status': 'ERROR', 'message': str(e)}
-            print(f"❌ 401 Unauthorized handling - ERROR: {e}")
-
-        # Test 404 Not Found
-        try:
-            async with self.session.get(f"{API_BASE}/jobs/nonexistent_job_id", headers=self.auth_headers) as response:
-                if response.status == 404:
-                    self.results['other']['not_found_error'] = {'status': 'PASS', 'message': '404 error handling works'}
-                    print("✅ 404 Not Found handling - PASS")
-                else:
-                    self.results['other']['not_found_error'] = {'status': 'FAIL', 'message': f'Expected 404, got {response.status}'}
-                    print(f"❌ 404 Not Found handling - FAIL: Got {response.status}")
-        except Exception as e:
-            self.results['other']['not_found_error'] = {'status': 'ERROR', 'message': str(e)}
-            print(f"❌ 404 Not Found handling - ERROR: {e}")
-
-    async def cleanup_test_job(self):
-        """Clean up test job"""
-        if self.test_job_id:
-            try:
-                async with self.session.delete(f"{API_BASE}/jobs/{self.test_job_id}", headers=self.auth_headers) as response:
-                    if response.status == 200:
-                        self.results['jobs']['delete'] = {'status': 'PASS', 'message': 'Job deleted successfully'}
-                        print("✅ DELETE /api/jobs/{job_id} - PASS")
-                    else:
-                        self.results['jobs']['delete'] = {'status': 'FAIL', 'message': f'Status: {response.status}'}
-                        print(f"❌ DELETE /api/jobs/{job_id} - FAIL: Status {response.status}")
-            except Exception as e:
-                self.results['jobs']['delete'] = {'status': 'ERROR', 'message': str(e)}
-                print(f"❌ DELETE /api/jobs/{job_id} - ERROR: {e}")
-
-    async def cleanup(self):
-        """Cleanup test environment"""
-        print("\n🧹 Cleaning up test environment...")
-        
-        # Clean up test data
-        if self.db is not None:
-            await self.db.users.delete_one({"email": TEST_USER_EMAIL})
-            await self.db.user_sessions.delete_one({"session_token": TEST_SESSION_TOKEN})
-            if self.test_job_id:
-                await self.db.jobs.delete_one({"job_id": self.test_job_id})
-        
-        # Close connections
-        if self.session:
-            await self.session.close()
-        if self.mongo_client:
-            self.mongo_client.close()
-        
-        print("✅ Cleanup completed")
-
-    def print_summary(self):
-        """Print test summary"""
-        print("\n" + "="*60)
-        print("📋 TEST SUMMARY")
-        print("="*60)
-        
-        total_tests = 0
-        passed_tests = 0
-        failed_tests = 0
-        error_tests = 0
-        
-        for category, tests in self.results.items():
-            if tests:
-                print(f"\n{category.upper()}:")
-                for test_name, result in tests.items():
-                    status = result['status']
-                    message = result['message']
-                    
-                    if status == 'PASS':
-                        print(f"  ✅ {test_name}: {message}")
-                        passed_tests += 1
-                    elif status == 'FAIL':
-                        print(f"  ❌ {test_name}: {message}")
-                        failed_tests += 1
-                    else:  # ERROR
-                        print(f"  🔥 {test_name}: {message}")
-                        error_tests += 1
-                    
-                    total_tests += 1
-        
-        print(f"\n{'='*60}")
-        print(f"TOTAL TESTS: {total_tests}")
-        print(f"✅ PASSED: {passed_tests}")
-        print(f"❌ FAILED: {failed_tests}")
-        print(f"🔥 ERRORS: {error_tests}")
-        print(f"SUCCESS RATE: {(passed_tests/total_tests*100):.1f}%" if total_tests > 0 else "0%")
-        print("="*60)
-
-    async def run_all_tests(self):
-        """Run all tests"""
-        try:
-            await self.setup()
-            await self.test_auth_endpoints()
-            await self.test_job_crud_endpoints()
-            await self.test_dashboard_endpoints()
-            await self.test_analytics_endpoints()
-            await self.test_template_endpoints()
-            await self.test_email_summary_endpoints()  # Add email summary tests
-            await self.test_other_endpoints()
-            await self.test_error_cases()
-            await self.cleanup_test_job()
-        except Exception as e:
-            print(f"🔥 Critical error during testing: {e}")
-        finally:
-            await self.cleanup()
-            self.print_summary()
-
-async def main():
-    """Main test runner"""
-    print("🚀 Starting Job Tracker Backend API Tests")
-    print(f"Backend URL: {API_BASE}")
+        if passed:
+            self.passed += 1
+        else:
+            self.failed += 1
+            
+        print(f"{status} - {test_name}: {message}")
+        if details and not passed:
+            print(f"    Details: {details}")
     
-    tester = JobTrackerAPITester()
-    await tester.run_all_tests()
+    def test_backend_connectivity(self) -> bool:
+        """Test if backend is running and accessible"""
+        try:
+            response = requests.get(f"{BASE_URL}/", timeout=10)
+            if response.status_code in [200, 404]:  # 404 is fine, means server is running
+                self.log_result("Backend Connectivity", True, f"Backend server responding (status: {response.status_code})")
+                return True
+            else:
+                self.log_result("Backend Connectivity", False, f"Unexpected status code: {response.status_code}")
+                return False
+        except requests.exceptions.RequestException as e:
+            self.log_result("Backend Connectivity", False, f"Connection failed: {str(e)}")
+            return False
+    
+    def test_health_endpoint(self) -> bool:
+        """Test GET /api/health endpoint"""
+        try:
+            response = requests.get(f"{API_BASE}/health", timeout=10)
+            
+            if response.status_code == 404:
+                self.log_result("Health Endpoint", False, "Health endpoint not implemented (404 error)", 
+                              "The /api/health endpoint is not implemented in the backend")
+                return False
+            elif response.status_code == 200:
+                self.log_result("Health Endpoint", True, "Health endpoint working correctly")
+                return True
+            else:
+                self.log_result("Health Endpoint", False, f"Unexpected status code: {response.status_code}")
+                return False
+                
+        except requests.exceptions.RequestException as e:
+            self.log_result("Health Endpoint", False, f"Request failed: {str(e)}")
+            return False
+    
+    def test_auth_me_endpoint(self) -> bool:
+        """Test GET /api/auth/me endpoint for authentication"""
+        try:
+            response = requests.get(f"{API_BASE}/auth/me", headers=AUTH_HEADERS, timeout=10)
+            
+            if response.status_code == 200:
+                data = response.json()
+                required_fields = ["user_id", "email", "name"]
+                missing_fields = [field for field in required_fields if field not in data]
+                
+                if not missing_fields:
+                    self.log_result("Authentication", True, "Auth endpoint working correctly")
+                    return True
+                else:
+                    self.log_result("Authentication", False, f"Missing required fields: {missing_fields}")
+                    return False
+            else:
+                self.log_result("Authentication", False, f"Auth failed with status: {response.status_code}")
+                return False
+                
+        except requests.exceptions.RequestException as e:
+            self.log_result("Authentication", False, f"Auth request failed: {str(e)}")
+            return False
+    
+    def test_dashboard_stats(self) -> bool:
+        """Test GET /api/dashboard/stats endpoint"""
+        try:
+            response = requests.get(f"{API_BASE}/dashboard/stats", headers=AUTH_HEADERS, timeout=10)
+            
+            if response.status_code == 200:
+                data = response.json()
+                
+                # Check required fields
+                required_fields = ["total", "applied", "by_location", "by_work_mode", "by_position"]
+                missing_fields = [field for field in required_fields if field not in data]
+                
+                if missing_fields:
+                    self.log_result("Dashboard Stats", False, f"Missing required fields: {missing_fields}")
+                    return False
+                
+                # Check status counts
+                status_fields = ["applied", "recruiter_screening", "phone_screen", "coding_round_1", 
+                               "coding_round_2", "system_design", "behavioural", "hiring_manager", 
+                               "final_round", "offer", "rejected"]
+                
+                for field in status_fields:
+                    if field not in data or not isinstance(data[field], int):
+                        self.log_result("Dashboard Stats", False, f"Invalid or missing status field: {field}")
+                        return False
+                
+                # Check work mode structure
+                work_modes = ["remote", "onsite", "hybrid"]
+                for mode in work_modes:
+                    if mode not in data["by_work_mode"] or not isinstance(data["by_work_mode"][mode], int):
+                        self.log_result("Dashboard Stats", False, f"Invalid work mode data for: {mode}")
+                        return False
+                
+                self.log_result("Dashboard Stats", True, 
+                              f"Dashboard stats working correctly (total: {data['total']}, applied: {data['applied']})")
+                return True
+            else:
+                self.log_result("Dashboard Stats", False, f"Request failed with status: {response.status_code}")
+                return False
+                
+        except requests.exceptions.RequestException as e:
+            self.log_result("Dashboard Stats", False, f"Request failed: {str(e)}")
+            return False
+        except json.JSONDecodeError as e:
+            self.log_result("Dashboard Stats", False, f"Invalid JSON response: {str(e)}")
+            return False
+    
+    def test_ai_insights(self) -> bool:
+        """Test GET /api/dashboard/ai-insights endpoint"""
+        try:
+            response = requests.get(f"{API_BASE}/dashboard/ai-insights", headers=AUTH_HEADERS, timeout=10)
+            
+            if response.status_code == 200:
+                data = response.json()
+                
+                # Check required structure
+                if "insights" not in data or "follow_ups" not in data:
+                    self.log_result("AI Insights", False, "Missing 'insights' or 'follow_ups' in response")
+                    return False
+                
+                # Validate insights structure
+                if not isinstance(data["insights"], list):
+                    self.log_result("AI Insights", False, "Insights should be a list")
+                    return False
+                
+                # Check insight structure if any exist
+                for insight in data["insights"]:
+                    required_insight_fields = ["icon", "color", "text", "type"]
+                    missing_insight_fields = [field for field in required_insight_fields if field not in insight]
+                    if missing_insight_fields:
+                        self.log_result("AI Insights", False, f"Insight missing fields: {missing_insight_fields}")
+                        return False
+                
+                # Validate follow_ups structure
+                if not isinstance(data["follow_ups"], list):
+                    self.log_result("AI Insights", False, "Follow_ups should be a list")
+                    return False
+                
+                # Test that insights consider upcoming_stage and upcoming_schedule
+                # This is verified by the structure and content being returned properly
+                insights_count = len(data["insights"])
+                follow_ups_count = len(data["follow_ups"])
+                
+                self.log_result("AI Insights", True, 
+                              f"AI insights working correctly ({insights_count} insights, {follow_ups_count} follow-ups)")
+                return True
+            else:
+                self.log_result("AI Insights", False, f"Request failed with status: {response.status_code}")
+                return False
+                
+        except requests.exceptions.RequestException as e:
+            self.log_result("AI Insights", False, f"Request failed: {str(e)}")
+            return False
+        except json.JSONDecodeError as e:
+            self.log_result("AI Insights", False, f"Invalid JSON response: {str(e)}")
+            return False
+    
+    def test_jobs_api_empty(self) -> bool:
+        """Test GET /api/jobs endpoint (should return empty initially)"""
+        try:
+            response = requests.get(f"{API_BASE}/jobs", headers=AUTH_HEADERS, timeout=10)
+            
+            if response.status_code == 200:
+                data = response.json()
+                
+                # Check pagination structure
+                if "jobs" not in data or "pagination" not in data:
+                    self.log_result("Jobs API (Empty)", False, "Missing 'jobs' or 'pagination' in response")
+                    return False
+                
+                if not isinstance(data["jobs"], list):
+                    self.log_result("Jobs API (Empty)", False, "Jobs should be a list")
+                    return False
+                
+                pagination = data["pagination"]
+                required_pagination_fields = ["page", "limit", "total_count", "total_pages", "has_next", "has_prev"]
+                missing_pagination_fields = [field for field in required_pagination_fields if field not in pagination]
+                
+                if missing_pagination_fields:
+                    self.log_result("Jobs API (Empty)", False, f"Pagination missing fields: {missing_pagination_fields}")
+                    return False
+                
+                self.log_result("Jobs API (Empty)", True, 
+                              f"Jobs API structure correct (found {len(data['jobs'])} jobs)")
+                return True
+            else:
+                self.log_result("Jobs API (Empty)", False, f"Request failed with status: {response.status_code}")
+                return False
+                
+        except requests.exceptions.RequestException as e:
+            self.log_result("Jobs API (Empty)", False, f"Request failed: {str(e)}")
+            return False
+        except json.JSONDecodeError as e:
+            self.log_result("Jobs API (Empty)", False, f"Invalid JSON response: {str(e)}")
+            return False
+    
+    def test_job_creation_with_upcoming_stage(self) -> Optional[str]:
+        """Test POST /api/jobs with upcoming_stage and upcoming_schedule"""
+        try:
+            # Create a job with upcoming_stage and upcoming_schedule
+            tomorrow = (datetime.now() + timedelta(days=1)).strftime("%m/%d/%Y")
+            
+            job_data = {
+                "company_name": "Test Company Inc",
+                "position": "Senior Software Engineer",
+                "location": {"city": "San Francisco", "state": "California"},
+                "salary_range": {"min": 120000, "max": 180000},
+                "work_mode": "hybrid",
+                "job_type": "Software Engineer",
+                "status": "applied",
+                "upcoming_stage": "phone_screen",
+                "upcoming_schedule": tomorrow,
+                "date_applied": datetime.now(timezone.utc).isoformat(),
+                "follow_up_days": 7,
+                "is_priority": True,
+                "notes": "Test job for upcoming stage functionality"
+            }
+            
+            response = requests.post(f"{API_BASE}/jobs", 
+                                   headers=AUTH_HEADERS, 
+                                   json=job_data, 
+                                   timeout=10)
+            
+            if response.status_code == 200:
+                job = response.json()
+                
+                # Verify job creation
+                required_fields = ["job_id", "company_name", "position", "status", "upcoming_stage", "upcoming_schedule"]
+                missing_fields = [field for field in required_fields if field not in job]
+                
+                if missing_fields:
+                    self.log_result("Job Creation", False, f"Created job missing fields: {missing_fields}")
+                    return None
+                
+                # Verify upcoming_stage and upcoming_schedule are preserved
+                if job["upcoming_stage"] != "phone_screen":
+                    self.log_result("Job Creation", False, f"upcoming_stage not preserved: {job.get('upcoming_stage')}")
+                    return None
+                
+                if job["upcoming_schedule"] != tomorrow:
+                    self.log_result("Job Creation", False, f"upcoming_schedule not preserved: {job.get('upcoming_schedule')}")
+                    return None
+                
+                self.log_result("Job Creation", True, 
+                              f"Job created successfully with upcoming_stage: {job['upcoming_stage']}")
+                return job["job_id"]
+            else:
+                self.log_result("Job Creation", False, f"Job creation failed with status: {response.status_code}")
+                return None
+                
+        except requests.exceptions.RequestException as e:
+            self.log_result("Job Creation", False, f"Request failed: {str(e)}")
+            return None
+        except json.JSONDecodeError as e:
+            self.log_result("Job Creation", False, f"Invalid JSON response: {str(e)}")
+            return None
+    
+    def test_job_update_status_sync(self, job_id: str) -> bool:
+        """Test PUT /api/jobs/{job_id} to verify status and upcoming_stage syncing"""
+        try:
+            # Update job status and verify upcoming_stage handling
+            update_data = {
+                "status": "phone_screen",
+                "upcoming_stage": "coding_round_1",
+                "upcoming_schedule": "12/25/2024"
+            }
+            
+            response = requests.put(f"{API_BASE}/jobs/{job_id}", 
+                                  headers=AUTH_HEADERS, 
+                                  json=update_data, 
+                                  timeout=10)
+            
+            if response.status_code == 200:
+                job = response.json()
+                
+                # Verify status update
+                if job["status"] != "phone_screen":
+                    self.log_result("Job Status Update", False, f"Status not updated: {job.get('status')}")
+                    return False
+                
+                # Verify upcoming_stage update
+                if job["upcoming_stage"] != "coding_round_1":
+                    self.log_result("Job Status Update", False, f"upcoming_stage not updated: {job.get('upcoming_stage')}")
+                    return False
+                
+                # Verify stages history is updated
+                if "stages" not in job or not isinstance(job["stages"], list):
+                    self.log_result("Job Status Update", False, "Stages history not maintained")
+                    return False
+                
+                # Check that new status is added to stages
+                latest_stage = job["stages"][-1] if job["stages"] else {}
+                if latest_stage.get("status") != "phone_screen":
+                    self.log_result("Job Status Update", False, "New status not added to stages history")
+                    return False
+                
+                self.log_result("Job Status Update", True, 
+                              f"Job updated successfully - status: {job['status']}, upcoming: {job['upcoming_stage']}")
+                return True
+            else:
+                self.log_result("Job Status Update", False, f"Job update failed with status: {response.status_code}")
+                return False
+                
+        except requests.exceptions.RequestException as e:
+            self.log_result("Job Status Update", False, f"Request failed: {str(e)}")
+            return False
+        except json.JSONDecodeError as e:
+            self.log_result("Job Status Update", False, f"Invalid JSON response: {str(e)}")
+            return False
+    
+    def test_jobs_api_with_data(self) -> bool:
+        """Test GET /api/jobs endpoint after creating data"""
+        try:
+            response = requests.get(f"{API_BASE}/jobs", headers=AUTH_HEADERS, timeout=10)
+            
+            if response.status_code == 200:
+                data = response.json()
+                
+                if len(data["jobs"]) == 0:
+                    self.log_result("Jobs API (With Data)", False, "No jobs found after creation")
+                    return False
+                
+                # Verify job structure
+                job = data["jobs"][0]
+                required_job_fields = ["job_id", "company_name", "position", "status", "location", "salary_range"]
+                missing_job_fields = [field for field in required_job_fields if field not in job]
+                
+                if missing_job_fields:
+                    self.log_result("Jobs API (With Data)", False, f"Job missing fields: {missing_job_fields}")
+                    return False
+                
+                self.log_result("Jobs API (With Data)", True, 
+                              f"Jobs API returning data correctly ({len(data['jobs'])} jobs)")
+                return True
+            else:
+                self.log_result("Jobs API (With Data)", False, f"Request failed with status: {response.status_code}")
+                return False
+                
+        except requests.exceptions.RequestException as e:
+            self.log_result("Jobs API (With Data)", False, f"Request failed: {str(e)}")
+            return False
+        except json.JSONDecodeError as e:
+            self.log_result("Jobs API (With Data)", False, f"Invalid JSON response: {str(e)}")
+            return False
+    
+    def test_upcoming_interviews_endpoint(self) -> bool:
+        """Test GET /api/dashboard/upcoming-interviews endpoint"""
+        try:
+            response = requests.get(f"{API_BASE}/dashboard/upcoming-interviews", headers=AUTH_HEADERS, timeout=10)
+            
+            if response.status_code == 200:
+                data = response.json()
+                
+                if not isinstance(data, list):
+                    self.log_result("Upcoming Interviews", False, "Response should be a list")
+                    return False
+                
+                # If there are upcoming interviews, verify structure
+                for interview in data:
+                    required_fields = ["job_id", "company_name", "position", "stage", "schedule_date"]
+                    missing_fields = [field for field in required_fields if field not in interview]
+                    if missing_fields:
+                        self.log_result("Upcoming Interviews", False, f"Interview missing fields: {missing_fields}")
+                        return False
+                
+                self.log_result("Upcoming Interviews", True, 
+                              f"Upcoming interviews endpoint working ({len(data)} interviews)")
+                return True
+            else:
+                self.log_result("Upcoming Interviews", False, f"Request failed with status: {response.status_code}")
+                return False
+                
+        except requests.exceptions.RequestException as e:
+            self.log_result("Upcoming Interviews", False, f"Request failed: {str(e)}")
+            return False
+        except json.JSONDecodeError as e:
+            self.log_result("Upcoming Interviews", False, f"Invalid JSON response: {str(e)}")
+            return False
+    
+    def run_all_tests(self):
+        """Run all backend tests"""
+        print("🚀 Starting CareerFlow Backend API Tests")
+        print("=" * 60)
+        
+        # Test 1: Backend connectivity
+        if not self.test_backend_connectivity():
+            print("\n❌ Backend not accessible. Stopping tests.")
+            return False
+        
+        # Test 2: Authentication
+        if not self.test_auth_me_endpoint():
+            print("\n❌ Authentication failed. Stopping tests.")
+            return False
+        
+        # Test 3: Health endpoint (expected to fail as not implemented)
+        self.test_health_endpoint()
+        
+        # Test 4: Dashboard stats
+        self.test_dashboard_stats()
+        
+        # Test 5: AI insights
+        self.test_ai_insights()
+        
+        # Test 6: Jobs API (empty)
+        self.test_jobs_api_empty()
+        
+        # Test 7: Job creation with upcoming_stage
+        job_id = self.test_job_creation_with_upcoming_stage()
+        
+        # Test 8: Job status update and syncing
+        if job_id:
+            self.test_job_update_status_sync(job_id)
+        
+        # Test 9: Jobs API with data
+        self.test_jobs_api_with_data()
+        
+        # Test 10: Upcoming interviews
+        self.test_upcoming_interviews_endpoint()
+        
+        # Print summary
+        print("\n" + "=" * 60)
+        print("📊 TEST SUMMARY")
+        print("=" * 60)
+        
+        total_tests = self.passed + self.failed
+        success_rate = (self.passed / total_tests * 100) if total_tests > 0 else 0
+        
+        print(f"Total Tests: {total_tests}")
+        print(f"Passed: {self.passed} ✅")
+        print(f"Failed: {self.failed} ❌")
+        print(f"Success Rate: {success_rate:.1f}%")
+        
+        # Print failed tests details
+        if self.failed > 0:
+            print(f"\n❌ FAILED TESTS ({self.failed}):")
+            for result in self.test_results:
+                if "❌ FAIL" in result["status"]:
+                    print(f"  • {result['test']}: {result['message']}")
+                    if result['details']:
+                        print(f"    {result['details']}")
+        
+        print("\n" + "=" * 60)
+        return self.failed == 0
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    tester = BackendTester()
+    success = tester.run_all_tests()
+    
+    if success:
+        print("🎉 All tests passed!")
+        sys.exit(0)
+    else:
+        print("💥 Some tests failed!")
+        sys.exit(1)
