@@ -526,7 +526,14 @@ export default function NotificationsScreen() {
           </Text>
         </View>
       ) : (
-        <ScrollView style={styles.scrollContent} showsVerticalScrollIndicator={false}>
+        <ScrollView 
+          style={styles.scrollContent} 
+          showsVerticalScrollIndicator={false}
+          bounces={true}
+          alwaysBounceVertical={true}
+          overScrollMode="always"
+          contentContainerStyle={styles.scrollContentContainer}
+        >
           {/* Reports Section */}
           {reports.length > 0 && (
             <>
