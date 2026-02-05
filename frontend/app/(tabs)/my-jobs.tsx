@@ -2547,24 +2547,20 @@ export default function MyJobsScreen() {
                       {upcomingScheduleDate || 'Select Date'}
                     </Text>
                   </TouchableOpacity>
-                  {showScheduledOnPicker && (
-                    <DateTimePicker
-                      value={scheduledOnValue}
-                      mode="date"
-                      display={Platform.OS === 'ios' ? 'spinner' : 'calendar'}
-                      onChange={(event, selectedDate) => {
-                        setShowScheduledOnPicker(Platform.OS === 'ios');
-                        if (selectedDate) {
-                          setScheduledOnValue(selectedDate);
-                          const formatted = format(selectedDate, 'MM/dd/yyyy');
-                          setUpcomingScheduleDate(formatted);
-                          setFormData({ ...formData, upcoming_schedule: formatted });
-                          setScheduledOnEdited(true);
-                        }
-                      }}
-                      minimumDate={new Date()}
-                    />
-                  )}
+                  <CalendarPicker
+                    visible={showScheduledOnPicker}
+                    onClose={() => setShowScheduledOnPicker(false)}
+                    onSelectDate={(selectedDate) => {
+                      setScheduledOnValue(selectedDate);
+                      const formatted = format(selectedDate, 'MM/dd/yyyy');
+                      setUpcomingScheduleDate(formatted);
+                      setFormData({ ...formData, upcoming_schedule: formatted });
+                      setScheduledOnEdited(true);
+                    }}
+                    selectedDate={scheduledOnValue}
+                    minDate={new Date()}
+                    colors={colors}
+                  />
                 </View>
               ) : null}
 
