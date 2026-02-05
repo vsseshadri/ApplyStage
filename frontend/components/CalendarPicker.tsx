@@ -257,6 +257,9 @@ const styles = StyleSheet.create({
   todayCell: {
     borderWidth: 0,
   },
+  weekendCell: {
+    backgroundColor: 'rgba(128, 128, 128, 0.1)',
+  },
   todayDot: {
     position: 'absolute',
     bottom: 4,
