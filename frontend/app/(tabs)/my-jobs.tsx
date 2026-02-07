@@ -1939,6 +1939,7 @@ export default function MyJobsScreen() {
     const daysAgo = getDaysAgo(job.date_applied || job.created_at);
     const appliedDate = job.date_applied ? format(new Date(job.date_applied), 'MMM d, yyyy') : '-';
     const isPriority = job.is_priority || false;
+    const isGhosted = job.status === 'ghosted';
     
     return (
       <TouchableOpacity
@@ -1948,6 +1949,7 @@ export default function MyJobsScreen() {
           dynamicStyles.jobCard,
           selectMode && isSelected && dynamicStyles.jobCardSelected,
           isPriority && dynamicStyles.priorityJobCard,
+          isGhosted && dynamicStyles.ghostedJobCard,
         ]}
         onPress={() => {
           if (selectMode) {
@@ -1966,19 +1968,24 @@ export default function MyJobsScreen() {
             />
           </View>
         )}
-        <View style={[dynamicStyles.cardContentWrapper, selectMode && { marginLeft: 8 }]}>
+        <View style={[dynamicStyles.cardContentWrapper, selectMode && { marginLeft: 8 }, isGhosted && { opacity: 0.6 }]}>
           {/* Row 1: Company Name + Priority Badge + Days Counter */}
           <View style={dynamicStyles.cardRow1}>
             <View style={dynamicStyles.companyWithPriority}>
-              <Text style={dynamicStyles.companyName} numberOfLines={1}>{job.company_name}</Text>
-              {isPriority && (
+              <Text style={[dynamicStyles.companyName, isGhosted && { color: colors.textSecondary }]} numberOfLines={1}>{job.company_name}</Text>
+              {isPriority && !isGhosted && (
                 <View style={dynamicStyles.priorityIndicator}>
                   <Ionicons name="star" size={12} color="#F59E0B" />
                 </View>
               )}
+              {isGhosted && (
+                <View style={dynamicStyles.ghostedIndicator}>
+                  <Ionicons name="eye-off-outline" size={12} color="#9CA3AF" />
+                </View>
+              )}
             </View>
             <View style={dynamicStyles.daysCounter}>
-              <Text style={dynamicStyles.daysNumber}>{daysAgo}</Text>
+              <Text style={[dynamicStyles.daysNumber, isGhosted && { color: colors.textSecondary }]}>{daysAgo}</Text>
               <Text style={dynamicStyles.daysLabel}>days</Text>
             </View>
           </View>
