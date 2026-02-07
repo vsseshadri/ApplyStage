@@ -72,32 +72,39 @@ const InterviewChecklist: React.FC<InterviewChecklistProps> = ({
 
   const fetchChecklistAndProgress = async () => {
     setLoading(true);
+    console.log('[InterviewChecklist] Fetching checklist for stage:', stage, 'company:', company, 'jobId:', jobId);
+    console.log('[InterviewChecklist] Using BACKEND_URL:', BACKEND_URL);
     try {
       // Fetch checklist items and saved progress in parallel
+      const checklistUrl = `${BACKEND_URL}/api/interview-checklist/${stage}?company=${encodeURIComponent(company)}`;
+      const progressUrl = `${BACKEND_URL}/api/checklist-progress/${jobId}/${stage}`;
+      
+      console.log('[InterviewChecklist] Fetching from:', checklistUrl);
+      
       const [checklistResponse, progressResponse] = await Promise.all([
-        fetch(
-          `${BACKEND_URL}/api/interview-checklist/${stage}?company=${encodeURIComponent(company)}`,
-          { headers: { 'Authorization': `Bearer ${sessionToken}` } }
-        ),
-        fetch(
-          `${BACKEND_URL}/api/checklist-progress/${jobId}/${stage}`,
-          { headers: { 'Authorization': `Bearer ${sessionToken}` } }
-        )
+        fetch(checklistUrl, { headers: { 'Authorization': `Bearer ${sessionToken}` } }),
+        fetch(progressUrl, { headers: { 'Authorization': `Bearer ${sessionToken}` } })
       ]);
+      
+      console.log('[InterviewChecklist] Checklist response status:', checklistResponse.status);
       
       if (checklistResponse.ok) {
         const data = await checklistResponse.json();
+        console.log('[InterviewChecklist] Received checklist data:', JSON.stringify(data));
         setChecklist(data);
+      } else {
+        console.log('[InterviewChecklist] Checklist fetch failed:', checklistResponse.status);
       }
       
       if (progressResponse.ok) {
         const progressData = await progressResponse.json();
+        console.log('[InterviewChecklist] Received progress data:', JSON.stringify(progressData));
         if (progressData.completed_items && Array.isArray(progressData.completed_items)) {
           setCompletedItems(new Set(progressData.completed_items));
         }
       }
     } catch (error) {
-      console.log('Error fetching checklist:', error);
+      console.log('[InterviewChecklist] Error fetching checklist:', error);
     } finally {
       setLoading(false);
     }
