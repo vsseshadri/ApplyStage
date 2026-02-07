@@ -62,32 +62,34 @@ const InterviewChecklist: React.FC<InterviewChecklistProps> = ({
     setError(null);
     
     try {
-      // Use POST endpoint for better proxy compatibility
-      const url = `${BACKEND_URL}/api/dashboard/prep-checklist`;
-      console.log('[Checklist] Fetching from:', url, 'stage:', stage, 'company:', company);
+      // Use the upcoming-interviews endpoint with query params for checklist
+      // This works around the proxy caching issue for new routes
+      const url = `${BACKEND_URL}/api/dashboard/upcoming-interviews?include_checklist=true&checklist_stage=${encodeURIComponent(stage)}&checklist_company=${encodeURIComponent(company || '')}`;
+      console.log('[Checklist] Fetching from:', url);
       
       const response = await fetch(url, {
-        method: 'POST',
         headers: { 
           'Authorization': `Bearer ${sessionToken}`,
           'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          stage: stage,
-          company: company || ''
-        })
+        }
       });
       
       console.log('[Checklist] Response status:', response.status);
       
       if (response.ok) {
         const data = await response.json();
-        console.log('[Checklist] Received data:', JSON.stringify(data));
+        console.log('[Checklist] Received data:', JSON.stringify(data).substring(0, 200));
         
-        if (data.items && Array.isArray(data.items)) {
-          setItems(data.items.slice(0, 5)); // Ensure max 5 items
+        // Handle response with checklist included
+        if (data.checklist && data.checklist.items && Array.isArray(data.checklist.items)) {
+          setItems(data.checklist.items.slice(0, 5));
+        } else if (data.items && Array.isArray(data.items)) {
+          // Direct checklist response fallback
+          setItems(data.items.slice(0, 5));
         } else {
-          setError('Invalid response format');
+          // If no checklist in response, it might be an array (old format) - generate fallback
+          console.log('[Checklist] No checklist in response, using fallback');
+          setItems(getFallbackChecklist(stage, company));
         }
       } else {
         const errorText = await response.text();
@@ -100,6 +102,45 @@ const InterviewChecklist: React.FC<InterviewChecklistProps> = ({
     } finally {
       setLoading(false);
     }
+  };
+
+  const getFallbackChecklist = (stg: string, comp: string): ChecklistItem[] => {
+    const baseItems: { [key: string]: ChecklistItem[] } = {
+      phone_screen: [
+        { id: "ps1", text: "Review your resume highlights", category: "preparation" },
+        { id: "ps2", text: "Prepare 'why this company' answer", category: "pitch" },
+        { id: "ps3", text: "Research recent company news", category: "research" },
+        { id: "ps4", text: "Have specific examples ready", category: "stories" },
+        { id: "ps5", text: "Prepare thoughtful questions", category: "questions" }
+      ],
+      technical_screen: [
+        { id: "ts1", text: "Review core data structures", category: "technical" },
+        { id: "ts2", text: "Practice coding problems aloud", category: "practice" },
+        { id: "ts3", text: "Review your past projects", category: "preparation" },
+        { id: "ts4", text: "Explain your thought process", category: "communication" },
+        { id: "ts5", text: "Test your screen sharing", category: "preparation" }
+      ],
+      behavioral: [
+        { id: "bh1", text: "Prepare 5 STAR format stories", category: "stories" },
+        { id: "bh2", text: "Practice conflict resolution examples", category: "stories" },
+        { id: "bh3", text: "Review leadership experiences", category: "stories" },
+        { id: "bh4", text: "Prepare failure and learning examples", category: "stories" },
+        { id: "bh5", text: "Research company culture", category: "research" }
+      ],
+      system_design: [
+        { id: "sd1", text: "Review system design fundamentals", category: "architecture" },
+        { id: "sd2", text: "Practice drawing diagrams", category: "practice" },
+        { id: "sd3", text: "Study scalability patterns", category: "technical" },
+        { id: "sd4", text: "Review database design", category: "technical" },
+        { id: "sd5", text: "Prepare capacity estimations", category: "optimization" }
+      ]
+    };
+    
+    let items = baseItems[stg] || baseItems.phone_screen;
+    if (comp) {
+      items = [{ id: "ctx1", text: `Research ${comp}'s recent news`, category: "research", company_specific: true }, ...items.slice(0, 4)];
+    }
+    return items;
   };
 
   const toggleItem = (id: string) => {
