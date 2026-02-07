@@ -909,10 +909,13 @@ async def get_ai_insights(current_user: User = Depends(get_current_user)):
     # Convert priority coaching insights to proper format
     for pi in priority_insights:
         if pi.get("type") == "coaching":
+            stage_label = pi['stage'].replace('_', ' ').title()
+            # Indicate if this is for an upcoming stage
+            prefix = "Upcoming " if pi.get("is_upcoming") else ""
             pi.update({
                 "icon": "star",
                 "color": "#F59E0B",
-                "text": f"{pi['company']}: {pi['tip']}"
+                "text": f"{pi['company']} ({prefix}{stage_label}): {pi['tip']}"
             })
     
     # 3. Offers and final rounds
