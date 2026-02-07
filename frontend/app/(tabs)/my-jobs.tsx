@@ -2534,8 +2534,8 @@ export default function MyJobsScreen() {
               </View>
 
               {/* Upcoming Stage Dropdown */}
-              {/* Upcoming Stage - Only show if status is not 'offer' */}
-              {formData.status !== 'offer' && (
+              {/* Upcoming Stage - Only show if status is not 'offer' or 'ghosted' */}
+              {formData.status !== 'offer' && formData.status !== 'ghosted' && (
                 <View style={dynamicStyles.formSection}>
                   <Text style={dynamicStyles.label}>Upcoming Stage</Text>
                   <TouchableOpacity 
@@ -2550,8 +2550,20 @@ export default function MyJobsScreen() {
                 </View>
               )}
 
-              {/* Scheduled On - Calendar Modal Date Picker - Only visible when Upcoming Stage is selected and status is not 'offer' */}
-              {formData.upcoming_stage && formData.status !== 'offer' ? (
+              {/* Ghosted status message - Stage progression is frozen */}
+              {formData.status === 'ghosted' && (
+                <View style={[dynamicStyles.formSection, { backgroundColor: colors.border + '40', padding: 12, borderRadius: 8 }]}>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                    <Ionicons name="snow-outline" size={18} color={colors.textSecondary} />
+                    <Text style={{ color: colors.textSecondary, fontSize: 13, flex: 1 }}>
+                      Stage progression is frozen for ghosted applications
+                    </Text>
+                  </View>
+                </View>
+              )}
+
+              {/* Scheduled On - Calendar Modal Date Picker - Only visible when Upcoming Stage is selected and status is not 'offer' or 'ghosted' */}
+              {formData.upcoming_stage && formData.status !== 'offer' && formData.status !== 'ghosted' ? (
                 <View style={dynamicStyles.formSection}>
                   <Text style={dynamicStyles.label}>Scheduled On *</Text>
                   <TouchableOpacity 
