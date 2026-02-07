@@ -56,6 +56,7 @@ const InterviewChecklist: React.FC<InterviewChecklistProps> = ({
 
   // Fetch checklist and saved progress when modal opens
   useEffect(() => {
+    console.log('[InterviewChecklist] useEffect triggered, visible:', visible, 'stage:', stage, 'company:', company);
     if (visible) {
       fetchChecklistAndProgress();
       Animated.spring(slideAnim, {
