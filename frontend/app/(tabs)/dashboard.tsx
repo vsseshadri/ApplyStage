@@ -1046,41 +1046,45 @@ export default function DashboardScreen() {
             <View style={dynamicStyles.section}>
               <Text style={dynamicStyles.sectionTitle}>By Location</Text>
               <View style={dynamicStyles.chartCard}>
-                <View style={dynamicStyles.donutContainer}>
-                  <Svg width={160} height={160} viewBox="0 0 160 160">
-                    <G rotation={-90} origin="80, 80">
-                      {(() => {
-                        const total = pieChartData.reduce((sum, item) => sum + item.value, 0);
-                        let currentAngle = 0;
-                        const radius = 60;
-                        const strokeWidth = 24;
-                        const circumference = 2 * Math.PI * radius;
-                        return pieChartData.map((item, index) => {
-                          const percentage = item.value / total;
-                          const strokeDasharray = `${percentage * circumference} ${circumference}`;
-                          const strokeDashoffset = -currentAngle * circumference;
-                          currentAngle += percentage;
-                          return (
-                            <Circle key={index} cx="80" cy="80" r={radius} stroke={item.color} strokeWidth={strokeWidth} fill="transparent" strokeDasharray={strokeDasharray} strokeDashoffset={strokeDashoffset} strokeLinecap="round" />
-                          );
-                        });
-                      })()}
-                    </G>
-                    <Circle cx="80" cy="80" r="36" fill={colors.card} />
-                  </Svg>
-                  <View style={dynamicStyles.donutCenterText}>
-                    <Text style={[dynamicStyles.donutNumber, { color: colors.text }]}>{stats?.total || 0}</Text>
-                    <Text style={[dynamicStyles.donutLabel, { color: colors.textSecondary }]}>Total</Text>
-                  </View>
-                </View>
-                <View style={dynamicStyles.legendContainer}>
-                  {pieChartData.map((item, index) => (
-                    <View key={index} style={dynamicStyles.legendItem}>
-                      <View style={[dynamicStyles.legendDot, { backgroundColor: item.color }]} />
-                      <Text style={dynamicStyles.legendText} numberOfLines={1}>{item.label}</Text>
-                      <Text style={dynamicStyles.legendValue}>{item.value}</Text>
+                <View style={dynamicStyles.locationChartRow}>
+                  {/* Donut Chart - Left Side */}
+                  <View style={dynamicStyles.donutContainerLeft}>
+                    <Svg width={140} height={140} viewBox="0 0 160 160">
+                      <G rotation={-90} origin="80, 80">
+                        {(() => {
+                          const total = pieChartData.reduce((sum, item) => sum + item.value, 0);
+                          let currentAngle = 0;
+                          const radius = 60;
+                          const strokeWidth = 24;
+                          const circumference = 2 * Math.PI * radius;
+                          return pieChartData.map((item, index) => {
+                            const percentage = item.value / total;
+                            const strokeDasharray = `${percentage * circumference} ${circumference}`;
+                            const strokeDashoffset = -currentAngle * circumference;
+                            currentAngle += percentage;
+                            return (
+                              <Circle key={index} cx="80" cy="80" r={radius} stroke={item.color} strokeWidth={strokeWidth} fill="transparent" strokeDasharray={strokeDasharray} strokeDashoffset={strokeDashoffset} strokeLinecap="round" />
+                            );
+                          });
+                        })()}
+                      </G>
+                      <Circle cx="80" cy="80" r="36" fill={colors.card} />
+                    </Svg>
+                    <View style={dynamicStyles.donutCenterTextSmall}>
+                      <Text style={[dynamicStyles.donutNumber, { color: colors.text, fontSize: 20 }]}>{stats?.total || 0}</Text>
+                      <Text style={[dynamicStyles.donutLabel, { color: colors.textSecondary, fontSize: 10 }]}>Total</Text>
                     </View>
-                  ))}
+                  </View>
+                  {/* Legend - Right Side */}
+                  <View style={dynamicStyles.legendContainerRight}>
+                    {pieChartData.map((item, index) => (
+                      <View key={index} style={dynamicStyles.legendItemRight}>
+                        <View style={[dynamicStyles.legendDot, { backgroundColor: item.color }]} />
+                        <Text style={dynamicStyles.legendTextRight} numberOfLines={1}>{item.label}</Text>
+                        <Text style={dynamicStyles.legendValueRight}>{item.value}</Text>
+                      </View>
+                    ))}
+                  </View>
                 </View>
               </View>
             </View>
