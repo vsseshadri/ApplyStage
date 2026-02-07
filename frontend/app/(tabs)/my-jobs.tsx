@@ -1662,7 +1662,7 @@ export default function MyJobsScreen() {
               }}
             >
               <Ionicons name="add-circle-outline" size={20} color={colors.primary} />
-              <Text style={dynamicStyles.manualEntryText}>Use "{stateSearchText}" as {stateLabel.toLowerCase()}</Text>
+              <Text style={dynamicStyles.manualEntryText}>Use &quot;{stateSearchText}&quot; as {stateLabel.toLowerCase()}</Text>
             </TouchableOpacity>
           )}
           <ScrollView style={dynamicStyles.dropdownScroll} nestedScrollEnabled={true} keyboardShouldPersistTaps="handled">
@@ -1739,7 +1739,7 @@ export default function MyJobsScreen() {
               }}
             >
               <Ionicons name="add-circle-outline" size={20} color={colors.primary} />
-              <Text style={dynamicStyles.manualEntryText}>Use "{citySearchText}" as city</Text>
+              <Text style={dynamicStyles.manualEntryText}>Use &quot;{citySearchText}&quot; as city</Text>
             </TouchableOpacity>
           )}
           <ScrollView style={dynamicStyles.dropdownScroll} nestedScrollEnabled={true} keyboardShouldPersistTaps="handled">
