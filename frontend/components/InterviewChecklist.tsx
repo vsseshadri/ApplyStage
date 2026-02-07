@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, TouchableOpacity, Modal, StyleSheet, ScrollView, Animated, Platform } from 'react-native';
+import React, { useState, useEffect, useCallback } from 'react';
+import { View, Text, TouchableOpacity, Modal, StyleSheet, ScrollView, Animated, Platform, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import Constants from 'expo-constants';
 
@@ -15,6 +15,7 @@ interface InterviewChecklistProps {
   onClose: () => void;
   stage: string;
   company: string;
+  jobId: string;
   daysUntil: number;
   colors: {
     background: string;
@@ -40,6 +41,7 @@ const InterviewChecklist: React.FC<InterviewChecklistProps> = ({
   onClose,
   stage,
   company,
+  jobId,
   daysUntil,
   colors,
   sessionToken,
@@ -47,11 +49,13 @@ const InterviewChecklist: React.FC<InterviewChecklistProps> = ({
   const [checklist, setChecklist] = useState<{ title: string; items: ChecklistItem[] }>({ title: '', items: [] });
   const [completedItems, setCompletedItems] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
   const slideAnim = useState(new Animated.Value(0))[0];
 
+  // Fetch checklist and saved progress when modal opens
   useEffect(() => {
     if (visible) {
-      fetchChecklist();
+      fetchChecklistAndProgress();
       Animated.spring(slideAnim, {
         toValue: 1,
         useNativeDriver: true,
@@ -61,18 +65,33 @@ const InterviewChecklist: React.FC<InterviewChecklistProps> = ({
     } else {
       slideAnim.setValue(0);
     }
-  }, [visible, stage, company]);
+  }, [visible, stage, company, jobId]);
 
-  const fetchChecklist = async () => {
+  const fetchChecklistAndProgress = async () => {
     setLoading(true);
     try {
-      const response = await fetch(
-        `${BACKEND_URL}/api/interview-checklist/${stage}?company=${encodeURIComponent(company)}`,
-        { headers: { 'Authorization': `Bearer ${sessionToken}` } }
-      );
-      if (response.ok) {
-        const data = await response.json();
+      // Fetch checklist items and saved progress in parallel
+      const [checklistResponse, progressResponse] = await Promise.all([
+        fetch(
+          `${BACKEND_URL}/api/interview-checklist/${stage}?company=${encodeURIComponent(company)}`,
+          { headers: { 'Authorization': `Bearer ${sessionToken}` } }
+        ),
+        fetch(
+          `${BACKEND_URL}/api/checklist-progress/${jobId}/${stage}`,
+          { headers: { 'Authorization': `Bearer ${sessionToken}` } }
+        )
+      ]);
+      
+      if (checklistResponse.ok) {
+        const data = await checklistResponse.json();
         setChecklist(data);
+      }
+      
+      if (progressResponse.ok) {
+        const progressData = await progressResponse.json();
+        if (progressData.completed_items && Array.isArray(progressData.completed_items)) {
+          setCompletedItems(new Set(progressData.completed_items));
+        }
       }
     } catch (error) {
       console.log('Error fetching checklist:', error);
@@ -80,6 +99,29 @@ const InterviewChecklist: React.FC<InterviewChecklistProps> = ({
       setLoading(false);
     }
   };
+
+  // Save progress to backend
+  const saveProgress = useCallback(async (newCompletedItems: Set<string>) => {
+    setSaving(true);
+    try {
+      await fetch(`${BACKEND_URL}/api/checklist-progress`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${sessionToken}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          job_id: jobId,
+          stage: stage,
+          completed_items: Array.from(newCompletedItems)
+        })
+      });
+    } catch (error) {
+      console.log('Error saving progress:', error);
+    } finally {
+      setSaving(false);
+    }
+  }, [jobId, stage, sessionToken]);
 
   const toggleItem = (id: string) => {
     setCompletedItems(prev => {
@@ -89,6 +131,8 @@ const InterviewChecklist: React.FC<InterviewChecklistProps> = ({
       } else {
         newSet.add(id);
       }
+      // Save progress to backend
+      saveProgress(newSet);
       return newSet;
     });
   };
@@ -125,15 +169,19 @@ const InterviewChecklist: React.FC<InterviewChecklistProps> = ({
     return colors.primary;
   };
 
+  const handleClose = () => {
+    onClose();
+  };
+
   return (
     <Modal
       visible={visible}
       transparent
       animationType="none"
-      onRequestClose={onClose}
+      onRequestClose={handleClose}
     >
       <View style={styles.overlay}>
-        <TouchableOpacity style={styles.backdrop} activeOpacity={1} onPress={onClose} />
+        <TouchableOpacity style={styles.backdrop} activeOpacity={1} onPress={handleClose} />
         <Animated.View
           style={[
             styles.container,
@@ -166,7 +214,7 @@ const InterviewChecklist: React.FC<InterviewChecklistProps> = ({
                 {formatStageName(stage)} Interview
               </Text>
             </View>
-            <TouchableOpacity style={styles.closeButton} onPress={onClose}>
+            <TouchableOpacity style={styles.closeButton} onPress={handleClose}>
               <Ionicons name="close" size={24} color={colors.text} />
             </TouchableOpacity>
           </View>
@@ -181,9 +229,17 @@ const InterviewChecklist: React.FC<InterviewChecklistProps> = ({
                 ]}
               />
             </View>
-            <Text style={[styles.progressText, { color: colors.textSecondary }]}>
-              {completedCount}/{totalCount} completed
-            </Text>
+            <View style={styles.progressTextRow}>
+              <Text style={[styles.progressText, { color: colors.textSecondary }]}>
+                {completedCount}/{totalCount} completed
+              </Text>
+              {saving && (
+                <View style={styles.savingIndicator}>
+                  <ActivityIndicator size="small" color={colors.primary} />
+                  <Text style={[styles.savingText, { color: colors.textSecondary }]}>Saving...</Text>
+                </View>
+              )}
+            </View>
           </View>
 
           {/* Checklist */}
@@ -194,12 +250,13 @@ const InterviewChecklist: React.FC<InterviewChecklistProps> = ({
           >
             {loading ? (
               <View style={styles.loadingContainer}>
+                <ActivityIndicator size="large" color={colors.primary} />
                 <Text style={[styles.loadingText, { color: colors.textSecondary }]}>
                   Loading checklist...
                 </Text>
               </View>
             ) : (
-              checklist.items.map((item, index) => (
+              checklist.items.map((item) => (
                 <TouchableOpacity
                   key={item.id}
                   style={[
@@ -240,6 +297,13 @@ const InterviewChecklist: React.FC<InterviewChecklistProps> = ({
                       <Text style={[styles.categoryText, { color: colors.textSecondary }]}>
                         {item.category}
                       </Text>
+                      {item.company_specific && (
+                        <View style={[styles.companyTag, { backgroundColor: colors.primary + '20' }]}>
+                          <Text style={[styles.companyTagText, { color: colors.primary }]}>
+                            {company}
+                          </Text>
+                        </View>
+                      )}
                     </View>
                   </View>
                 </TouchableOpacity>
@@ -249,9 +313,19 @@ const InterviewChecklist: React.FC<InterviewChecklistProps> = ({
 
           {/* Footer */}
           <View style={[styles.footer, { borderTopColor: colors.border }]}>
+            {progress === 100 ? (
+              <View style={styles.completedBanner}>
+                <Ionicons name="checkmark-circle" size={20} color="#22C55E" />
+                <Text style={styles.completedBannerText}>All tasks completed! You're ready! 🎉</Text>
+              </View>
+            ) : (
+              <Text style={[styles.footerHint, { color: colors.textSecondary }]}>
+                Progress is saved automatically
+              </Text>
+            )}
             <TouchableOpacity
               style={[styles.doneButton, { backgroundColor: colors.primary }]}
-              onPress={onClose}
+              onPress={handleClose}
             >
               <Text style={styles.doneButtonText}>Done</Text>
             </TouchableOpacity>
@@ -337,10 +411,22 @@ const styles = StyleSheet.create({
     height: '100%',
     borderRadius: 3,
   },
+  progressTextRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginTop: 6,
+  },
   progressText: {
     fontSize: 12,
-    marginTop: 6,
-    textAlign: 'right',
+  },
+  savingIndicator: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  savingText: {
+    fontSize: 11,
   },
   scrollView: {
     flex: 1,
@@ -349,6 +435,7 @@ const styles = StyleSheet.create({
   loadingContainer: {
     paddingVertical: 40,
     alignItems: 'center',
+    gap: 12,
   },
   loadingText: {
     fontSize: 14,
@@ -394,9 +481,38 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     textTransform: 'capitalize',
   },
+  companyTag: {
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 4,
+    marginLeft: 4,
+  },
+  companyTagText: {
+    fontSize: 10,
+    fontWeight: '600',
+  },
   footer: {
     padding: 20,
     borderTopWidth: 1,
+    gap: 12,
+  },
+  footerHint: {
+    fontSize: 12,
+    textAlign: 'center',
+  },
+  completedBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    paddingVertical: 8,
+    backgroundColor: '#22C55E10',
+    borderRadius: 8,
+  },
+  completedBannerText: {
+    color: '#22C55E',
+    fontWeight: '600',
+    fontSize: 14,
   },
   doneButton: {
     paddingVertical: 14,
