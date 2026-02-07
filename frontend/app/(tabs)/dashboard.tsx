@@ -1472,6 +1472,47 @@ const createStyles = (colors: any, isDark: boolean) => StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+  // Location Chart Row Layout
+  locationChartRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: 12,
+    paddingHorizontal: 8,
+  },
+  donutContainerLeft: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    position: 'relative',
+    flex: 0,
+  },
+  donutCenterTextSmall: {
+    position: 'absolute',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  legendContainerRight: {
+    flex: 1,
+    marginLeft: 16,
+    gap: 6,
+  },
+  legendItemRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  legendTextRight: {
+    flex: 1,
+    fontSize: 13,
+    color: colors.text,
+  },
+  legendValueRight: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: colors.text,
+    minWidth: 24,
+    textAlign: 'right',
+  },
   donutOuter: {
     width: 120,
     height: 120,
