@@ -810,21 +810,25 @@ async def get_ai_insights(current_user: User = Depends(get_current_user)):
                 pass
         
         # Track priority jobs with coaching insights
+        # Use upcoming_stage for coaching if available, otherwise use status
         if is_priority and status not in ['offer', 'rejected']:
             priority_jobs.append({
                 "company": company, 
                 "status": status, 
                 "biz_days": biz_days,
-                "position": position
+                "position": position,
+                "upcoming_stage": upcoming_stage
             })
-            # Add stage-specific coaching for priority jobs
-            if status in stage_coaching:
+            # Add stage-specific coaching - prioritize upcoming_stage over status
+            coaching_stage = upcoming_stage if upcoming_stage else status
+            if coaching_stage in stage_coaching:
                 priority_insights.append({
                     "type": "coaching",
                     "company": company,
-                    "stage": status,
-                    "tip": stage_coaching[status],
-                    "is_priority": True
+                    "stage": coaching_stage,
+                    "tip": stage_coaching[coaching_stage],
+                    "is_priority": True,
+                    "is_upcoming": bool(upcoming_stage)
                 })
         
         # Track "No status change" - jobs stuck in same status for 10+ biz days
