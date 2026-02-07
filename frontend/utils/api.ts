@@ -25,14 +25,12 @@ const getBackendUrl = (): string => {
     return envUrl;
   }
   
-  // Priority 3: For development only - use the preview URL
-  // WARNING: This will NOT work in production/TestFlight builds
+  // Priority 3: For development only - use the production URL
   if (__DEV__) {
-    return 'https://repo-preview-43.preview.emergentagent.com';
+    return 'https://repo-preview-43.emergent.host';
   }
   
-  // For production builds without a configured URL, we need to handle this gracefully
-  // Return the config URL even if it's a preview URL (the app will show an error)
+  // For production builds without a configured URL, return empty string
   return configUrl || envUrl || '';
 };
 
