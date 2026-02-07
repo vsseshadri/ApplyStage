@@ -10,7 +10,7 @@ import sys
 from datetime import datetime, timezone
 
 # Backend URL from environment
-BACKEND_URL = "https://repo-preview-43.preview.emergentagent.com"
+BACKEND_URL = "https://launchready-4.preview.emergentagent.com"
 API_BASE = f"{BACKEND_URL}/api"
 
 # Test authentication token
