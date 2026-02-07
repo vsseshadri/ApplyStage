@@ -1244,6 +1244,43 @@ async def get_interview_checklist(stage: str, company: str = None, current_user:
     
     return checklist
 
+# Checklist progress model and endpoints for persistence
+class ChecklistProgressUpdate(BaseModel):
+    job_id: str
+    stage: str
+    completed_items: List[str]
+
+@api_router.get("/checklist-progress/{job_id}/{stage}")
+async def get_checklist_progress(job_id: str, stage: str, current_user: User = Depends(get_current_user)):
+    """Get saved checklist progress for a specific job and stage"""
+    progress = await db.checklist_progress.find_one(
+        {"user_id": current_user.user_id, "job_id": job_id, "stage": stage},
+        {"_id": 0}
+    )
+    
+    if not progress:
+        return {"completed_items": []}
+    
+    return {"completed_items": progress.get("completed_items", [])}
+
+@api_router.put("/checklist-progress")
+async def save_checklist_progress(data: ChecklistProgressUpdate, current_user: User = Depends(get_current_user)):
+    """Save checklist progress for a specific job and stage"""
+    # Upsert the progress document
+    await db.checklist_progress.update_one(
+        {"user_id": current_user.user_id, "job_id": data.job_id, "stage": data.stage},
+        {"$set": {
+            "user_id": current_user.user_id,
+            "job_id": data.job_id,
+            "stage": data.stage,
+            "completed_items": data.completed_items,
+            "updated_at": datetime.now(timezone.utc)
+        }},
+        upsert=True
+    )
+    
+    return {"message": "Progress saved", "completed_items": data.completed_items}
+
 @api_router.get("/positions", response_model=List[CustomPosition])
 async def get_positions(current_user: User = Depends(get_current_user)):
     positions = await db.custom_positions.find(
