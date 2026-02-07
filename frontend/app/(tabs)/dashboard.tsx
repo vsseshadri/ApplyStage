@@ -12,6 +12,7 @@ import Constants from 'expo-constants';
 import Svg, { Path, Circle, G } from 'react-native-svg';
 import { Swipeable } from 'react-native-gesture-handler';
 import { BlurView } from 'expo-blur';
+import InterviewChecklist from '../../components/InterviewChecklist';
 
 // Get backend URL from configuration
 const getBackendUrl = (): string => {
@@ -35,7 +36,8 @@ const STATUS_COLORS: {[key: string]: string} = {
   hiring_manager: '#14B8A6',
   final_round: '#10B981',
   offer: '#22C55E',
-  rejected: '#DC2626'
+  rejected: '#DC2626',
+  ghosted: '#9CA3AF'
 };
 
 // Modern pie chart colors with gradients
