@@ -17,359 +17,293 @@ HEADERS = {
     "Content-Type": "application/json"
 }
 
-class BackendTester:
-    def __init__(self):
-        self.session = None
-        self.headers = {"Authorization": f"Bearer {TEST_TOKEN}"}
-        self.test_results = []
-        
-    async def __aenter__(self):
-        self.session = aiohttp.ClientSession()
-        return self
-        
-    async def __aexit__(self, exc_type, exc_val, exc_tb):
-        if self.session:
-            await self.session.close()
-    
-    def log_test(self, test_name, status, details=""):
-        """Log test results"""
-        result = {
-            "test": test_name,
-            "status": status,
-            "details": details,
-            "timestamp": datetime.now().isoformat()
-        }
-        self.test_results.append(result)
-        status_icon = "✅" if status == "PASS" else "❌"
-        print(f"{status_icon} {test_name}: {status}")
-        if details:
-            print(f"   Details: {details}")
-    
-    async def test_health_endpoint(self):
-        """Test 1: Health check endpoint"""
-        try:
-            async with self.session.get(f"{BACKEND_URL}/api/health") as response:
-                if response.status == 200:
-                    data = await response.json()
-                    if data.get("status") == "healthy":
-                        self.log_test("Health Check", "PASS", f"Status: {data.get('status')}, DB: {data.get('database', 'N/A')}")
-                        return True
-                    else:
-                        self.log_test("Health Check", "FAIL", f"Unexpected status: {data.get('status')}")
-                        return False
-                else:
-                    self.log_test("Health Check", "FAIL", f"HTTP {response.status}")
-                    return False
-        except Exception as e:
-            self.log_test("Health Check", "FAIL", f"Exception: {str(e)}")
-            return False
-    
-    async def test_ai_insights_basic(self):
-        """Test 2: Basic AI Insights endpoint structure"""
-        try:
-            async with self.session.get(f"{BACKEND_URL}/api/dashboard/ai-insights", headers=self.headers) as response:
-                if response.status == 200:
-                    data = await response.json()
-                    
-                    # Check core required structure (upcoming_interviews may not be present if no data)
-                    required_keys = ["insights", "follow_ups"]
-                    missing_keys = [key for key in required_keys if key not in data]
-                    
-                    if not missing_keys:
-                        insights_count = len(data.get("insights", []))
-                        follow_ups_count = len(data.get("follow_ups", []))
-                        upcoming_count = len(data.get("upcoming_interviews", []))
-                        
-                        # Check if upcoming_interviews is present when there's data
-                        has_upcoming = "upcoming_interviews" in data
-                        
-                        self.log_test("AI Insights Basic Structure", "PASS", 
-                                    f"Insights: {insights_count}, Follow-ups: {follow_ups_count}, Upcoming: {upcoming_count}, Has upcoming_interviews key: {has_upcoming}")
-                        return True, data
-                    else:
-                        self.log_test("AI Insights Basic Structure", "FAIL", f"Missing keys: {missing_keys}")
-                        return False, None
-                else:
-                    self.log_test("AI Insights Basic Structure", "FAIL", f"HTTP {response.status}")
-                    return False, None
-        except Exception as e:
-            self.log_test("AI Insights Basic Structure", "FAIL", f"Exception: {str(e)}")
-            return False, None
-    
-    async def test_ai_insights_enhanced_format(self, insights_data):
-        """Test 3: Enhanced AI Insights format verification"""
-        try:
-            insights = insights_data.get("insights", [])
-            upcoming_interviews = insights_data.get("upcoming_interviews", [])
-            
-            # Check for enhanced format features
-            format_checks = {
-                "consolidated_company_insights": False,
-                "progress_reinforcement": False,
-                "weekly_reflection_prompts": False,
-                "stage_pattern_analysis": False,
-                "upcoming_interviews_with_checklists": False
-            }
-            
-            # Check insights for different types
-            for insight in insights:
-                insight_type = insight.get("type", "")
-                text = insight.get("text", "").lower()
-                
-                if insight_type == "coaching" or "company" in text:
-                    format_checks["consolidated_company_insights"] = True
-                
-                if insight_type == "celebration" or "offer" in text or "progress" in text:
-                    format_checks["progress_reinforcement"] = True
-                
-                if insight_type == "reflection" or "reflect" in text:
-                    format_checks["weekly_reflection_prompts"] = True
-                
-                if insight_type == "pattern" or "pattern" in text or "strongest stage" in text:
-                    format_checks["stage_pattern_analysis"] = True
-            
-            # Check upcoming interviews for checklists
-            for interview in upcoming_interviews:
-                if "checklist" in interview and interview["checklist"]:
-                    format_checks["upcoming_interviews_with_checklists"] = True
-                    break
-            
-            passed_checks = sum(format_checks.values())
-            total_checks = len(format_checks)
-            
-            details = f"Enhanced format features found: {passed_checks}/{total_checks} - " + \
-                     ", ".join([k.replace("_", " ").title() for k, v in format_checks.items() if v])
-            
-            if passed_checks >= 3:  # At least 3 out of 5 features should be present
-                self.log_test("AI Insights Enhanced Format", "PASS", details)
-                return True
-            else:
-                self.log_test("AI Insights Enhanced Format", "PARTIAL", details)
-                return True  # Still consider it a pass as some features may not be visible without data
-                
-        except Exception as e:
-            self.log_test("AI Insights Enhanced Format", "FAIL", f"Exception: {str(e)}")
-            return False
-    
-    async def test_interview_checklist(self):
-        """Test 4: Interview Checklist endpoint"""
-        try:
-            # Test system_design stage with Google company as specified in review request
-            url = f"{BACKEND_URL}/api/interview-checklist/system_design"
-            params = {"company": "Google"}
-            
-            async with self.session.get(url, params=params, headers=self.headers) as response:
-                if response.status == 200:
-                    data = await response.json()
-                    
-                    # Check required structure
-                    required_keys = ["title", "items"]
-                    missing_keys = [key for key in required_keys if key not in data]
-                    
-                    if not missing_keys:
-                        items_count = len(data.get("items", []))
-                        company = data.get("company", "")
-                        title = data.get("title", "")
-                        
-                        # Check if items have proper structure
-                        items = data.get("items", [])
-                        valid_items = all(
-                            isinstance(item, dict) and 
-                            "id" in item and 
-                            "text" in item and 
-                            "category" in item 
-                            for item in items
-                        )
-                        
-                        if valid_items and items_count > 0:
-                            self.log_test("Interview Checklist", "PASS", 
-                                        f"Title: '{title}', Company: '{company}', Items: {items_count}")
-                            return True
-                        else:
-                            self.log_test("Interview Checklist", "FAIL", 
-                                        f"Invalid item structure or no items. Items count: {items_count}")
-                            return False
-                    else:
-                        self.log_test("Interview Checklist", "FAIL", f"Missing keys: {missing_keys}")
-                        return False
-                elif response.status == 404:
-                    # The endpoint exists in code but returns 404 - likely a routing issue
-                    self.log_test("Interview Checklist", "FAIL", 
-                                f"Endpoint not found (404) - possible routing issue. Function exists in code but not accessible via API.")
-                    return False
-                else:
-                    self.log_test("Interview Checklist", "FAIL", f"HTTP {response.status}")
-                    return False
-        except Exception as e:
-            self.log_test("Interview Checklist", "FAIL", f"Exception: {str(e)}")
-            return False
-    
-    async def create_test_job_with_ghosted_status(self):
-        """Helper: Create a test job with ghosted status to test AI insights handling"""
-        try:
-            job_data = {
-                "company_name": "TestCompanyGhosted",
-                "position": "Software Engineer",
-                "location": {"city": "San Francisco", "state": "California"},
-                "salary_range": {"min": 120000, "max": 180000},
-                "work_mode": "remote",
-                "job_type": "Software Engineer",
-                "status": "ghosted",
-                "is_priority": True,
-                "date_applied": (datetime.now(timezone.utc) - timedelta(days=15)).isoformat()
-            }
-            
-            async with self.session.post(f"{BACKEND_URL}/api/jobs", 
-                                       json=job_data, 
-                                       headers=self.headers) as response:
-                if response.status == 200:
-                    data = await response.json()
-                    return data.get("job_id")
-                return None
-        except Exception as e:
-            print(f"Failed to create test ghosted job: {e}")
-            return None
-    
-    async def test_ghosted_status_handling(self):
-        """Test 5: Verify ghosted status is handled in AI insights"""
-        try:
-            # First create a test job with ghosted status
-            job_id = await self.create_test_job_with_ghosted_status()
-            
-            if job_id:
-                # Wait a moment for the job to be processed
-                await asyncio.sleep(1)
-                
-                # Now get AI insights and check for ghosted handling
-                async with self.session.get(f"{BACKEND_URL}/api/dashboard/ai-insights", headers=self.headers) as response:
-                    if response.status == 200:
-                        data = await response.json()
-                        insights = data.get("insights", [])
-                        
-                        # Look for ghosted-related insights
-                        ghosted_insight_found = False
-                        for insight in insights:
-                            text = insight.get("text", "").lower()
-                            insight_type = insight.get("type", "")
-                            
-                            if "ghost" in text or insight_type == "ghosted":
-                                ghosted_insight_found = True
-                                break
-                        
-                        if ghosted_insight_found:
-                            self.log_test("Ghosted Status Handling", "PASS", 
-                                        "AI insights properly acknowledge ghosted applications")
-                        else:
-                            self.log_test("Ghosted Status Handling", "PASS", 
-                                        "No ghosted insights shown (may be by design if no ghosted jobs exist)")
-                        
-                        # Clean up: delete the test job
-                        if job_id:
-                            await self.session.delete(f"{BACKEND_URL}/api/jobs/{job_id}", headers=self.headers)
-                        
-                        return True
-                    else:
-                        self.log_test("Ghosted Status Handling", "FAIL", f"HTTP {response.status}")
-                        return False
-            else:
-                self.log_test("Ghosted Status Handling", "SKIP", "Could not create test ghosted job")
-                return True  # Don't fail the test if we can't create test data
-                
-        except Exception as e:
-            self.log_test("Ghosted Status Handling", "FAIL", f"Exception: {str(e)}")
-            return False
-    
-    async def test_no_500_errors(self):
-        """Test 6: Verify no 500 errors on key endpoints"""
-        endpoints_to_test = [
-            "/api/health",
-            "/api/dashboard/ai-insights",
-            "/api/dashboard/stats",
-            "/api/jobs",
-            "/api/interview-checklist/phone_screen"
-        ]
-        
-        error_count = 0
-        total_tests = len(endpoints_to_test)
-        
-        for endpoint in endpoints_to_test:
-            try:
-                headers = self.headers if endpoint != "/api/health" else {}
-                async with self.session.get(f"{BACKEND_URL}{endpoint}", headers=headers) as response:
-                    if response.status >= 500:
-                        error_count += 1
-                        print(f"   ❌ {endpoint}: HTTP {response.status}")
-                    else:
-                        print(f"   ✅ {endpoint}: HTTP {response.status}")
-            except Exception as e:
-                error_count += 1
-                print(f"   ❌ {endpoint}: Exception {str(e)}")
-        
-        if error_count == 0:
-            self.log_test("No 500 Errors", "PASS", f"All {total_tests} endpoints returned < 500")
+def log_test(test_name, status, details=""):
+    """Log test results with timestamp"""
+    timestamp = datetime.now().strftime("%H:%M:%S")
+    status_symbol = "✅" if status == "PASS" else "❌" if status == "FAIL" else "⚠️"
+    print(f"[{timestamp}] {status_symbol} {test_name}: {status}")
+    if details:
+        print(f"    {details}")
+
+def test_backend_connectivity():
+    """Test basic backend connectivity"""
+    try:
+        response = requests.get(f"{BASE_URL}/api/auth/me", headers=HEADERS, timeout=10)
+        if response.status_code == 200:
+            user_data = response.json()
+            log_test("Backend Connectivity", "PASS", f"Connected as user: {user_data.get('email', 'Unknown')}")
             return True
         else:
-            self.log_test("No 500 Errors", "FAIL", f"{error_count}/{total_tests} endpoints had 500+ errors")
+            log_test("Backend Connectivity", "FAIL", f"Status: {response.status_code}")
             return False
-    
-    async def run_all_tests(self):
-        """Run all tests in sequence"""
-        print("🚀 Starting CareerFlow Backend API Tests")
-        print(f"Backend URL: {BACKEND_URL}")
-        print("=" * 60)
-        
-        test_results = []
-        
-        # Test 1: Health Check
-        result1 = await self.test_health_endpoint()
-        test_results.append(result1)
-        
-        # Test 2 & 3: AI Insights (basic structure and enhanced format)
-        result2, insights_data = await self.test_ai_insights_basic()
-        test_results.append(result2)
-        
-        if result2 and insights_data:
-            result3 = await self.test_ai_insights_enhanced_format(insights_data)
-            test_results.append(result3)
-        else:
-            test_results.append(False)
-        
-        # Test 4: Interview Checklist
-        result4 = await self.test_interview_checklist()
-        test_results.append(result4)
-        
-        # Test 5: Ghosted Status Handling
-        result5 = await self.test_ghosted_status_handling()
-        test_results.append(result5)
-        
-        # Test 6: No 500 Errors
-        result6 = await self.test_no_500_errors()
-        test_results.append(result6)
-        
-        # Summary
-        passed_tests = sum(test_results)
-        total_tests = len(test_results)
-        success_rate = (passed_tests / total_tests) * 100
-        
-        print("\n" + "=" * 60)
-        print("📊 TEST SUMMARY")
-        print("=" * 60)
-        print(f"Tests Passed: {passed_tests}/{total_tests} ({success_rate:.1f}%)")
-        
-        if success_rate >= 80:
-            print("🎉 Overall Status: PASS")
-        else:
-            print("⚠️  Overall Status: NEEDS ATTENTION")
-        
-        return success_rate >= 80, self.test_results
+    except Exception as e:
+        log_test("Backend Connectivity", "FAIL", f"Error: {str(e)}")
+        return False
 
-async def main():
-    """Main test runner"""
-    async with BackendTester() as tester:
-        success, results = await tester.run_all_tests()
+def test_interview_checklist_endpoint():
+    """Test the interview checklist endpoint that previously had routing issues"""
+    try:
+        # Test different stages
+        stages = ["system_design", "phone_screen", "coding_round_1", "behavioural"]
         
-        # Return appropriate exit code
-        sys.exit(0 if success else 1)
+        for stage in stages:
+            # Test without company parameter
+            response = requests.get(f"{BASE_URL}/api/interview-checklist/{stage}", headers=HEADERS, timeout=10)
+            if response.status_code == 200:
+                data = response.json()
+                if "title" in data and "items" in data:
+                    log_test(f"Interview Checklist - {stage}", "PASS", f"Returned {len(data['items'])} checklist items")
+                else:
+                    log_test(f"Interview Checklist - {stage}", "FAIL", "Missing required fields in response")
+                    return False
+            else:
+                log_test(f"Interview Checklist - {stage}", "FAIL", f"Status: {response.status_code}")
+                return False
+            
+            # Test with company parameter
+            response = requests.get(f"{BASE_URL}/api/interview-checklist/{stage}?company=Google", headers=HEADERS, timeout=10)
+            if response.status_code == 200:
+                data = response.json()
+                if "company" in data and data["company"] == "Google":
+                    log_test(f"Interview Checklist - {stage} with company", "PASS", "Company parameter handled correctly")
+                else:
+                    log_test(f"Interview Checklist - {stage} with company", "FAIL", "Company parameter not handled")
+                    return False
+            else:
+                log_test(f"Interview Checklist - {stage} with company", "FAIL", f"Status: {response.status_code}")
+                return False
+        
+        return True
+    except Exception as e:
+        log_test("Interview Checklist Endpoint", "FAIL", f"Error: {str(e)}")
+        return False
+
+def test_checklist_progress_persistence():
+    """Test the new checklist progress persistence endpoints"""
+    try:
+        # Create a test job first to get a valid job_id
+        job_data = {
+            "company_name": "TestCompany",
+            "position": "Software Engineer",
+            "location": {"city": "San Francisco", "state": "California"},
+            "salary_range": {"min": 100000, "max": 150000},
+            "work_mode": "remote",
+            "job_type": "full_time",
+            "status": "applied",
+            "is_priority": True
+        }
+        
+        response = requests.post(f"{BASE_URL}/api/jobs", headers=HEADERS, json=job_data, timeout=10)
+        if response.status_code != 200:
+            log_test("Create Test Job for Checklist", "FAIL", f"Status: {response.status_code}")
+            return False
+        
+        job = response.json()
+        job_id = job["job_id"]
+        stage = "system_design"
+        
+        log_test("Create Test Job for Checklist", "PASS", f"Created job with ID: {job_id}")
+        
+        # Test 1: GET checklist progress for new job (should return empty)
+        response = requests.get(f"{BASE_URL}/api/checklist-progress/{job_id}/{stage}", headers=HEADERS, timeout=10)
+        if response.status_code == 200:
+            data = response.json()
+            if "completed_items" in data and data["completed_items"] == []:
+                log_test("GET Checklist Progress (Empty)", "PASS", "Returns empty completed_items for new job")
+            else:
+                log_test("GET Checklist Progress (Empty)", "FAIL", f"Expected empty array, got: {data}")
+                return False
+        else:
+            log_test("GET Checklist Progress (Empty)", "FAIL", f"Status: {response.status_code}")
+            return False
+        
+        # Test 2: PUT checklist progress (save some completed items)
+        progress_data = {
+            "job_id": job_id,
+            "stage": stage,
+            "completed_items": ["sd1", "sd2", "sd3"]
+        }
+        
+        response = requests.put(f"{BASE_URL}/api/checklist-progress", headers=HEADERS, json=progress_data, timeout=10)
+        if response.status_code == 200:
+            data = response.json()
+            if "message" in data and "completed_items" in data:
+                log_test("PUT Checklist Progress", "PASS", f"Saved {len(progress_data['completed_items'])} completed items")
+            else:
+                log_test("PUT Checklist Progress", "FAIL", "Missing required fields in response")
+                return False
+        else:
+            log_test("PUT Checklist Progress", "FAIL", f"Status: {response.status_code}")
+            return False
+        
+        # Test 3: GET checklist progress again (should return saved items)
+        response = requests.get(f"{BASE_URL}/api/checklist-progress/{job_id}/{stage}", headers=HEADERS, timeout=10)
+        if response.status_code == 200:
+            data = response.json()
+            if "completed_items" in data and data["completed_items"] == ["sd1", "sd2", "sd3"]:
+                log_test("GET Checklist Progress (Saved)", "PASS", "Returns saved completed_items correctly")
+            else:
+                log_test("GET Checklist Progress (Saved)", "FAIL", f"Expected ['sd1', 'sd2', 'sd3'], got: {data['completed_items']}")
+                return False
+        else:
+            log_test("GET Checklist Progress (Saved)", "FAIL", f"Status: {response.status_code}")
+            return False
+        
+        # Test 4: Update checklist progress (modify existing)
+        updated_progress_data = {
+            "job_id": job_id,
+            "stage": stage,
+            "completed_items": ["sd1", "sd2", "sd3", "sd4", "sd5"]
+        }
+        
+        response = requests.put(f"{BASE_URL}/api/checklist-progress", headers=HEADERS, json=updated_progress_data, timeout=10)
+        if response.status_code == 200:
+            log_test("PUT Checklist Progress (Update)", "PASS", "Updated existing progress successfully")
+        else:
+            log_test("PUT Checklist Progress (Update)", "FAIL", f"Status: {response.status_code}")
+            return False
+        
+        # Test 5: Verify updated progress
+        response = requests.get(f"{BASE_URL}/api/checklist-progress/{job_id}/{stage}", headers=HEADERS, timeout=10)
+        if response.status_code == 200:
+            data = response.json()
+            if "completed_items" in data and len(data["completed_items"]) == 5:
+                log_test("GET Updated Checklist Progress", "PASS", f"Returns {len(data['completed_items'])} updated items")
+            else:
+                log_test("GET Updated Checklist Progress", "FAIL", f"Expected 5 items, got: {len(data.get('completed_items', []))}")
+                return False
+        else:
+            log_test("GET Updated Checklist Progress", "FAIL", f"Status: {response.status_code}")
+            return False
+        
+        # Test 6: Test different stage for same job
+        different_stage = "phone_screen"
+        response = requests.get(f"{BASE_URL}/api/checklist-progress/{job_id}/{different_stage}", headers=HEADERS, timeout=10)
+        if response.status_code == 200:
+            data = response.json()
+            if "completed_items" in data and data["completed_items"] == []:
+                log_test("GET Different Stage Progress", "PASS", "Different stage returns empty progress correctly")
+            else:
+                log_test("GET Different Stage Progress", "FAIL", "Different stage should return empty progress")
+                return False
+        else:
+            log_test("GET Different Stage Progress", "FAIL", f"Status: {response.status_code}")
+            return False
+        
+        # Clean up: Delete the test job
+        response = requests.delete(f"{BASE_URL}/api/jobs/{job_id}", headers=HEADERS, timeout=10)
+        if response.status_code == 200:
+            log_test("Cleanup Test Job", "PASS", "Test job deleted successfully")
+        else:
+            log_test("Cleanup Test Job", "WARN", f"Could not delete test job: {response.status_code}")
+        
+        return True
+        
+    except Exception as e:
+        log_test("Checklist Progress Persistence", "FAIL", f"Error: {str(e)}")
+        return False
+
+def test_ghosted_status_in_dashboard():
+    """Test that ghosted status is correctly handled in dashboard stats"""
+    try:
+        # Create a test job with ghosted status
+        job_data = {
+            "company_name": "GhostedCompany",
+            "position": "Software Engineer",
+            "location": {"city": "San Francisco", "state": "California"},
+            "salary_range": {"min": 100000, "max": 150000},
+            "work_mode": "remote",
+            "job_type": "full_time",
+            "status": "ghosted",
+            "is_priority": False
+        }
+        
+        response = requests.post(f"{BASE_URL}/api/jobs", headers=HEADERS, json=job_data, timeout=10)
+        if response.status_code != 200:
+            log_test("Create Ghosted Job", "FAIL", f"Status: {response.status_code}")
+            return False
+        
+        job = response.json()
+        job_id = job["job_id"]
+        log_test("Create Ghosted Job", "PASS", f"Created ghosted job with ID: {job_id}")
+        
+        # Test dashboard stats include ghosted status
+        response = requests.get(f"{BASE_URL}/api/dashboard/stats", headers=HEADERS, timeout=10)
+        if response.status_code == 200:
+            stats = response.json()
+            if "ghosted" in stats and isinstance(stats["ghosted"], int):
+                log_test("Dashboard Stats - Ghosted Status", "PASS", f"Ghosted count: {stats['ghosted']}")
+            else:
+                log_test("Dashboard Stats - Ghosted Status", "FAIL", "Ghosted status not found in dashboard stats")
+                return False
+        else:
+            log_test("Dashboard Stats - Ghosted Status", "FAIL", f"Status: {response.status_code}")
+            return False
+        
+        # Test AI insights handle ghosted jobs correctly
+        response = requests.get(f"{BASE_URL}/api/dashboard/ai-insights", headers=HEADERS, timeout=10)
+        if response.status_code == 200:
+            insights = response.json()
+            if "insights" in insights and "follow_ups" in insights:
+                log_test("AI Insights - Ghosted Handling", "PASS", "AI insights endpoint working with ghosted jobs")
+            else:
+                log_test("AI Insights - Ghosted Handling", "FAIL", "AI insights missing required fields")
+                return False
+        else:
+            log_test("AI Insights - Ghosted Handling", "FAIL", f"Status: {response.status_code}")
+            return False
+        
+        # Clean up: Delete the ghosted test job
+        response = requests.delete(f"{BASE_URL}/api/jobs/{job_id}", headers=HEADERS, timeout=10)
+        if response.status_code == 200:
+            log_test("Cleanup Ghosted Job", "PASS", "Ghosted test job deleted successfully")
+        else:
+            log_test("Cleanup Ghosted Job", "WARN", f"Could not delete ghosted test job: {response.status_code}")
+        
+        return True
+        
+    except Exception as e:
+        log_test("Ghosted Status Dashboard", "FAIL", f"Error: {str(e)}")
+        return False
+
+def main():
+    """Run all backend tests"""
+    print("=" * 80)
+    print("BACKEND API TESTING - CHECKLIST PROGRESS PERSISTENCE")
+    print("=" * 80)
+    print(f"Backend URL: {BASE_URL}")
+    print(f"Test Token: {TEST_TOKEN}")
+    print("-" * 80)
+    
+    tests = [
+        ("Backend Connectivity", test_backend_connectivity),
+        ("Interview Checklist Endpoint", test_interview_checklist_endpoint),
+        ("Checklist Progress Persistence", test_checklist_progress_persistence),
+        ("Ghosted Status Dashboard", test_ghosted_status_in_dashboard)
+    ]
+    
+    passed = 0
+    total = len(tests)
+    
+    for test_name, test_func in tests:
+        print(f"\n🧪 Running: {test_name}")
+        print("-" * 40)
+        
+        if test_func():
+            passed += 1
+        else:
+            print(f"❌ {test_name} FAILED - stopping further tests")
+            break
+    
+    print("\n" + "=" * 80)
+    print(f"TESTING COMPLETE: {passed}/{total} test suites passed")
+    
+    if passed == total:
+        print("🎉 ALL TESTS PASSED - Backend endpoints are working correctly!")
+        return 0
+    else:
+        print("❌ SOME TESTS FAILED - Check the details above")
+        return 1
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    sys.exit(main())
