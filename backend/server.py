@@ -648,8 +648,13 @@ async def get_dashboard_stats(current_user: User = Depends(get_current_user)):
     return stats
 
 @api_router.get("/dashboard/upcoming-interviews")
-async def get_upcoming_interviews(current_user: User = Depends(get_current_user)):
-    """Get list of upcoming interviews with schedule dates"""
+async def get_upcoming_interviews(
+    current_user: User = Depends(get_current_user),
+    include_checklist: bool = False,
+    checklist_stage: str = "",
+    checklist_company: str = ""
+):
+    """Get list of upcoming interviews with schedule dates. Optionally include prep checklist."""
     from datetime import datetime, timezone, timedelta
     
     jobs = await db.job_applications.find(
@@ -685,6 +690,12 @@ async def get_upcoming_interviews(current_user: User = Depends(get_current_user)
     
     # Sort by days until interview
     upcoming.sort(key=lambda x: x["days_until"])
+    
+    # If checklist requested, include it in response
+    if include_checklist and checklist_stage:
+        checklist_data = await generate_interview_checklist(checklist_stage, checklist_company)
+        return {"interviews": upcoming, "checklist": checklist_data}
+    
     return upcoming
 
 # Interview prep checklist - POST endpoint for proxy compatibility
