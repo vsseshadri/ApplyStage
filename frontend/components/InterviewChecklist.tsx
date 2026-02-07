@@ -62,14 +62,20 @@ const InterviewChecklist: React.FC<InterviewChecklistProps> = ({
     setError(null);
     
     try {
-      const url = `${BACKEND_URL}/api/interview-checklist/${encodeURIComponent(stage)}?company=${encodeURIComponent(company || '')}`;
-      console.log('[Checklist] Fetching from:', url);
+      // Use POST endpoint for better proxy compatibility
+      const url = `${BACKEND_URL}/api/dashboard/prep-checklist`;
+      console.log('[Checklist] Fetching from:', url, 'stage:', stage, 'company:', company);
       
       const response = await fetch(url, {
+        method: 'POST',
         headers: { 
           'Authorization': `Bearer ${sessionToken}`,
           'Content-Type': 'application/json'
-        }
+        },
+        body: JSON.stringify({
+          stage: stage,
+          company: company || ''
+        })
       });
       
       console.log('[Checklist] Response status:', response.status);
