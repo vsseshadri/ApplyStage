@@ -649,51 +649,199 @@ async def get_dashboard_stats(current_user: User = Depends(get_current_user)):
 
 @api_router.get("/dashboard/upcoming-interviews")
 async def get_upcoming_interviews(current_user: User = Depends(get_current_user)):
-    """Get upcoming interview stages that are scheduled for today or future dates"""
+    """Get list of upcoming interviews with schedule dates"""
+    from datetime import datetime, timezone, timedelta
+    
     jobs = await db.job_applications.find(
         {
             "user_id": current_user.user_id,
             "upcoming_stage": {"$exists": True, "$ne": None, "$ne": ""},
             "upcoming_schedule": {"$exists": True, "$ne": None, "$ne": ""}
         },
-        {"_id": 0, "job_id": 1, "company_name": 1, "position": 1, "upcoming_stage": 1, "upcoming_schedule": 1, "status": 1}
+        {"_id": 0}
     ).to_list(100)
     
-    today = datetime.now(timezone.utc).date()
     upcoming = []
-    
     for job in jobs:
-        schedule_str = job.get("upcoming_schedule", "")
-        if schedule_str:
-            try:
-                # Parse both MM/DD/YYYY and MM-DD-YY formats
-                parts = schedule_str.replace('/', '-').split("-")
-                if len(parts) == 3:
-                    month, day, year = int(parts[0]), int(parts[1]), int(parts[2])
-                    # Handle 2-digit year
-                    if year < 100:
-                        year += 2000
-                    schedule_date = datetime(year, month, day).date()
-                    
-                    # Only include if date is today or in the future
-                    if schedule_date >= today:
-                        upcoming.append({
-                            "job_id": job.get("job_id"),
-                            "company_name": job.get("company_name"),
-                            "position": job.get("position"),
-                            "stage": job.get("upcoming_stage"),
-                            "status": job.get("status", "applied"),
-                            "schedule_date": schedule_date.strftime("%b %d, %Y"),
-                            "schedule_raw": schedule_str,
-                            "days_until": (schedule_date - today).days
-                        })
-            except (ValueError, IndexError):
-                continue
+        try:
+            schedule_str = job.get("upcoming_schedule", "")
+            if schedule_str:
+                schedule_date = datetime.strptime(schedule_str, "%m/%d/%Y")
+                days_until = (schedule_date - datetime.now()).days
+                
+                if days_until >= 0:
+                    upcoming.append({
+                        "job_id": job.get("job_id"),
+                        "company_name": job.get("company_name"),
+                        "position": job.get("position"),
+                        "stage": job.get("upcoming_stage"),
+                        "status": job.get("status"),
+                        "schedule_date": schedule_date.strftime("%b %d, %Y"),
+                        "schedule_raw": schedule_str,
+                        "days_until": days_until
+                    })
+        except:
+            continue
     
-    # Sort by date (soonest first)
-    upcoming.sort(key=lambda x: x.get("days_until", 0))
-    
+    # Sort by days until interview
+    upcoming.sort(key=lambda x: x["days_until"])
     return upcoming
+
+# Interview prep checklist - POST endpoint for proxy compatibility
+class ChecklistRequest(BaseModel):
+    stage: str
+    company: str = ""
+
+@api_router.post("/dashboard/prep-checklist")
+async def get_prep_checklist_post(request: ChecklistRequest, current_user: User = Depends(get_current_user)):
+    """Get AI-generated interview preparation checklist (POST version for proxy compatibility)"""
+    return await generate_interview_checklist(request.stage, request.company)
+
+async def generate_interview_checklist(stage: str, company: str = ""):
+    """Generate AI-powered interview checklist"""
+    from emergentintegrations.llm.chat import LlmChat, UserMessage
+    import os
+    
+    stage_contexts = {
+        "recruiter_screening": "initial recruiter call focusing on background, motivation, and basic qualifications",
+        "phone_screen": "phone interview to assess technical communication and fit",
+        "technical_screen": "technical phone interview with coding or system questions",
+        "onsite": "in-person or virtual onsite interview with multiple rounds",
+        "system_design": "system design interview focusing on architecture and scalability",
+        "behavioral": "behavioral interview using STAR method to discuss past experiences",
+        "hiring_manager": "interview with hiring manager focusing on team fit and role expectations",
+        "final_round": "final interview round, often with senior leadership",
+        "offer": "offer stage - negotiation and decision making"
+    }
+    
+    stage_context = stage_contexts.get(stage, f"{stage.replace('_', ' ')} interview")
+    formatted_stage = stage.replace('_', ' ').title()
+    
+    # Try AI-generated checklist first
+    try:
+        api_key = os.getenv("EMERGENT_LLM_KEY")
+        if api_key:
+            chat = LlmChat(
+                api_key=api_key,
+                session_id=f"checklist_{stage}_{company}",
+                system_message="""You are an expert career coach specializing in interview preparation.
+Generate exactly 5 actionable, specific checklist items for interview preparation.
+Each item should be practical and immediately actionable.
+Base your advice on best practices from trusted career sources like Harvard Business Review, LinkedIn, Glassdoor, and Indeed.
+Format: Return ONLY a JSON array of 5 objects with 'id', 'text', and 'category' fields.
+Categories must be one of: research, preparation, technical, stories, questions, pitch, communication, compensation, architecture, optimization, practice, wellness.
+Keep each item under 60 characters. No explanations, just the JSON array."""
+            ).with_model("openai", "gpt-5.2")
+            
+            company_context = f" at {company}" if company else ""
+            prompt = f"""Generate 5 specific interview preparation checklist items for a {stage_context}{company_context}.
+
+The candidate is preparing for a {formatted_stage} interview{company_context}. 
+{"Include 1-2 items specifically about researching " + company + " as a company." if company else ""}
+
+Return ONLY valid JSON array like:
+[{{"id":"1","text":"Research company recent news","category":"research"}},{{"id":"2","text":"Practice STAR stories","category":"stories"}}]"""
+
+            user_message = UserMessage(text=prompt)
+            response = await chat.send_message(user_message)
+            
+            import json
+            import re
+            
+            json_match = re.search(r'\[[\s\S]*\]', response)
+            if json_match:
+                items = json.loads(json_match.group())
+                for item in items:
+                    if company and company.lower() in item.get('text', '').lower():
+                        item['company_specific'] = True
+                    item['id'] = f"ai_{item.get('id', str(items.index(item)))}"
+                
+                return {
+                    "title": f"{formatted_stage} Prep",
+                    "items": items[:5],
+                    "company": company,
+                    "ai_generated": True
+                }
+    except Exception as e:
+        print(f"AI checklist generation failed: {e}")
+    
+    # Fallback to static checklist
+    base_items = {
+        "recruiter_screening": [
+            {"id": "rs1", "text": "Prepare elevator pitch (60 seconds)", "category": "pitch"},
+            {"id": "rs2", "text": "Review job description key requirements", "category": "preparation"},
+            {"id": "rs3", "text": "Research company mission and values", "category": "research"},
+            {"id": "rs4", "text": "Prepare salary expectations response", "category": "compensation"},
+            {"id": "rs5", "text": "Have questions about role and team ready", "category": "questions"}
+        ],
+        "phone_screen": [
+            {"id": "ps1", "text": "Review your resume highlights", "category": "preparation"},
+            {"id": "ps2", "text": "Prepare 'why this company' answer", "category": "pitch"},
+            {"id": "ps3", "text": "Research recent company news", "category": "research"},
+            {"id": "ps4", "text": "Have specific examples ready", "category": "stories"},
+            {"id": "ps5", "text": "Prepare thoughtful questions", "category": "questions"}
+        ],
+        "technical_screen": [
+            {"id": "ts1", "text": "Review core data structures and algorithms", "category": "technical"},
+            {"id": "ts2", "text": "Practice coding problems aloud", "category": "practice"},
+            {"id": "ts3", "text": "Review your past project architectures", "category": "preparation"},
+            {"id": "ts4", "text": "Prepare to explain your thought process", "category": "communication"},
+            {"id": "ts5", "text": "Test your screen sharing setup", "category": "preparation"}
+        ],
+        "system_design": [
+            {"id": "sd1", "text": "Review system design fundamentals", "category": "architecture"},
+            {"id": "sd2", "text": "Practice drawing architecture diagrams", "category": "practice"},
+            {"id": "sd3", "text": "Study scalability patterns", "category": "technical"},
+            {"id": "sd4", "text": "Review database design principles", "category": "technical"},
+            {"id": "sd5", "text": "Prepare capacity estimation examples", "category": "optimization"}
+        ],
+        "behavioral": [
+            {"id": "bh1", "text": "Prepare 5 STAR format stories", "category": "stories"},
+            {"id": "bh2", "text": "Practice conflict resolution examples", "category": "stories"},
+            {"id": "bh3", "text": "Review leadership experience stories", "category": "stories"},
+            {"id": "bh4", "text": "Prepare failure and learning examples", "category": "stories"},
+            {"id": "bh5", "text": "Research company culture and values", "category": "research"}
+        ],
+        "onsite": [
+            {"id": "os1", "text": "Get 8 hours of sleep the night before", "category": "wellness"},
+            {"id": "os2", "text": "Review all interview formats expected", "category": "preparation"},
+            {"id": "os3", "text": "Prepare questions for each interviewer", "category": "questions"},
+            {"id": "os4", "text": "Plan your outfit and logistics", "category": "preparation"},
+            {"id": "os5", "text": "Bring copies of resume and portfolio", "category": "preparation"}
+        ],
+        "hiring_manager": [
+            {"id": "hm1", "text": "Research hiring manager on LinkedIn", "category": "research"},
+            {"id": "hm2", "text": "Prepare team collaboration examples", "category": "stories"},
+            {"id": "hm3", "text": "Have 90-day plan ideas ready", "category": "preparation"},
+            {"id": "hm4", "text": "Prepare questions about team dynamics", "category": "questions"},
+            {"id": "hm5", "text": "Review role expectations in detail", "category": "preparation"}
+        ],
+        "final_round": [
+            {"id": "fr1", "text": "Review all previous interview feedback", "category": "preparation"},
+            {"id": "fr2", "text": "Prepare executive summary of your value", "category": "pitch"},
+            {"id": "fr3", "text": "Research leadership team backgrounds", "category": "research"},
+            {"id": "fr4", "text": "Prepare strategic questions", "category": "questions"},
+            {"id": "fr5", "text": "Be ready for offer discussion", "category": "compensation"}
+        ]
+    }
+    
+    items = base_items.get(stage, base_items["phone_screen"])
+    
+    if company:
+        company_item = {
+            "id": "ctx1",
+            "text": f"Research {company}'s recent news and developments",
+            "category": "research",
+            "company_specific": True
+        }
+        items = [company_item] + items[:4]
+    
+    return {
+        "title": f"{formatted_stage} Prep",
+        "items": items,
+        "company": company,
+        "ai_generated": False
+    }
 
 @api_router.get("/dashboard/ai-insights")
 async def get_ai_insights(current_user: User = Depends(get_current_user)):
