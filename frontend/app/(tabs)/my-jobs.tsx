@@ -2243,13 +2243,6 @@ export default function MyJobsScreen() {
         </View>
       </Modal>
 
-      {/* Floating Add Button */}
-      {jobs.length > 0 && (
-        <TouchableOpacity style={dynamicStyles.fab} onPress={openAddModal}>
-          <Ionicons name="add" size={32} color="white" />
-        </TouchableOpacity>
-      )}
-
       <Modal visible={modalVisible} animationType="slide" presentationStyle="pageSheet" onRequestClose={() => setModalVisible(false)}>
         <SafeAreaView style={[dynamicStyles.modalContainer]}>
           <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={dynamicStyles.modalKeyboard}>
