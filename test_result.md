@@ -255,6 +255,21 @@ backend:
         agent: "testing"
         comment: "✅ PASS - Subscription verification placeholder working correctly. Returns expected response format for testing purposes. Ready for actual Store Kit integration in production."
 
+  - task: "Interview checklist progress persistence"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "Implemented checklist progress persistence endpoints: GET/PUT /api/checklist-progress/{job_id}/{stage} to save/load checklist completion state to MongoDB"
+      - working: true
+        agent: "testing"
+        comment: "✅ PASS - All checklist progress persistence endpoints working perfectly. GET /api/checklist-progress/{job_id}/{stage} returns empty completed_items for new jobs, PUT /api/checklist-progress successfully saves progress with job_id/stage/completed_items array, GET returns saved completed_items correctly. Tested persistence across different stages. Interview checklist endpoint GET /api/interview-checklist/{stage}?company={company} also working with proper company parameter handling. NOTE: Endpoints work perfectly on internal port but have routing issues via external URL due to ingress/proxy configuration - this is infrastructure issue, not backend code issue."
+
 frontend:
   - task: "Tab navigation with 4 tabs"
     implemented: true
