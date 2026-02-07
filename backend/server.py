@@ -1134,115 +1134,156 @@ async def get_ai_insights(current_user: User = Depends(get_current_user)):
 
 # Interview checklist endpoint
 @api_router.get("/interview-checklist/{stage}")
-async def get_interview_checklist(stage: str, company: str = None, current_user: User = Depends(get_current_user)):
-    """
-    Get dynamic interview checklist based on stage and optionally company context
-    """
-    stage_checklists = {
-        'recruiter_screening': {
-            'title': 'Recruiter Screening Prep',
-            'items': [
-                {"id": "rs1", "text": "Prepare 60-second career summary", "category": "pitch"},
-                {"id": "rs2", "text": "Research company culture and values", "category": "research"},
-                {"id": "rs3", "text": "Know your salary range expectations", "category": "compensation"},
-                {"id": "rs4", "text": "Prepare questions about role and team", "category": "questions"},
-                {"id": "rs5", "text": "Review job description key requirements", "category": "preparation"}
-            ]
-        },
-        'phone_screen': {
-            'title': 'Phone Screen Prep',
-            'items': [
-                {"id": "ps1", "text": "Review your resume highlights", "category": "preparation"},
-                {"id": "ps2", "text": "Prepare 'why this company' answer", "category": "pitch"},
-                {"id": "ps3", "text": "Research recent company news", "category": "research"},
-                {"id": "ps4", "text": "Have specific examples ready", "category": "stories"},
-                {"id": "ps5", "text": "Prepare thoughtful questions", "category": "questions"}
-            ]
-        },
-        'coding_round_1': {
-            'title': 'Coding Round 1 Prep',
-            'items': [
-                {"id": "c1_1", "text": "Review common data structures (arrays, trees, graphs)", "category": "technical"},
-                {"id": "c1_2", "text": "Practice explaining your thought process aloud", "category": "communication"},
-                {"id": "c1_3", "text": "Review Big O complexity analysis", "category": "technical"},
-                {"id": "c1_4", "text": "Practice LeetCode medium problems", "category": "practice"},
-                {"id": "c1_5", "text": "Prepare questions about engineering culture", "category": "questions"}
-            ]
-        },
-        'coding_round_2': {
-            'title': 'Coding Round 2 Prep',
-            'items': [
-                {"id": "c2_1", "text": "Review dynamic programming patterns", "category": "technical"},
-                {"id": "c2_2", "text": "Practice graph algorithms (BFS, DFS, Dijkstra)", "category": "technical"},
-                {"id": "c2_3", "text": "Review advanced tree operations", "category": "technical"},
-                {"id": "c2_4", "text": "Practice time/space optimization", "category": "optimization"},
-                {"id": "c2_5", "text": "Prepare to discuss past technical projects", "category": "stories"}
-            ]
-        },
-        'system_design': {
-            'title': 'System Design Prep',
-            'items': [
-                {"id": "sd1", "text": "Review scalability patterns (sharding, caching)", "category": "architecture"},
-                {"id": "sd2", "text": "Study company's tech stack and architecture", "category": "research"},
-                {"id": "sd3", "text": "Practice drawing system diagrams clearly", "category": "communication"},
-                {"id": "sd4", "text": "Prepare to discuss CAP theorem trade-offs", "category": "technical"},
-                {"id": "sd5", "text": "Review load balancing and database design", "category": "architecture"}
-            ]
-        },
-        'behavioural': {
-            'title': 'Behavioral Interview Prep',
-            'items': [
-                {"id": "bh1", "text": "Prepare STAR stories for leadership scenarios", "category": "stories"},
-                {"id": "bh2", "text": "Prepare conflict resolution examples", "category": "stories"},
-                {"id": "bh3", "text": "Research hiring manager on LinkedIn", "category": "research"},
-                {"id": "bh4", "text": "Practice stories about failures and learnings", "category": "stories"},
-                {"id": "bh5", "text": "Align examples with company values", "category": "preparation"}
-            ]
-        },
-        'hiring_manager': {
-            'title': 'Hiring Manager Interview Prep',
-            'items': [
-                {"id": "hm1", "text": "Research manager's background and team", "category": "research"},
-                {"id": "hm2", "text": "Prepare questions about team dynamics", "category": "questions"},
-                {"id": "hm3", "text": "Review company's recent product launches", "category": "research"},
-                {"id": "hm4", "text": "Prepare to discuss your career goals", "category": "pitch"},
-                {"id": "hm5", "text": "Research company earnings/growth (if public)", "category": "research"}
-            ]
-        },
-        'final_round': {
-            'title': 'Final Round Prep',
-            'items': [
-                {"id": "fr1", "text": "Research total compensation benchmarks", "category": "compensation"},
-                {"id": "fr2", "text": "Prepare negotiation talking points", "category": "compensation"},
-                {"id": "fr3", "text": "Review company mission and values deeply", "category": "research"},
-                {"id": "fr4", "text": "Prepare 30-60-90 day plan", "category": "preparation"},
-                {"id": "fr5", "text": "Have questions about growth opportunities", "category": "questions"}
-            ]
-        }
+async def get_interview_checklist(stage: str, company: str = "", current_user: User = Depends(get_current_user)):
+    """Get AI-generated interview preparation checklist for a specific stage and company"""
+    from emergentintegrations.llm.chat import LlmChat, UserMessage
+    import os
+    
+    # Stage-specific context for better AI prompts
+    stage_contexts = {
+        "recruiter_screening": "initial recruiter call focusing on background, motivation, and basic qualifications",
+        "phone_screen": "phone interview to assess technical communication and fit",
+        "technical_screen": "technical phone interview with coding or system questions",
+        "onsite": "in-person or virtual onsite interview with multiple rounds",
+        "system_design": "system design interview focusing on architecture and scalability",
+        "behavioral": "behavioral interview using STAR method to discuss past experiences",
+        "hiring_manager": "interview with hiring manager focusing on team fit and role expectations",
+        "final_round": "final interview round, often with senior leadership",
+        "offer": "offer stage - negotiation and decision making"
     }
     
-    checklist = stage_checklists.get(stage, {
-        'title': f'{stage.replace("_", " ").title()} Prep',
-        'items': [
-            {"id": "gen1", "text": "Review your resume and experience", "category": "preparation"},
-            {"id": "gen2", "text": "Research the company", "category": "research"},
-            {"id": "gen3", "text": "Prepare thoughtful questions", "category": "questions"},
-            {"id": "gen4", "text": "Practice your pitch", "category": "pitch"},
-            {"id": "gen5", "text": "Get a good night's rest", "category": "wellness"}
-        ]
-    })
+    stage_context = stage_contexts.get(stage, f"{stage.replace('_', ' ')} interview")
+    formatted_stage = stage.replace('_', ' ').title()
     
-    # Add company context if provided
+    # Try AI-generated checklist first
+    try:
+        api_key = os.getenv("EMERGENT_LLM_KEY")
+        if api_key:
+            chat = LlmChat(
+                api_key=api_key,
+                session_id=f"checklist_{stage}_{company}",
+                system_message="""You are an expert career coach specializing in interview preparation.
+Generate exactly 5 actionable, specific checklist items for interview preparation.
+Each item should be practical and immediately actionable.
+Base your advice on best practices from trusted career sources like Harvard Business Review, LinkedIn, Glassdoor, and Indeed.
+Format: Return ONLY a JSON array of 5 objects with 'id', 'text', and 'category' fields.
+Categories must be one of: research, preparation, technical, stories, questions, pitch, communication, compensation, architecture, optimization, practice, wellness.
+Keep each item under 60 characters. No explanations, just the JSON array."""
+            ).with_model("openai", "gpt-5.2")
+            
+            company_context = f" at {company}" if company else ""
+            prompt = f"""Generate 5 specific interview preparation checklist items for a {stage_context}{company_context}.
+
+The candidate is preparing for a {formatted_stage} interview{company_context}. 
+{"Include 1-2 items specifically about researching " + company + " as a company." if company else ""}
+
+Return ONLY valid JSON array like:
+[{{"id":"1","text":"Research company recent news","category":"research"}},{{"id":"2","text":"Practice STAR stories","category":"stories"}}]"""
+
+            user_message = UserMessage(text=prompt)
+            response = await chat.send_message(user_message)
+            
+            # Parse the AI response
+            import json
+            import re
+            
+            # Extract JSON from response (handle markdown code blocks)
+            json_match = re.search(r'\[[\s\S]*\]', response)
+            if json_match:
+                items = json.loads(json_match.group())
+                # Add company_specific flag for relevant items
+                for item in items:
+                    if company and company.lower() in item.get('text', '').lower():
+                        item['company_specific'] = True
+                    item['id'] = f"ai_{item.get('id', str(items.index(item)))}"
+                
+                return {
+                    "title": f"{formatted_stage} Prep",
+                    "items": items[:5],  # Ensure max 5 items
+                    "company": company,
+                    "ai_generated": True
+                }
+    except Exception as e:
+        print(f"AI checklist generation failed: {e}")
+    
+    # Fallback to static checklist if AI fails
+    base_items = {
+        "recruiter_screening": [
+            {"id": "rs1", "text": "Prepare elevator pitch (60 seconds)", "category": "pitch"},
+            {"id": "rs2", "text": "Review job description key requirements", "category": "preparation"},
+            {"id": "rs3", "text": "Research company mission and values", "category": "research"},
+            {"id": "rs4", "text": "Prepare salary expectations response", "category": "compensation"},
+            {"id": "rs5", "text": "Have questions about role and team ready", "category": "questions"}
+        ],
+        "phone_screen": [
+            {"id": "ps1", "text": "Review your resume highlights", "category": "preparation"},
+            {"id": "ps2", "text": "Prepare 'why this company' answer", "category": "pitch"},
+            {"id": "ps3", "text": "Research recent company news", "category": "research"},
+            {"id": "ps4", "text": "Have specific examples ready", "category": "stories"},
+            {"id": "ps5", "text": "Prepare thoughtful questions", "category": "questions"}
+        ],
+        "technical_screen": [
+            {"id": "ts1", "text": "Review core data structures and algorithms", "category": "technical"},
+            {"id": "ts2", "text": "Practice coding problems aloud", "category": "practice"},
+            {"id": "ts3", "text": "Review your past project architectures", "category": "preparation"},
+            {"id": "ts4", "text": "Prepare to explain your thought process", "category": "communication"},
+            {"id": "ts5", "text": "Test your screen sharing setup", "category": "preparation"}
+        ],
+        "system_design": [
+            {"id": "sd1", "text": "Review system design fundamentals", "category": "architecture"},
+            {"id": "sd2", "text": "Practice drawing architecture diagrams", "category": "practice"},
+            {"id": "sd3", "text": "Study scalability patterns", "category": "technical"},
+            {"id": "sd4", "text": "Review database design principles", "category": "technical"},
+            {"id": "sd5", "text": "Prepare capacity estimation examples", "category": "optimization"}
+        ],
+        "behavioral": [
+            {"id": "bh1", "text": "Prepare 5 STAR format stories", "category": "stories"},
+            {"id": "bh2", "text": "Practice conflict resolution examples", "category": "stories"},
+            {"id": "bh3", "text": "Review leadership experience stories", "category": "stories"},
+            {"id": "bh4", "text": "Prepare failure and learning examples", "category": "stories"},
+            {"id": "bh5", "text": "Research company culture and values", "category": "research"}
+        ],
+        "onsite": [
+            {"id": "os1", "text": "Get 8 hours of sleep the night before", "category": "wellness"},
+            {"id": "os2", "text": "Review all interview formats expected", "category": "preparation"},
+            {"id": "os3", "text": "Prepare questions for each interviewer", "category": "questions"},
+            {"id": "os4", "text": "Plan your outfit and logistics", "category": "preparation"},
+            {"id": "os5", "text": "Bring copies of resume and portfolio", "category": "preparation"}
+        ],
+        "hiring_manager": [
+            {"id": "hm1", "text": "Research hiring manager on LinkedIn", "category": "research"},
+            {"id": "hm2", "text": "Prepare team collaboration examples", "category": "stories"},
+            {"id": "hm3", "text": "Have 90-day plan ideas ready", "category": "preparation"},
+            {"id": "hm4", "text": "Prepare questions about team dynamics", "category": "questions"},
+            {"id": "hm5", "text": "Review role expectations in detail", "category": "preparation"}
+        ],
+        "final_round": [
+            {"id": "fr1", "text": "Review all previous interview feedback", "category": "preparation"},
+            {"id": "fr2", "text": "Prepare executive summary of your value", "category": "pitch"},
+            {"id": "fr3", "text": "Research leadership team backgrounds", "category": "research"},
+            {"id": "fr4", "text": "Prepare strategic questions", "category": "questions"},
+            {"id": "fr5", "text": "Be ready for offer discussion", "category": "compensation"}
+        ]
+    }
+    
+    items = base_items.get(stage, base_items["phone_screen"])
+    
+    # Add company-specific item if company provided
     if company:
-        checklist['company'] = company
-        checklist['items'].insert(0, {
+        company_item = {
             "id": "ctx1",
             "text": f"Research {company}'s recent news and developments",
             "category": "research",
             "company_specific": True
-        })
+        }
+        items = [company_item] + items[:4]
     
-    return checklist
+    return {
+        "title": f"{formatted_stage} Prep",
+        "items": items,
+        "company": company,
+        "ai_generated": False
+    }
 
 # Checklist progress model and endpoints for persistence
 class ChecklistProgressUpdate(BaseModel):
