@@ -241,6 +241,17 @@ export default function MyJobsScreen() {
   const [dateAppliedText, setDateAppliedText] = useState('');
   const [screenWidth, setScreenWidth] = useState(Dimensions.get('window').width);
   
+  // Check for openAdd param to trigger modal from tab button
+  const params = require('expo-router').useLocalSearchParams();
+  
+  useEffect(() => {
+    if (params?.openAdd === 'true' && !loading) {
+      openAddModal();
+      // Clear the param after opening
+      require('expo-router').router.setParams({ openAdd: undefined });
+    }
+  }, [params?.openAdd, loading]);
+  
   // Date picker states
   const [showDateAppliedPicker, setShowDateAppliedPicker] = useState(false);
   const [showScheduledOnPicker, setShowScheduledOnPicker] = useState(false);
