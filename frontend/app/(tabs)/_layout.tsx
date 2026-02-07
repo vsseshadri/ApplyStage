@@ -196,18 +196,23 @@ export default function TabsLayout() {
 }
 
 const styles = StyleSheet.create({
-  addButton: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
+  addButtonContainer: {
+    flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    marginTop: -15,
+    paddingTop: 4,
+  },
+  addButton: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    justifyContent: 'center',
+    alignItems: 'center',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 4,
-    elevation: 5,
+    shadowOpacity: 0.2,
+    shadowRadius: 3,
+    elevation: 4,
   },
   badge: {
     position: 'absolute',
