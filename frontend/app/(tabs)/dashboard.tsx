@@ -90,7 +90,7 @@ export default function DashboardScreen() {
   
   // Interview checklist state
   const [checklistVisible, setChecklistVisible] = useState(false);
-  const [selectedInterview, setSelectedInterview] = useState<{stage: string; company: string; daysUntil: number} | null>(null);
+  const [selectedInterview, setSelectedInterview] = useState<{stage: string; company: string; daysUntil: number; jobId: string} | null>(null);
   
   // Detect tablet (width > 768)
   const isTablet = screenWidth >= 768;
