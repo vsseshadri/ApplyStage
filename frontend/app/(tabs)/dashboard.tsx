@@ -698,11 +698,34 @@ export default function DashboardScreen() {
                 'hiring_manager': '#14B8A6',
                 'final_round': '#22C55E',
                 'offer': '#22C55E',
-                'rejected': '#EF4444'
+                'rejected': '#EF4444',
+                'ghosted': '#9CA3AF'
               };
               const statusColor = statusColors[interview.status] || '#6B7280';
               const formatStatus = (status: string) => status?.split('_').map((word: string) => word.charAt(0).toUpperCase() + word.slice(1)).join(' ') || 'Applied';
               const isLastItem = index === upcomingInterviews.length - 1;
+              
+              // Calculate days until interview
+              const getDaysUntil = () => {
+                if (!interview.schedule_date) return 7;
+                try {
+                  const scheduleDate = new Date(interview.schedule_date);
+                  const today = new Date();
+                  const diffTime = scheduleDate.getTime() - today.getTime();
+                  return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                } catch {
+                  return 7;
+                }
+              };
+              
+              const handleOpenChecklist = () => {
+                setSelectedInterview({
+                  stage: interview.stage,
+                  company: interview.company_name,
+                  daysUntil: getDaysUntil()
+                });
+                setChecklistVisible(true);
+              };
               
               return (
                 <View key={interview.job_id || index} style={[dynamicStyles.upcomingCard, !isLastItem && dynamicStyles.upcomingCardWithBorder]}>
@@ -722,12 +745,17 @@ export default function DashboardScreen() {
                       {interview.position}
                     </Text>
                   </View>
-                  <View style={dynamicStyles.upcomingStageBadgeRight}>
+                  <TouchableOpacity 
+                    style={dynamicStyles.upcomingStageBadgeRight}
+                    onPress={handleOpenChecklist}
+                    activeOpacity={0.7}
+                  >
                     <View style={[dynamicStyles.stageDot, { backgroundColor: STATUS_COLORS[interview.stage] || '#8B5CF6' }]} />
                     <Text style={dynamicStyles.upcomingStageTextRight}>
                       {interview.stage?.replace(/_/g, ' ').replace(/\b\w/g, (l: string) => l.toUpperCase())}
                     </Text>
-                  </View>
+                    <Ionicons name="chevron-forward" size={14} color={colors.textSecondary} style={{ marginLeft: 4 }} />
+                  </TouchableOpacity>
                 </View>
               );
             })}
