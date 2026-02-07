@@ -2909,6 +2909,12 @@ const createStyles = (colors: any, isDark: boolean, isTablet: boolean = false) =
     borderLeftWidth: 3,
     borderLeftColor: '#F59E0B',
   },
+  ghostedJobCard: {
+    borderLeftWidth: 3,
+    borderLeftColor: '#9CA3AF',
+    borderStyle: 'dashed',
+    backgroundColor: isDark ? 'rgba(156, 163, 175, 0.1)' : 'rgba(156, 163, 175, 0.08)',
+  },
   companyWithPriority: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -2916,6 +2922,10 @@ const createStyles = (colors: any, isDark: boolean, isTablet: boolean = false) =
     marginRight: 8,
   },
   priorityIndicator: {
+    marginLeft: 4,
+    padding: 2,
+  },
+  ghostedIndicator: {
     marginLeft: 4,
     padding: 2,
   },
