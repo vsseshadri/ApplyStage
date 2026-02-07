@@ -193,6 +193,11 @@ class BackendTester:
                     else:
                         self.log_test("Interview Checklist", "FAIL", f"Missing keys: {missing_keys}")
                         return False
+                elif response.status == 404:
+                    # The endpoint exists in code but returns 404 - likely a routing issue
+                    self.log_test("Interview Checklist", "FAIL", 
+                                f"Endpoint not found (404) - possible routing issue. Function exists in code but not accessible via API.")
+                    return False
                 else:
                     self.log_test("Interview Checklist", "FAIL", f"HTTP {response.status}")
                     return False
