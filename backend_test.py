@@ -1,22 +1,21 @@
 #!/usr/bin/env python3
 """
-CareerFlow Backend API Testing Script
-Tests the new features as specified in the review request:
-1. Health check endpoint
-2. AI Insights with enhanced format
-3. Interview Checklist endpoint
-4. Ghosted status handling
+Backend API Testing for Checklist Progress Persistence
+Testing the new checklist progress endpoints and related functionality
 """
 
-import asyncio
-import aiohttp
+import requests
 import json
-from datetime import datetime, timezone, timedelta
 import sys
+from datetime import datetime
 
-# Backend URL from review request
-BACKEND_URL = "https://repo-preview-43.emergent.host"
+# Configuration
+BASE_URL = "https://repo-preview-43.emergent.host"
 TEST_TOKEN = "test_token_abc123"
+HEADERS = {
+    "Authorization": f"Bearer {TEST_TOKEN}",
+    "Content-Type": "application/json"
+}
 
 class BackendTester:
     def __init__(self):
