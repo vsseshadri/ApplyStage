@@ -1132,10 +1132,11 @@ async def get_ai_insights(current_user: User = Depends(get_current_user)):
     }
 
 
-# Interview checklist endpoint - also available under multiple paths for proxy compatibility
+# Interview checklist endpoint - multiple paths for proxy compatibility
 @api_router.get("/interview-checklist/{stage}")
 @api_router.get("/dashboard/interview-checklist/{stage}")
 @api_router.get("/checklist/{stage}")
+@api_router.get("/prep/{stage}")
 async def get_interview_checklist(stage: str, company: str = "", current_user: User = Depends(get_current_user)):
     """Get AI-generated interview preparation checklist for a specific stage and company"""
     from emergentintegrations.llm.chat import LlmChat, UserMessage
