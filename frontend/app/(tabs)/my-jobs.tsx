@@ -1377,14 +1377,15 @@ export default function MyJobsScreen() {
     }
   };
 
-  // Auto-format text to Title Case (first letter of each word capitalized)
+  // Auto-format text to Title Case (capitalize first letter of each word, preserve rest)
   const formatToTitleCase = (text: string): string => {
     if (!text) return '';
     return text
       .split(' ')
       .map(word => {
         if (word.length === 0) return '';
-        return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
+        // Only capitalize the first letter, preserve the rest as typed
+        return word.charAt(0).toUpperCase() + word.slice(1);
       })
       .join(' ');
   };
