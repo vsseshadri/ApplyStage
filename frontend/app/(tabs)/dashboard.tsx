@@ -722,7 +722,8 @@ export default function DashboardScreen() {
                 setSelectedInterview({
                   stage: interview.stage,
                   company: interview.company_name,
-                  daysUntil: getDaysUntil()
+                  daysUntil: getDaysUntil(),
+                  jobId: interview.job_id || ''
                 });
                 setChecklistVisible(true);
               };
