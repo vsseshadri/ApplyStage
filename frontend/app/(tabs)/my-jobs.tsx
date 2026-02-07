@@ -40,7 +40,7 @@ const getBackendUrl = (): string => {
 };
 const BACKEND_URL = getBackendUrl();
 
-const STATUSES = ['applied', 'recruiter_screening', 'phone_screen', 'coding_round_1', 'coding_round_2', 'system_design', 'behavioural', 'hiring_manager', 'final_round', 'offer', 'rejected'];
+const STATUSES = ['applied', 'recruiter_screening', 'phone_screen', 'coding_round_1', 'coding_round_2', 'system_design', 'behavioural', 'hiring_manager', 'final_round', 'offer', 'rejected', 'ghosted'];
 const DEFAULT_POSITIONS = ['Software Engineer', 'Senior Software Engineer', 'Frontend Developer', 'Backend Developer', 'Full Stack Developer', 'DevOps Engineer', 'Data Scientist', 'Product Manager', 'UI/UX Designer'];
 const WORK_MODES = ['remote', 'onsite', 'hybrid'];
 
