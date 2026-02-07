@@ -698,11 +698,13 @@ async def get_upcoming_interviews(current_user: User = Depends(get_current_user)
 @api_router.get("/dashboard/ai-insights")
 async def get_ai_insights(current_user: User = Depends(get_current_user)):
     """
-    Generate strategic AI-powered insights split into:
-    - Strategic Insights (trends, patterns, recommendations)
-    - Follow-up Reminders (urgent actions with aging stats)
-    - Incorporates upcoming interview data for more contextual advice
-    - Provides coaching insights based on application status
+    Generate comprehensive AI-powered insights including:
+    - Consolidated company insights (grouped by company)
+    - Positive progress reinforcement
+    - Weekly reflection prompts
+    - Stage pattern analysis
+    - Career progression info for offers
+    - Weekly momentum narratives
     """
     jobs = await db.job_applications.find(
         {"user_id": current_user.user_id},
@@ -718,7 +720,9 @@ async def get_ai_insights(current_user: User = Depends(get_current_user)):
             "upcoming_stage": 1,
             "upcoming_schedule": 1,
             "recruiter_email": 1,
-            "updated_at": 1
+            "updated_at": 1,
+            "work_mode": 1,
+            "location": 1
         }
     ).to_list(1000)
     
@@ -726,36 +730,112 @@ async def get_ai_insights(current_user: User = Depends(get_current_user)):
     follow_up_reminders = []
     now = datetime.now(timezone.utc)
     today = now.date()
+    week_start = today - timedelta(days=today.weekday())
     
     # Data structures
     follow_ups_needed = []
-    priority_jobs = []
-    priority_insights = []  # Separate list for priority job insights
-    regular_insights = []   # Non-priority insights
-    no_movement_jobs = []
-    stage_counts = {}
-    stage_progression = {'advanced': 0, 'stalled': 0}
+    company_data = {}  # Consolidated data by company
+    stage_progression_history = {}  # Track stage progressions per stage
+    stage_success_count = {}  # Count successful progressions past each stage
     upcoming_interviews = []
-    rejected_jobs = []  # Track recently rejected jobs for encouragement
+    weekly_activity = {'applied': 0, 'advanced': 0, 'interviews': 0}
+    offer_companies = []
+    ghosted_jobs = []
+    rejected_jobs = []
     
-    # Company-specific coaching tips based on stage
-    stage_coaching = {
-        'recruiter_screening': "Focus on your elevator pitch and salary expectations",
-        'phone_screen': "Prepare concise answers about your background and motivation",
-        'coding_round_1': "Practice problem-solving approaches and think aloud",
-        'coding_round_2': "Review advanced algorithms and optimization techniques",
-        'system_design': "Practice designing scalable systems with clear trade-offs",
-        'behavioural': "Prepare 5-7 STAR stories covering leadership and challenges",
-        'hiring_manager': "Research the team's recent projects and prepare questions",
-        'final_round': "Align your goals with company mission, discuss compensation"
-    }
-    
+    # All stages including ghosted
     all_stages = ['applied', 'recruiter_screening', 'phone_screen', 'coding_round_1', 
                   'coding_round_2', 'system_design', 'behavioural', 'hiring_manager', 
-                  'final_round', 'offer', 'rejected']
-    for stage in all_stages:
-        stage_counts[stage] = 0
+                  'final_round', 'offer', 'rejected', 'ghosted']
     
+    stage_order = {stage: idx for idx, stage in enumerate(all_stages)}
+    stage_counts = {stage: 0 for stage in all_stages}
+    
+    # Enhanced stage coaching with interview-specific tips
+    stage_coaching = {
+        'recruiter_screening': {
+            'tip': "Focus on your elevator pitch and salary expectations",
+            'checklist': [
+                "Prepare 60-second career summary",
+                "Research company culture and values",
+                "Know your salary range expectations",
+                "Prepare questions about role and team",
+                "Review job description key requirements"
+            ]
+        },
+        'phone_screen': {
+            'tip': "Prepare concise answers about your background and motivation",
+            'checklist': [
+                "Review your resume highlights",
+                "Prepare 'why this company' answer",
+                "Research recent company news",
+                "Have specific examples ready",
+                "Prepare thoughtful questions"
+            ]
+        },
+        'coding_round_1': {
+            'tip': "Practice problem-solving approaches and think aloud",
+            'checklist': [
+                "Review common data structures (arrays, trees, graphs)",
+                "Practice explaining your thought process",
+                "Review Big O complexity analysis",
+                "Practice on LeetCode medium problems",
+                "Prepare questions about engineering culture"
+            ]
+        },
+        'coding_round_2': {
+            'tip': "Review advanced algorithms and optimization techniques",
+            'checklist': [
+                "Review dynamic programming patterns",
+                "Practice graph algorithms (BFS, DFS, Dijkstra)",
+                "Review advanced tree operations",
+                "Practice time/space optimization",
+                "Prepare to discuss past technical projects"
+            ]
+        },
+        'system_design': {
+            'tip': "Practice designing scalable systems with clear trade-offs",
+            'checklist': [
+                "Review scalability patterns (sharding, caching)",
+                "Study company's tech stack and architecture",
+                "Practice drawing system diagrams",
+                "Prepare to discuss CAP theorem trade-offs",
+                "Review load balancing and database design"
+            ]
+        },
+        'behavioural': {
+            'tip': "Prepare 5-7 STAR stories covering leadership and challenges",
+            'checklist': [
+                "Prepare STAR stories for leadership",
+                "Prepare conflict resolution examples",
+                "Research hiring manager on LinkedIn",
+                "Practice stories about failures and learnings",
+                "Align examples with company values"
+            ]
+        },
+        'hiring_manager': {
+            'tip': "Research the team's recent projects and prepare questions",
+            'checklist': [
+                "Research manager's background and team",
+                "Prepare questions about team dynamics",
+                "Review company's recent product launches",
+                "Prepare to discuss career goals",
+                "Research company earnings/growth if public"
+            ]
+        },
+        'final_round': {
+            'tip': "Align your goals with company mission, discuss compensation",
+            'checklist': [
+                "Research total compensation benchmarks",
+                "Prepare negotiation talking points",
+                "Review company mission and values",
+                "Prepare 30-60-90 day plan",
+                "Have questions about growth opportunities"
+            ]
+        }
+    }
+    
+    # Process each job
     for job in jobs:
         status = job.get("status", "applied")
         if status in stage_counts:
@@ -764,6 +844,8 @@ async def get_ai_insights(current_user: User = Depends(get_current_user)):
         company = job.get("company_name", "Unknown")
         position = job.get("position", "Position")
         is_priority = job.get("is_priority", False)
+        upcoming_stage = job.get("upcoming_stage")
+        upcoming_schedule = job.get("upcoming_schedule")
         
         # Get date applied
         date_applied = job.get("date_applied") or job.get("created_at")
@@ -774,21 +856,64 @@ async def get_ai_insights(current_user: User = Depends(get_current_user)):
                 date_applied = date_applied.replace(tzinfo=timezone.utc)
             days_old = (now - date_applied).days
             biz_days = sum(1 for i in range(days_old) if (date_applied + timedelta(days=i)).weekday() < 5)
+            
+            # Track weekly activity
+            if date_applied.date() >= week_start:
+                weekly_activity['applied'] += 1
         else:
             days_old = 0
             biz_days = 0
         
-        # Track rejected jobs for encouraging insights
-        if status == 'rejected' and days_old <= 14:
-            rejected_jobs.append({
+        # Track ghosted jobs
+        if status == 'ghosted':
+            ghosted_jobs.append({"company": company, "position": position})
+            continue
+        
+        # Track offers for career progression insights
+        if status == 'offer':
+            offer_companies.append({
                 "company": company,
                 "position": position,
-                "days_ago": days_old
+                "days_to_offer": days_old
             })
+            continue
+        
+        # Track rejected for encouragement
+        if status == 'rejected' and days_old <= 14:
+            rejected_jobs.append({"company": company, "position": position})
+            continue
+        
+        # Track stage progression success
+        stage_idx = stage_order.get(status, 0)
+        if stage_idx >= 3:  # Past phone screen
+            for s in list(stage_order.keys())[:stage_idx]:
+                stage_success_count[s] = stage_success_count.get(s, 0) + 1
+        
+        # Build consolidated company data
+        if company not in company_data:
+            company_data[company] = {
+                "company": company,
+                "positions": [],
+                "status": status,
+                "is_priority": is_priority,
+                "coaching_tips": [],
+                "upcoming_stage": upcoming_stage,
+                "upcoming_schedule": upcoming_schedule,
+                "biz_days": biz_days,
+                "stage_idx": stage_idx
+            }
+        
+        company_data[company]["positions"].append(position)
+        if stage_order.get(status, 0) > company_data[company]["stage_idx"]:
+            company_data[company]["status"] = status
+            company_data[company]["stage_idx"] = stage_order.get(status, 0)
+        
+        # Add coaching tip based on upcoming_stage or status
+        coaching_stage = upcoming_stage if upcoming_stage else status
+        if coaching_stage in stage_coaching and is_priority:
+            company_data[company]["coaching_tips"].append(stage_coaching[coaching_stage]['tip'])
         
         # Track upcoming interviews
-        upcoming_stage = job.get("upcoming_stage")
-        upcoming_schedule = job.get("upcoming_schedule")
         if upcoming_stage and upcoming_schedule:
             try:
                 parts = upcoming_schedule.replace('/', '-').split("-")
@@ -800,257 +925,166 @@ async def get_ai_insights(current_user: User = Depends(get_current_user)):
                     
                     if schedule_date >= today:
                         days_until = (schedule_date - today).days
+                        weekly_activity['interviews'] += 1 if days_until <= 7 else 0
                         upcoming_interviews.append({
                             "company": company,
                             "stage": upcoming_stage,
                             "days_until": days_until,
-                            "is_priority": is_priority
+                            "is_priority": is_priority,
+                            "checklist": stage_coaching.get(upcoming_stage, {}).get('checklist', [])
                         })
             except (ValueError, IndexError):
                 pass
         
-        # Track priority jobs with coaching insights
-        # Use upcoming_stage for coaching if available, otherwise use status
-        if is_priority and status not in ['offer', 'rejected']:
-            priority_jobs.append({
-                "company": company, 
-                "status": status, 
-                "biz_days": biz_days,
-                "position": position,
-                "upcoming_stage": upcoming_stage
-            })
-            # Add stage-specific coaching - prioritize upcoming_stage over status
-            coaching_stage = upcoming_stage if upcoming_stage else status
-            if coaching_stage in stage_coaching:
-                priority_insights.append({
-                    "type": "coaching",
-                    "company": company,
-                    "stage": coaching_stage,
-                    "tip": stage_coaching[coaching_stage],
-                    "is_priority": True,
-                    "is_upcoming": bool(upcoming_stage)
-                })
+        # Track applications advancing
+        if stage_idx >= 2:  # Past applied/recruiter_screening
+            weekly_activity['advanced'] += 1
         
-        # Track "No status change" - jobs stuck in same status for 10+ biz days
-        if status not in ['offer', 'rejected'] and biz_days >= 10:
-            no_movement_jobs.append({
-                "company": company, "status": status, "biz_days": biz_days, "is_priority": is_priority
-            })
-        
-        # Follow-up tracking - adapted based on status progression
+        # Follow-up tracking
         follow_up_days = job.get("follow_up_days")
-        if follow_up_days and status not in ['offer', 'rejected']:
+        if follow_up_days and status not in ['offer', 'rejected', 'ghosted']:
             if days_old >= int(follow_up_days):
                 overdue_by = days_old - int(follow_up_days)
-                # Adjust urgency based on stage
-                urgency = "high" if status in ['applied', 'recruiter_screening'] else "medium"
-                if is_priority:
-                    urgency = "critical"
+                urgency = "critical" if is_priority else ("high" if status in ['applied', 'recruiter_screening'] else "medium")
                 follow_ups_needed.append({
-                    "company": company, 
-                    "status": status, 
-                    "overdue_days": overdue_by, 
+                    "company": company,
+                    "status": status,
+                    "overdue_days": overdue_by,
                     "biz_days": biz_days,
                     "is_priority": is_priority,
                     "urgency": urgency,
                     "recruiter_email": job.get("recruiter_email", "")
                 })
-        
-        # Progression tracking
-        early_stages = ['applied', 'recruiter_screening']
-        advanced_stages_list = ['system_design', 'behavioural', 'hiring_manager', 'final_round', 'offer']
-        
-        if status in advanced_stages_list:
-            stage_progression['advanced'] += 1
-        elif status in early_stages and biz_days >= 15:
-            stage_progression['stalled'] += 1
     
     total = len(jobs)
-    active_jobs = total - stage_counts['offer'] - stage_counts['rejected']
+    active_jobs = total - stage_counts['offer'] - stage_counts['rejected'] - stage_counts['ghosted']
     
-    # === BUILD INSIGHTS WITH PRIORITY ORDERING ===
+    # === BUILD CONSOLIDATED INSIGHTS ===
     
-    # 1. PRIORITY: Upcoming Interviews (highest priority - actionable items)
-    if upcoming_interviews:
-        upcoming_interviews.sort(key=lambda x: (x['days_until'], -x['is_priority']))
-        
-        # Today's interviews
-        todays_interviews = [i for i in upcoming_interviews if i['days_until'] == 0]
-        if todays_interviews:
-            companies = ', '.join([i['company'] for i in todays_interviews[:2]])
-            if len(todays_interviews) > 2:
-                companies += f" (+{len(todays_interviews) - 2} more)"
-            priority_insights.insert(0, {
-                "type": "urgent",
-                "icon": "alert-circle",
-                "color": "#EF4444",
-                "text": f"TODAY: Interview{'s' if len(todays_interviews) > 1 else ''} at {companies}—good luck!",
-                "is_priority": True
-            })
-        
-        # This week's interviews (excluding today)
-        this_week = [i for i in upcoming_interviews if 0 < i['days_until'] <= 7]
-        if this_week:
-            stage_summary = {}
-            for interview in this_week:
-                stage = interview['stage'].replace('_', ' ').title()
-                stage_summary[stage] = stage_summary.get(stage, 0) + 1
-            
-            stage_text = ', '.join([f"{count} {stage}" for stage, count in stage_summary.items()])
-            regular_insights.append({
-                "type": "schedule",
-                "icon": "calendar",
-                "color": "#8B5CF6",
-                "text": f"This week: {len(this_week)} interview{'s' if len(this_week) > 1 else ''} ({stage_text})",
-                "is_priority": False
-            })
+    # 1. URGENT: Today's interviews
+    todays_interviews = [i for i in upcoming_interviews if i['days_until'] == 0]
+    if todays_interviews:
+        companies = ', '.join([i['company'] for i in todays_interviews[:2]])
+        strategic_insights.append({
+            "icon": "alert-circle",
+            "color": "#EF4444",
+            "text": f"🎯 TODAY: Interview{'s' if len(todays_interviews) > 1 else ''} at {companies}—you've got this!",
+            "type": "urgent",
+            "priority": 0
+        })
     
-    # 2. PRIORITY: Priority job coaching insights (already added above)
-    # Convert priority coaching insights to proper format
-    for pi in priority_insights:
-        if pi.get("type") == "coaching":
-            stage_label = pi['stage'].replace('_', ' ').title()
-            # Indicate if this is for an upcoming stage
-            prefix = "Upcoming " if pi.get("is_upcoming") else ""
-            pi.update({
-                "icon": "star",
-                "color": "#F59E0B",
-                "text": f"{pi['company']} ({prefix}{stage_label}): {pi['tip']}"
-            })
-    
-    # 3. Offers and final rounds
-    if stage_counts['offer'] > 0:
-        priority_insights.append({
-            "type": "celebration",
+    # 2. POSITIVE REINFORCEMENT: Offers
+    if offer_companies:
+        avg_days = sum(o['days_to_offer'] for o in offer_companies) / len(offer_companies)
+        strategic_insights.append({
             "icon": "trophy",
             "color": "#22C55E",
-            "text": f"{stage_counts['offer']} offer{'s' if stage_counts['offer'] > 1 else ''} received! 73% of employers expect negotiation.",
-            "is_priority": True
+            "text": f"🎉 {len(offer_companies)} offer{'s' if len(offer_companies) > 1 else ''} received! Your average time-to-offer: {avg_days:.0f} days. Consider negotiating—73% of employers expect it.",
+            "type": "celebration",
+            "priority": 1
         })
     
-    if stage_counts['final_round'] > 0:
-        regular_insights.append({
-            "type": "progress",
-            "icon": "rocket",
-            "color": "#10B981",
-            "text": f"{stage_counts['final_round']} in final rounds—prepare team fit and compensation discussions",
-            "is_priority": False
-        })
-    
-    if stage_counts['hiring_manager'] > 0:
-        regular_insights.append({
-            "type": "tip",
-            "icon": "briefcase",
-            "color": "#3B82F6",
-            "text": f"{stage_counts['hiring_manager']} at hiring manager stage—research recent company initiatives",
-            "is_priority": False
-        })
-    
-    # 4. Pipeline health
-    if total >= 3 and active_jobs > 0:
-        advanced = stage_progression['advanced']
-        if advanced > 0:
-            advanced_rate = (advanced / active_jobs) * 100
-            if advanced_rate >= 30:
-                regular_insights.append({
-                    "type": "momentum",
-                    "icon": "trending-up",
-                    "color": "#10B981",
-                    "text": f"Strong momentum: {advanced_rate:.0f}% of active applications advancing",
-                    "is_priority": False
-                })
-    
-    # 5. Stalled applications insight
-    if no_movement_jobs:
-        no_movement_jobs.sort(key=lambda x: (-x['is_priority'], -x['biz_days']))
-        stalled_priority = [j for j in no_movement_jobs if j['is_priority']][:2]
-        for job in stalled_priority:
-            status_label = job['status'].replace('_', ' ').title()
-            priority_insights.append({
-                "type": "attention",
-                "icon": "star",
-                "color": "#F59E0B",
-                "text": f"{job['company']}: No update for {job['biz_days']} days at {status_label}",
-                "is_priority": True
+    # 3. STAGE PATTERN ANALYSIS: Find strongest stage
+    if stage_success_count:
+        best_stage = max(stage_success_count.items(), key=lambda x: x[1])
+        if best_stage[1] >= 2:
+            stage_name = best_stage[0].replace('_', ' ').title()
+            strategic_insights.append({
+                "icon": "trending-up",
+                "color": "#10B981",
+                "text": f"💪 Pattern detected: {stage_name} appears to be your strongest stage with {best_stage[1]} successful progressions. Keep leveraging this strength!",
+                "type": "pattern",
+                "priority": 2
             })
     
-    # 6. REJECTION ENCOURAGEMENT - Friendly, coaching-style
-    if rejected_jobs:
-        recent_rejection = rejected_jobs[0]
+    # 4. WEEKLY MOMENTUM NARRATIVE
+    if weekly_activity['applied'] > 0 or weekly_activity['interviews'] > 0:
+        momentum_parts = []
+        if weekly_activity['applied'] > 0:
+            momentum_parts.append(f"{weekly_activity['applied']} new application{'s' if weekly_activity['applied'] > 1 else ''}")
+        if weekly_activity['interviews'] > 0:
+            momentum_parts.append(f"{weekly_activity['interviews']} interview{'s' if weekly_activity['interviews'] > 1 else ''} scheduled")
+        
+        strategic_insights.append({
+            "icon": "flash",
+            "color": "#8B5CF6",
+            "text": f"📈 This week's momentum: {', '.join(momentum_parts)}. Great progress!",
+            "type": "momentum",
+            "priority": 3
+        })
+    
+    # 5. CONSOLIDATED COMPANY INSIGHTS (Priority companies)
+    priority_companies = sorted(
+        [c for c in company_data.values() if c['is_priority'] and c['coaching_tips']],
+        key=lambda x: -x['stage_idx']
+    )[:3]
+    
+    for comp in priority_companies:
+        tips = ' • '.join(comp['coaching_tips'][:2])
+        stage_label = comp['status'].replace('_', ' ').title()
+        strategic_insights.append({
+            "icon": "star",
+            "color": "#F59E0B",
+            "text": f"⭐ {comp['company']} ({stage_label}): {tips}",
+            "type": "coaching",
+            "company": comp['company'],
+            "priority": 4
+        })
+    
+    # 6. WEEKLY REFLECTION PROMPT
+    import random
+    reflection_prompts = [
+        "📝 Weekly reflection: What went well this week? What could improve in your interview approach?",
+        "🤔 Reflection moment: Which company excites you most and why? Let that energy show in interviews!",
+        "💭 Time to reflect: What new skill or insight did you gain from recent interviews?",
+        "🎯 Weekly check-in: Are you applying to roles that align with your career goals?",
+        "✨ Reflect and grow: What feedback have you received? How can you apply it?"
+    ]
+    
+    if total >= 3:
+        strategic_insights.append({
+            "icon": "bulb",
+            "color": "#6366F1",
+            "text": random.choice(reflection_prompts),
+            "type": "reflection",
+            "priority": 5
+        })
+    
+    # 7. ENCOURAGEMENT for rejections
+    if rejected_jobs and len(rejected_jobs) <= 3:
         encouraging_messages = [
-            "Every 'no' brings you closer to the right 'yes'. Keep going!",
-            "Rejection is redirection. Your perfect role is still out there.",
-            "The best candidates face rejection too. It's part of the journey.",
-            "Use this as fuel—reflect, refine, and come back stronger.",
-            "This wasn't the right fit, and that's okay. Better opportunities await."
+            f"💪 {len(rejected_jobs)} recent rejection{'s' if len(rejected_jobs) > 1 else ''}—but you're still in the game! Each 'no' refines your path to the right 'yes'.",
+            "🌟 Rejection is just redirection. Your skills are valuable—the right opportunity is coming.",
+            "🚀 The best candidates face rejection too. Stay focused on what you can control and keep moving forward!"
         ]
-        import random
-        regular_insights.append({
-            "type": "encouragement",
+        strategic_insights.append({
             "icon": "heart",
             "color": "#EC4899",
             "text": random.choice(encouraging_messages),
-            "is_priority": False
+            "type": "encouragement",
+            "priority": 6
         })
     
-    # === COMBINE AND LIMIT INSIGHTS - Group by company ===
-    # First, group priority coaching insights by company
-    company_insights = {}
-    other_insights = []
-    
-    for insight in priority_insights + regular_insights:
-        text = insight.get("text", "")
-        # Check if this is a company-specific insight (contains company name followed by colon)
-        if ": " in text and insight.get("type") in ["coaching", "attention"]:
-            company = text.split(": ")[0]
-            if company not in company_insights:
-                company_insights[company] = {
-                    "company": company,
-                    "tips": [],
-                    "is_priority": insight.get("is_priority", False),
-                    "color": insight.get("color", "#F59E0B"),
-                    "icon": insight.get("icon", "star")
-                }
-            # Extract the tip part (after company name)
-            tip = text.split(": ", 1)[1] if ": " in text else text
-            company_insights[company]["tips"].append(tip)
-        else:
-            other_insights.append(insight)
-    
-    # Convert grouped company insights to single cards
-    grouped_insights = []
-    for company, data in company_insights.items():
-        tips_text = " • ".join(data["tips"][:2])  # Max 2 tips per company
-        grouped_insights.append({
-            "icon": data["icon"],
-            "color": data["color"],
-            "text": f"{company}: {tips_text}",
-            "type": "grouped",
-            "is_priority": data["is_priority"],
-            "company": company
-        })
-    
-    # Sort: priority first
-    grouped_insights.sort(key=lambda x: (0 if x["is_priority"] else 1))
-    
-    # Combine: grouped company insights first, then other insights
-    all_insights = grouped_insights + other_insights
-    limited_insights = all_insights[:6]
-    
-    # Convert to the format expected by frontend
-    strategic_insights = []
-    for insight in limited_insights:
+    # 8. GHOSTED JOBS acknowledgment
+    if ghosted_jobs:
         strategic_insights.append({
-            "icon": insight.get("icon", "information-circle"),
-            "color": insight.get("color", "#6B7280"),
-            "text": insight.get("text", ""),
-            "type": insight.get("type", "info"),
-            "company": insight.get("company", None)
+            "icon": "eye-off",
+            "color": "#9CA3AF",
+            "text": f"👻 {len(ghosted_jobs)} application{'s' if len(ghosted_jobs) > 1 else ''} marked as ghosted. It's okay—focus your energy on active opportunities!",
+            "type": "ghosted",
+            "priority": 7
         })
     
-    # === FOLLOW-UP REMINDERS - Adapted based on status ===
+    # Sort by priority and limit
+    strategic_insights.sort(key=lambda x: x.get('priority', 99))
+    strategic_insights = strategic_insights[:8]
+    
+    # Remove priority field from output
+    for insight in strategic_insights:
+        insight.pop('priority', None)
+    
+    # === FOLLOW-UP REMINDERS ===
     if follow_ups_needed:
-        # Sort: critical first, then high urgency, then by overdue days
         follow_ups_needed.sort(key=lambda x: (
             0 if x['urgency'] == 'critical' else (1 if x['urgency'] == 'high' else 2),
             -x['overdue_days']
@@ -1058,16 +1092,12 @@ async def get_ai_insights(current_user: User = Depends(get_current_user)):
         
         for fu in follow_ups_needed[:4]:
             status_label = fu['status'].replace('_', ' ').title()
-            
-            # Dynamic message based on status progression
-            if fu['status'] == 'applied':
-                action_hint = "Send a brief check-in email"
-            elif fu['status'] == 'recruiter_screening':
-                action_hint = "Follow up on next steps"
-            elif fu['status'] in ['phone_screen', 'coding_round_1', 'coding_round_2']:
-                action_hint = "Ask for feedback or timeline"
-            else:
-                action_hint = "Request status update"
+            action_hints = {
+                'applied': "Send a brief check-in email",
+                'recruiter_screening': "Follow up on next steps",
+                'phone_screen': "Ask for feedback or timeline",
+            }
+            action_hint = action_hints.get(fu['status'], "Request status update")
             
             follow_up_reminders.append({
                 "company": fu['company'],
@@ -1079,21 +1109,13 @@ async def get_ai_insights(current_user: User = Depends(get_current_user)):
                 "action_hint": action_hint,
                 "recruiter_email": fu.get('recruiter_email', '')
             })
-        
-        if len(follow_ups_needed) > 4:
-            remaining = len(follow_ups_needed) - 4
-            follow_up_reminders.append({
-                "summary": True,
-                "count": remaining,
-                "text": f"+ {remaining} more need{'s' if remaining == 1 else ''} follow-up"
-            })
     
     # Default messages
     if not strategic_insights:
         strategic_insights.append({
             "icon": "rocket",
             "color": "#3B82F6",
-            "text": "Add applications with follow-up dates to receive strategic insights!",
+            "text": "🚀 Add applications with follow-up dates to receive strategic insights!",
             "type": "info"
         })
     
