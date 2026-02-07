@@ -56,7 +56,8 @@ const STATUS_COLORS: {[key: string]: string} = {
   hiring_manager: '#14B8A6',
   final_round: '#10B981',
   offer: '#22C55E',
-  rejected: '#DC2626'
+  rejected: '#DC2626',
+  ghosted: '#9CA3AF'
 };
 
 // State abbreviation mapping
