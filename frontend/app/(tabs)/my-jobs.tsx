@@ -2522,21 +2522,24 @@ export default function MyJobsScreen() {
               </View>
 
               {/* Upcoming Stage Dropdown */}
-              <View style={dynamicStyles.formSection}>
-                <Text style={dynamicStyles.label}>Upcoming Stage</Text>
-                <TouchableOpacity 
-                  style={dynamicStyles.dropdownButton}
-                  onPress={() => setShowUpcomingStageDropdown(true)}
-                >
-                  <Text style={[dynamicStyles.dropdownButtonText, !formData.upcoming_stage && dynamicStyles.dropdownPlaceholder]}>
-                    {formData.upcoming_stage ? formatStatus(formData.upcoming_stage) : 'Select Upcoming Stage'}
-                  </Text>
-                  <Ionicons name="chevron-down" size={20} color={colors.textSecondary} />
-                </TouchableOpacity>
-              </View>
+              {/* Upcoming Stage - Only show if status is not 'offer' */}
+              {formData.status !== 'offer' && (
+                <View style={dynamicStyles.formSection}>
+                  <Text style={dynamicStyles.label}>Upcoming Stage</Text>
+                  <TouchableOpacity 
+                    style={dynamicStyles.dropdownButton}
+                    onPress={() => setShowUpcomingStageDropdown(true)}
+                  >
+                    <Text style={[dynamicStyles.dropdownButtonText, !formData.upcoming_stage && dynamicStyles.dropdownPlaceholder]}>
+                      {formData.upcoming_stage ? formatStatus(formData.upcoming_stage) : 'Select Upcoming Stage'}
+                    </Text>
+                    <Ionicons name="chevron-down" size={20} color={colors.textSecondary} />
+                  </TouchableOpacity>
+                </View>
+              )}
 
-              {/* Scheduled On - Calendar Modal Date Picker - Only visible when Upcoming Stage is selected */}
-              {formData.upcoming_stage ? (
+              {/* Scheduled On - Calendar Modal Date Picker - Only visible when Upcoming Stage is selected and status is not 'offer' */}
+              {formData.upcoming_stage && formData.status !== 'offer' ? (
                 <View style={dynamicStyles.formSection}>
                   <Text style={dynamicStyles.label}>Scheduled On *</Text>
                   <TouchableOpacity 
