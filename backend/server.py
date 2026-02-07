@@ -1127,8 +1127,122 @@ async def get_ai_insights(current_user: User = Depends(get_current_user)):
     
     return {
         "insights": strategic_insights,
-        "follow_ups": follow_up_reminders
+        "follow_ups": follow_up_reminders,
+        "upcoming_interviews": upcoming_interviews[:5]  # Include upcoming interviews with checklists
     }
+
+
+# Interview checklist endpoint
+@api_router.get("/interview-checklist/{stage}")
+async def get_interview_checklist(stage: str, company: str = None, current_user: User = Depends(get_current_user)):
+    """
+    Get dynamic interview checklist based on stage and optionally company context
+    """
+    stage_checklists = {
+        'recruiter_screening': {
+            'title': 'Recruiter Screening Prep',
+            'items': [
+                {"id": "rs1", "text": "Prepare 60-second career summary", "category": "pitch"},
+                {"id": "rs2", "text": "Research company culture and values", "category": "research"},
+                {"id": "rs3", "text": "Know your salary range expectations", "category": "compensation"},
+                {"id": "rs4", "text": "Prepare questions about role and team", "category": "questions"},
+                {"id": "rs5", "text": "Review job description key requirements", "category": "preparation"}
+            ]
+        },
+        'phone_screen': {
+            'title': 'Phone Screen Prep',
+            'items': [
+                {"id": "ps1", "text": "Review your resume highlights", "category": "preparation"},
+                {"id": "ps2", "text": "Prepare 'why this company' answer", "category": "pitch"},
+                {"id": "ps3", "text": "Research recent company news", "category": "research"},
+                {"id": "ps4", "text": "Have specific examples ready", "category": "stories"},
+                {"id": "ps5", "text": "Prepare thoughtful questions", "category": "questions"}
+            ]
+        },
+        'coding_round_1': {
+            'title': 'Coding Round 1 Prep',
+            'items': [
+                {"id": "c1_1", "text": "Review common data structures (arrays, trees, graphs)", "category": "technical"},
+                {"id": "c1_2", "text": "Practice explaining your thought process aloud", "category": "communication"},
+                {"id": "c1_3", "text": "Review Big O complexity analysis", "category": "technical"},
+                {"id": "c1_4", "text": "Practice LeetCode medium problems", "category": "practice"},
+                {"id": "c1_5", "text": "Prepare questions about engineering culture", "category": "questions"}
+            ]
+        },
+        'coding_round_2': {
+            'title': 'Coding Round 2 Prep',
+            'items': [
+                {"id": "c2_1", "text": "Review dynamic programming patterns", "category": "technical"},
+                {"id": "c2_2", "text": "Practice graph algorithms (BFS, DFS, Dijkstra)", "category": "technical"},
+                {"id": "c2_3", "text": "Review advanced tree operations", "category": "technical"},
+                {"id": "c2_4", "text": "Practice time/space optimization", "category": "optimization"},
+                {"id": "c2_5", "text": "Prepare to discuss past technical projects", "category": "stories"}
+            ]
+        },
+        'system_design': {
+            'title': 'System Design Prep',
+            'items': [
+                {"id": "sd1", "text": "Review scalability patterns (sharding, caching)", "category": "architecture"},
+                {"id": "sd2", "text": "Study company's tech stack and architecture", "category": "research"},
+                {"id": "sd3", "text": "Practice drawing system diagrams clearly", "category": "communication"},
+                {"id": "sd4", "text": "Prepare to discuss CAP theorem trade-offs", "category": "technical"},
+                {"id": "sd5", "text": "Review load balancing and database design", "category": "architecture"}
+            ]
+        },
+        'behavioural': {
+            'title': 'Behavioral Interview Prep',
+            'items': [
+                {"id": "bh1", "text": "Prepare STAR stories for leadership scenarios", "category": "stories"},
+                {"id": "bh2", "text": "Prepare conflict resolution examples", "category": "stories"},
+                {"id": "bh3", "text": "Research hiring manager on LinkedIn", "category": "research"},
+                {"id": "bh4", "text": "Practice stories about failures and learnings", "category": "stories"},
+                {"id": "bh5", "text": "Align examples with company values", "category": "preparation"}
+            ]
+        },
+        'hiring_manager': {
+            'title': 'Hiring Manager Interview Prep',
+            'items': [
+                {"id": "hm1", "text": "Research manager's background and team", "category": "research"},
+                {"id": "hm2", "text": "Prepare questions about team dynamics", "category": "questions"},
+                {"id": "hm3", "text": "Review company's recent product launches", "category": "research"},
+                {"id": "hm4", "text": "Prepare to discuss your career goals", "category": "pitch"},
+                {"id": "hm5", "text": "Research company earnings/growth (if public)", "category": "research"}
+            ]
+        },
+        'final_round': {
+            'title': 'Final Round Prep',
+            'items': [
+                {"id": "fr1", "text": "Research total compensation benchmarks", "category": "compensation"},
+                {"id": "fr2", "text": "Prepare negotiation talking points", "category": "compensation"},
+                {"id": "fr3", "text": "Review company mission and values deeply", "category": "research"},
+                {"id": "fr4", "text": "Prepare 30-60-90 day plan", "category": "preparation"},
+                {"id": "fr5", "text": "Have questions about growth opportunities", "category": "questions"}
+            ]
+        }
+    }
+    
+    checklist = stage_checklists.get(stage, {
+        'title': f'{stage.replace("_", " ").title()} Prep',
+        'items': [
+            {"id": "gen1", "text": "Review your resume and experience", "category": "preparation"},
+            {"id": "gen2", "text": "Research the company", "category": "research"},
+            {"id": "gen3", "text": "Prepare thoughtful questions", "category": "questions"},
+            {"id": "gen4", "text": "Practice your pitch", "category": "pitch"},
+            {"id": "gen5", "text": "Get a good night's rest", "category": "wellness"}
+        ]
+    })
+    
+    # Add company context if provided
+    if company:
+        checklist['company'] = company
+        checklist['items'].insert(0, {
+            "id": "ctx1",
+            "text": f"Research {company}'s recent news and developments",
+            "category": "research",
+            "company_specific": True
+        })
+    
+    return checklist
 
 @api_router.get("/positions", response_model=List[CustomPosition])
 async def get_positions(current_user: User = Depends(get_current_user)):
