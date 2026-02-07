@@ -31,10 +31,10 @@ interface InterviewChecklistProps {
 const getBackendUrl = (): string => {
   const configUrl = Constants.expoConfig?.extra?.EXPO_PUBLIC_BACKEND_URL;
   const envUrl = process.env.EXPO_PUBLIC_BACKEND_URL;
-  return configUrl || envUrl || '';
+  const url = configUrl || envUrl || '';
+  console.log('InterviewChecklist BACKEND_URL:', url);
+  return url;
 };
-
-const BACKEND_URL = getBackendUrl();
 
 const InterviewChecklist: React.FC<InterviewChecklistProps> = ({
   visible,
