@@ -139,12 +139,14 @@ export default function TabsLayout() {
           options={{
             title: '',
             tabBarIcon: () => null,
-            tabBarButton: () => (
+            tabBarButton: (props) => (
               <TouchableOpacity
-                style={[styles.addButton, { backgroundColor: colors.primary }]}
+                style={styles.addButtonContainer}
                 onPress={handleAddJob}
               >
-                <Ionicons name="add" size={28} color="white" />
+                <View style={[styles.addButton, { backgroundColor: colors.primary }]}>
+                  <Ionicons name="add" size={26} color="white" />
+                </View>
               </TouchableOpacity>
             ),
           }}
