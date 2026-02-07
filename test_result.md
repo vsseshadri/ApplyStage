@@ -419,8 +419,13 @@ metadata:
   run_ui: false
 
 test_plan:
-  current_focus: []
-  stuck_tasks: []
+  current_focus:
+    - "Tab navigation with 4 tabs"
+    - "Authentication flow with Emergent Google Login"
+    - "Dashboard with charts and statistics"
+    - "Interview checklist popup feature"
+  stuck_tasks:
+    - "Tab navigation with 4 tabs"
   test_all: false
   test_priority: "high_first"
 
