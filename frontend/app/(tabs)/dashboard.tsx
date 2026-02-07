@@ -1133,6 +1133,22 @@ export default function DashboardScreen() {
           <View style={{ height: 40 }} />
         </ScrollView>
       )}
+      
+      {/* Interview Checklist Modal */}
+      {selectedInterview && (
+        <InterviewChecklist
+          visible={checklistVisible}
+          onClose={() => {
+            setChecklistVisible(false);
+            setSelectedInterview(null);
+          }}
+          stage={selectedInterview.stage}
+          company={selectedInterview.company}
+          daysUntil={selectedInterview.daysUntil}
+          colors={colors}
+          sessionToken={sessionToken || ''}
+        />
+      )}
     </SafeAreaView>
   );
 }
