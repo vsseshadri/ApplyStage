@@ -719,6 +719,7 @@ export default function DashboardScreen() {
               };
               
               const handleOpenChecklist = () => {
+                console.log('[Dashboard] Opening checklist for:', interview.company_name, interview.stage, interview.job_id);
                 setSelectedInterview({
                   stage: interview.stage,
                   company: interview.company_name,
