@@ -251,14 +251,11 @@ const InterviewChecklist: React.FC<InterviewChecklistProps> = ({
             </TouchableOpacity>
           </View>
 
-          {/* Divider */}
+          {/* Divider - reduced spacing */}
           <View style={[styles.divider, { backgroundColor: colors.border }]} />
 
-          {/* Title */}
-          <View style={styles.titleRow}>
-            <Ionicons name="checkbox-outline" size={20} color={colors.primary} />
-            <Text style={[styles.title, { color: colors.text }]}>Suggested Prep Checklist</Text>
-          </View>
+          {/* Title - left aligned, no icon */}
+          <Text style={[styles.title, { color: colors.text }]}>Suggested Prep Checklist</Text>
 
           {/* Content */}
           {loading ? (
