@@ -25,9 +25,9 @@ const getBackendUrl = (): string => {
     return envUrl;
   }
   
-  // Priority 3: For development only - use the current session URL
+  // Priority 3: For development only - use the production URL
   if (__DEV__) {
-    return 'https://launchready-4.preview.emergentagent.com';
+    return 'https://repo-preview-43.emergent.host';
   }
   
   // For production builds without a configured URL, return empty string
