@@ -47,7 +47,6 @@ const InterviewChecklist: React.FC<InterviewChecklistProps> = ({
   const [items, setItems] = useState<ChecklistItem[]>([]);
   const [completedItems, setCompletedItems] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
 
   const BACKEND_URL = getBackendUrl();
 
@@ -59,11 +58,9 @@ const InterviewChecklist: React.FC<InterviewChecklistProps> = ({
 
   const fetchChecklist = async () => {
     setLoading(true);
-    setError(null);
     
     try {
       // Use the upcoming-interviews endpoint with query params for checklist
-      // This works around the proxy caching issue for new routes
       const url = `${BACKEND_URL}/api/dashboard/upcoming-interviews?include_checklist=true&checklist_stage=${encodeURIComponent(stage)}&checklist_company=${encodeURIComponent(company || '')}`;
       console.log('[Checklist] Fetching from:', url);
       
@@ -74,72 +71,120 @@ const InterviewChecklist: React.FC<InterviewChecklistProps> = ({
         }
       });
       
-      console.log('[Checklist] Response status:', response.status);
-      
       if (response.ok) {
         const data = await response.json();
-        console.log('[Checklist] Received data:', JSON.stringify(data).substring(0, 200));
         
         // Handle response with checklist included
         if (data.checklist && data.checklist.items && Array.isArray(data.checklist.items)) {
           setItems(data.checklist.items.slice(0, 5));
-        } else if (data.items && Array.isArray(data.items)) {
-          // Direct checklist response fallback
-          setItems(data.items.slice(0, 5));
         } else {
-          // If no checklist in response, it might be an array (old format) - generate fallback
-          console.log('[Checklist] No checklist in response, using fallback');
-          setItems(getFallbackChecklist(stage, company));
+          // Use comprehensive stage-specific fallback
+          console.log('[Checklist] Using stage-specific fallback for:', stage);
+          setItems(getStageSpecificChecklist(stage, company));
         }
       } else {
-        const errorText = await response.text();
-        console.log('[Checklist] Error response:', errorText);
-        setError(`Failed to load (${response.status})`);
+        // Use fallback on error
+        setItems(getStageSpecificChecklist(stage, company));
       }
     } catch (err) {
-      console.log('[Checklist] Fetch error:', err);
-      setError('Network error');
+      console.log('[Checklist] Fetch error, using fallback:', err);
+      setItems(getStageSpecificChecklist(stage, company));
     } finally {
       setLoading(false);
     }
   };
 
-  const getFallbackChecklist = (stg: string, comp: string): ChecklistItem[] => {
-    const baseItems: { [key: string]: ChecklistItem[] } = {
+  // Comprehensive stage-specific checklist items
+  const getStageSpecificChecklist = (stg: string, comp: string): ChecklistItem[] => {
+    const stageChecklists: { [key: string]: ChecklistItem[] } = {
+      // Recruiter Screening
+      recruiter_screening: [
+        { id: "rs1", text: "Prepare 60-second elevator pitch about yourself", category: "pitch" },
+        { id: "rs2", text: "Review job description and match your skills", category: "preparation" },
+        { id: "rs3", text: "Research company mission, values, and culture", category: "research" },
+        { id: "rs4", text: "Prepare salary expectations (check Glassdoor/Levels.fyi)", category: "compensation" },
+        { id: "rs5", text: "Have 3 questions ready about role and team", category: "questions" }
+      ],
+      // Phone Screen
       phone_screen: [
-        { id: "ps1", text: "Review your resume highlights", category: "preparation" },
-        { id: "ps2", text: "Prepare 'why this company' answer", category: "pitch" },
-        { id: "ps3", text: "Research recent company news", category: "research" },
-        { id: "ps4", text: "Have specific examples ready", category: "stories" },
-        { id: "ps5", text: "Prepare thoughtful questions", category: "questions" }
+        { id: "ps1", text: "Review your resume - be ready to discuss any point", category: "preparation" },
+        { id: "ps2", text: "Prepare 'Why this company?' and 'Why this role?' answers", category: "pitch" },
+        { id: "ps3", text: "Research recent company news and announcements", category: "research" },
+        { id: "ps4", text: "Have 3-4 STAR stories ready (Situation, Task, Action, Result)", category: "stories" },
+        { id: "ps5", text: "Test your phone/video setup in a quiet space", category: "preparation" }
       ],
+      // Technical Screen
       technical_screen: [
-        { id: "ts1", text: "Review core data structures", category: "technical" },
-        { id: "ts2", text: "Practice coding problems aloud", category: "practice" },
-        { id: "ts3", text: "Review your past projects", category: "preparation" },
-        { id: "ts4", text: "Explain your thought process", category: "communication" },
-        { id: "ts5", text: "Test your screen sharing", category: "preparation" }
+        { id: "ts1", text: "Review data structures: arrays, trees, graphs, hash maps", category: "technical" },
+        { id: "ts2", text: "Practice 2-3 LeetCode medium problems with time limit", category: "practice" },
+        { id: "ts3", text: "Be ready to explain your thought process out loud", category: "communication" },
+        { id: "ts4", text: "Review Big O notation and complexity analysis", category: "technical" },
+        { id: "ts5", text: "Test screen sharing and coding environment", category: "preparation" }
       ],
-      behavioral: [
-        { id: "bh1", text: "Prepare 5 STAR format stories", category: "stories" },
-        { id: "bh2", text: "Practice conflict resolution examples", category: "stories" },
-        { id: "bh3", text: "Review leadership experiences", category: "stories" },
-        { id: "bh4", text: "Prepare failure and learning examples", category: "stories" },
-        { id: "bh5", text: "Research company culture", category: "research" }
-      ],
+      // System Design
       system_design: [
-        { id: "sd1", text: "Review system design fundamentals", category: "architecture" },
-        { id: "sd2", text: "Practice drawing diagrams", category: "practice" },
-        { id: "sd3", text: "Study scalability patterns", category: "technical" },
-        { id: "sd4", text: "Review database design", category: "technical" },
-        { id: "sd5", text: "Prepare capacity estimations", category: "optimization" }
+        { id: "sd1", text: "Review system design fundamentals (CAP theorem, scaling)", category: "architecture" },
+        { id: "sd2", text: "Practice designing: URL shortener, Twitter feed, Chat app", category: "practice" },
+        { id: "sd3", text: "Know trade-offs: SQL vs NoSQL, caching strategies", category: "technical" },
+        { id: "sd4", text: "Be ready for capacity estimation and back-of-envelope math", category: "optimization" },
+        { id: "sd5", text: "Prepare to discuss load balancing and database sharding", category: "architecture" }
+      ],
+      // Behavioral
+      behavioral: [
+        { id: "bh1", text: "Prepare 5 STAR stories: leadership, conflict, failure, success", category: "stories" },
+        { id: "bh2", text: "Have examples of cross-team collaboration", category: "stories" },
+        { id: "bh3", text: "Prepare a story about receiving difficult feedback", category: "stories" },
+        { id: "bh4", text: "Research company values - align your stories", category: "research" },
+        { id: "bh5", text: "Practice out loud - time yourself (2-3 min per story)", category: "practice" }
+      ],
+      // Hiring Manager
+      hiring_manager: [
+        { id: "hm1", text: "Research the hiring manager on LinkedIn", category: "research" },
+        { id: "hm2", text: "Prepare questions about team structure and goals", category: "questions" },
+        { id: "hm3", text: "Have a 30-60-90 day plan outline ready", category: "preparation" },
+        { id: "hm4", text: "Be ready to discuss your management/leadership style", category: "stories" },
+        { id: "hm5", text: "Prepare examples of mentoring or team building", category: "stories" }
+      ],
+      // Onsite
+      onsite: [
+        { id: "os1", text: "Get 8 hours of sleep the night before", category: "wellness" },
+        { id: "os2", text: "Review all interviewers on LinkedIn", category: "research" },
+        { id: "os3", text: "Prepare different questions for each interviewer", category: "questions" },
+        { id: "os4", text: "Plan your outfit and travel/login logistics", category: "preparation" },
+        { id: "os5", text: "Bring water, snacks, and copies of your resume", category: "preparation" }
+      ],
+      // Final Round
+      final_round: [
+        { id: "fr1", text: "Review feedback from previous rounds (if available)", category: "preparation" },
+        { id: "fr2", text: "Research executive team and company strategy", category: "research" },
+        { id: "fr3", text: "Prepare high-level vision for your contribution", category: "pitch" },
+        { id: "fr4", text: "Have thoughtful strategic questions ready", category: "questions" },
+        { id: "fr5", text: "Be prepared to discuss compensation expectations", category: "compensation" }
+      ],
+      // Offer Stage
+      offer: [
+        { id: "of1", text: "Research market rates on Levels.fyi, Glassdoor, Blind", category: "compensation" },
+        { id: "of2", text: "Ask about health insurance, dental, vision coverage", category: "compensation" },
+        { id: "of3", text: "Clarify 401k match percentage and vesting schedule", category: "compensation" },
+        { id: "of4", text: "Understand equity/RSU details: vesting, refresh grants", category: "compensation" },
+        { id: "of5", text: "Ask about PTO, remote work policy, signing bonus", category: "compensation" }
       ]
     };
+
+    // Get stage-specific items or default to phone_screen
+    let items = stageChecklists[stg] || stageChecklists.phone_screen;
     
-    let items = baseItems[stg] || baseItems.phone_screen;
+    // Add company-specific research item if company is provided
     if (comp) {
-      items = [{ id: "ctx1", text: `Research ${comp}'s recent news`, category: "research", company_specific: true }, ...items.slice(0, 4)];
+      const companyItem: ChecklistItem = { 
+        id: "ctx1", 
+        text: `Research ${comp}'s recent news, products, and culture`, 
+        category: "research", 
+        company_specific: true 
+      };
+      items = [companyItem, ...items.slice(0, 4)];
     }
+    
     return items;
   };
 
@@ -159,10 +204,15 @@ const InterviewChecklist: React.FC<InterviewChecklistProps> = ({
     return s.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
   };
 
+  // Fixed: Handle NaN and invalid daysUntil values
   const getUrgencyLabel = () => {
-    if (daysUntil === 0) return { text: 'TODAY', color: '#EF4444' };
-    if (daysUntil === 1) return { text: 'TOMORROW', color: '#F59E0B' };
-    return { text: `In ${daysUntil} days`, color: colors.primary };
+    const days = typeof daysUntil === 'number' && !isNaN(daysUntil) ? daysUntil : null;
+    
+    if (days === null) return { text: 'Upcoming', color: colors.primary };
+    if (days === 0) return { text: 'TODAY', color: '#EF4444' };
+    if (days === 1) return { text: 'TOMORROW', color: '#F59E0B' };
+    if (days < 0) return { text: 'Past Due', color: '#9CA3AF' };
+    return { text: `In ${days} days`, color: colors.primary };
   };
 
   const urgency = getUrgencyLabel();
@@ -202,10 +252,10 @@ const InterviewChecklist: React.FC<InterviewChecklistProps> = ({
           {/* Divider */}
           <View style={[styles.divider, { backgroundColor: colors.border }]} />
 
-          {/* Title */}
+          {/* Title - Changed from "AI Interview Prep Checklist" */}
           <View style={styles.titleRow}>
             <Ionicons name="checkbox-outline" size={20} color={colors.primary} />
-            <Text style={[styles.title, { color: colors.text }]}>AI Interview Prep Checklist</Text>
+            <Text style={[styles.title, { color: colors.text }]}>Suggested Prep Checklist</Text>
           </View>
 
           {/* Content */}
@@ -213,16 +263,8 @@ const InterviewChecklist: React.FC<InterviewChecklistProps> = ({
             <View style={styles.loadingContainer}>
               <ActivityIndicator size="large" color={colors.primary} />
               <Text style={[styles.loadingText, { color: colors.textSecondary }]}>
-                Generating personalized checklist...
+                Loading checklist...
               </Text>
-            </View>
-          ) : error ? (
-            <View style={styles.errorContainer}>
-              <Ionicons name="alert-circle" size={40} color="#EF4444" />
-              <Text style={[styles.errorText, { color: colors.textSecondary }]}>{error}</Text>
-              <TouchableOpacity style={[styles.retryBtn, { backgroundColor: colors.primary }]} onPress={fetchChecklist}>
-                <Text style={styles.retryText}>Retry</Text>
-              </TouchableOpacity>
             </View>
           ) : (
             <ScrollView style={styles.listContainer} showsVerticalScrollIndicator={false}>
@@ -264,7 +306,7 @@ const InterviewChecklist: React.FC<InterviewChecklistProps> = ({
           )}
 
           {/* Footer */}
-          {!loading && !error && items.length > 0 && (
+          {!loading && items.length > 0 && (
             <View style={[styles.footer, { borderTopColor: colors.border }]}>
               <Text style={[styles.progressText, { color: colors.textSecondary }]}>
                 {completedCount}/{totalCount} completed
@@ -362,24 +404,6 @@ const styles = StyleSheet.create({
   loadingText: {
     fontSize: 14,
     textAlign: 'center',
-  },
-  errorContainer: {
-    paddingVertical: 30,
-    alignItems: 'center',
-    gap: 12,
-  },
-  errorText: {
-    fontSize: 14,
-    textAlign: 'center',
-  },
-  retryBtn: {
-    paddingHorizontal: 20,
-    paddingVertical: 10,
-    borderRadius: 8,
-  },
-  retryText: {
-    color: 'white',
-    fontWeight: '600',
   },
   listContainer: {
     maxHeight: 300,
