@@ -74,6 +74,61 @@ const formatLocationWithAbbr = (location: string): string => {
   return location;
 };
 
+// Consolidate insights by company to avoid duplicate company cards
+const consolidateInsightsByCompany = (insights: any[]): any[] => {
+  const companyInsightsMap = new Map<string, any>();
+  const nonCompanyInsights: any[] = [];
+  
+  for (const insight of insights) {
+    const text = insight.text || insight;
+    
+    // Try to extract company name from insight text
+    // Look for patterns like "at CompanyName", "CompanyName -", etc.
+    const companyMatch = text.match(/(?:at|for|from|@)\s+([A-Z][A-Za-z0-9\s&.]+?)(?:\s*[-—:]|\s+is|\s+has|\s+needs|\s*$)/i) ||
+                         text.match(/^([A-Z][A-Za-z0-9\s&.]+?)(?:\s*[-—:])/);
+    
+    if (companyMatch && companyMatch[1]) {
+      const companyName = companyMatch[1].trim();
+      
+      if (companyInsightsMap.has(companyName)) {
+        // Consolidate: append this insight's text to existing company card
+        const existing = companyInsightsMap.get(companyName);
+        existing.consolidatedTexts = existing.consolidatedTexts || [existing.text];
+        existing.consolidatedTexts.push(text);
+        // Keep highest priority (lowest number)
+        if (insight.priority < existing.priority) {
+          existing.icon = insight.icon;
+          existing.color = insight.color;
+          existing.type = insight.type;
+          existing.priority = insight.priority;
+        }
+      } else {
+        companyInsightsMap.set(companyName, {
+          ...insight,
+          company: companyName,
+          consolidatedTexts: [text]
+        });
+      }
+    } else {
+      // Not company-specific, keep as is
+      nonCompanyInsights.push(insight);
+    }
+  }
+  
+  // Convert map back to array and combine with non-company insights
+  const consolidatedCompanyInsights = Array.from(companyInsightsMap.values()).map(insight => {
+    // If multiple texts, join them
+    if (insight.consolidatedTexts && insight.consolidatedTexts.length > 1) {
+      insight.text = insight.consolidatedTexts.join(' • ');
+    }
+    return insight;
+  });
+  
+  // Sort by priority and return
+  return [...consolidatedCompanyInsights, ...nonCompanyInsights]
+    .sort((a, b) => (a.priority || 99) - (b.priority || 99));
+};
+
 export default function DashboardScreen() {
   const { user, sessionToken, isNewUser } = useAuth();
   const { colors, isDark } = useTheme();
