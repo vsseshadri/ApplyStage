@@ -240,7 +240,10 @@ export default function DashboardScreen() {
 
       if (insightsRes.ok) {
         const insightsData = await insightsRes.json();
-        setInsights(insightsData.insights || []);
+        // Consolidate insights by company name to avoid duplicate company cards
+        const rawInsights = insightsData.insights || [];
+        const consolidatedInsights = consolidateInsightsByCompany(rawInsights);
+        setInsights(consolidatedInsights);
         setFollowUps(insightsData.follow_ups || []);
       }
 
