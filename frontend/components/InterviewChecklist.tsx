@@ -252,12 +252,6 @@ const InterviewChecklist: React.FC<InterviewChecklistProps> = ({
           {/* Divider */}
           <View style={[styles.divider, { backgroundColor: colors.border }]} />
 
-          {/* Title - Changed from "AI Interview Prep Checklist" */}
-          <View style={styles.titleRow}>
-            <Ionicons name="checkbox-outline" size={20} color={colors.primary} />
-            <Text style={[styles.title, { color: colors.text }]}>Suggested Prep Checklist</Text>
-          </View>
-
           {/* Content */}
           {loading ? (
             <View style={styles.loadingContainer}>
@@ -271,7 +265,7 @@ const InterviewChecklist: React.FC<InterviewChecklistProps> = ({
               {items.map((item, index) => (
                 <TouchableOpacity
                   key={item.id}
-                  style={[styles.checkItem, { borderBottomColor: colors.border }]}
+                  style={styles.checkItem}
                   onPress={() => toggleItem(item.id)}
                   activeOpacity={0.7}
                 >
