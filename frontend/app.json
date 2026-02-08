@@ -83,7 +83,7 @@
     },
     "extra": {
       "appName": "CareerFlow",
-      "EXPO_PUBLIC_BACKEND_URL": "https://launchready-4.preview.emergentagent.com"
+      "EXPO_PUBLIC_BACKEND_URL": "https://repo-preview-43.emergent.host"
     }
   }
 }
