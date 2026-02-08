@@ -292,7 +292,7 @@ const InterviewChecklist: React.FC<InterviewChecklistProps> = ({
                       { color: colors.text },
                       completedItems.has(item.id) && styles.checkedText
                     ]}>
-                      {index + 1}. {item.text}
+                      {item.text}
                     </Text>
                     {item.company_specific && (
                       <View style={[styles.companyTag, { backgroundColor: colors.primary + '15' }]}>
