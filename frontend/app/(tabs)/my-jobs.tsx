@@ -1141,8 +1141,8 @@ export default function MyJobsScreen() {
     setFormData({
       company_name: job.company_name,
       position: job.position,
-      min_salary: job.salary_range.min.toString(),
-      max_salary: job.salary_range.max.toString(),
+      min_salary: job.salary_range.min > 0 ? job.salary_range.min.toString() : '',
+      max_salary: job.salary_range.max > 0 ? job.salary_range.max.toString() : '',
       work_mode: job.work_mode,
       job_url: job.job_url || '',
       recruiter_email: job.recruiter_email || '',
