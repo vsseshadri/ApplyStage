@@ -405,8 +405,7 @@ const styles = StyleSheet.create({
   checkItem: {
     flexDirection: 'row',
     alignItems: 'flex-start',
-    paddingVertical: 12,
-    borderBottomWidth: 1,
+    paddingVertical: 10,
   },
   checkbox: {
     width: 22,
