@@ -204,14 +204,14 @@ const InterviewChecklist: React.FC<InterviewChecklistProps> = ({
     return s.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
   };
 
-  // Fixed: Handle NaN and invalid daysUntil values
+  // Fixed: Handle NaN and invalid daysUntil values - return null to hide badge entirely
   const getUrgencyLabel = () => {
     const days = typeof daysUntil === 'number' && !isNaN(daysUntil) ? daysUntil : null;
     
-    if (days === null) return { text: 'Upcoming', color: colors.primary };
+    if (days === null) return null; // Don't show badge if no valid date
     if (days === 0) return { text: 'TODAY', color: '#EF4444' };
     if (days === 1) return { text: 'TOMORROW', color: '#F59E0B' };
-    if (days < 0) return { text: 'Past Due', color: '#9CA3AF' };
+    if (days < 0) return null; // Don't show badge for past dates
     return { text: `In ${days} days`, color: colors.primary };
   };
 
