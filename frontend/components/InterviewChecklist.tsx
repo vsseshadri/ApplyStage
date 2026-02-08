@@ -240,9 +240,11 @@ const InterviewChecklist: React.FC<InterviewChecklistProps> = ({
               <Text style={[styles.stageName, { color: colors.textSecondary }]}>
                 {formatStageName(stage)} Interview
               </Text>
-              <View style={[styles.urgencyBadge, { backgroundColor: urgency.color + '20' }]}>
-                <Text style={[styles.urgencyText, { color: urgency.color }]}>{urgency.text}</Text>
-              </View>
+              {urgency && (
+                <View style={[styles.urgencyBadge, { backgroundColor: urgency.color + '20' }]}>
+                  <Text style={[styles.urgencyText, { color: urgency.color }]}>{urgency.text}</Text>
+                </View>
+              )}
             </View>
             <TouchableOpacity onPress={onClose} style={styles.closeBtn}>
               <Ionicons name="close-circle" size={28} color={colors.textSecondary} />
@@ -251,6 +253,12 @@ const InterviewChecklist: React.FC<InterviewChecklistProps> = ({
 
           {/* Divider */}
           <View style={[styles.divider, { backgroundColor: colors.border }]} />
+
+          {/* Title */}
+          <View style={styles.titleRow}>
+            <Ionicons name="checkbox-outline" size={20} color={colors.primary} />
+            <Text style={[styles.title, { color: colors.text }]}>Suggested Prep Checklist</Text>
+          </View>
 
           {/* Content */}
           {loading ? (
