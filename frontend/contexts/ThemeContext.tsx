@@ -38,6 +38,7 @@ const lightColors: ThemeColors = {
   inputBackground: '#FFFFFF',
   inputText: '#1A1A1A',
   inputBorder: '#E5E5EA',
+  error: '#EF4444',
 };
 
 const darkColors: ThemeColors = {
@@ -52,6 +53,7 @@ const darkColors: ThemeColors = {
   inputBackground: '#2C2C2E',
   inputText: '#FFFFFF',
   inputBorder: '#48484A',
+  error: '#EF4444',
 };
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
