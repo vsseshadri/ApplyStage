@@ -27,7 +27,7 @@ const getBackendUrl = (): string => {
   
   // Priority 3: For development only - use fallback
   if (__DEV__) {
-    return 'https://apptracker-19.preview.emergentagent.com';
+    return 'https://repo-preview-43.emergent.host';
   }
   
   // For production builds without a configured URL, return empty string
