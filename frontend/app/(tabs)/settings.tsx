@@ -43,10 +43,58 @@ export default function SettingsScreen() {
   // Settings state
   const [twoFactorEnabled, setTwoFactorEnabled] = useState(false);
   const [biometricType, setBiometricType] = useState<string>('Biometrics');
+  
+  // Target Goals state
+  const [weeklyTarget, setWeeklyTarget] = useState<string>('10');
+  const [monthlyTarget, setMonthlyTarget] = useState<string>('40');
+  const [savingTargets, setSavingTargets] = useState(false);
 
   React.useEffect(() => {
     checkBiometricType();
+    fetchTargetGoals();
   }, []);
+
+  // Fetch target goals from backend
+  const fetchTargetGoals = async () => {
+    try {
+      const response = await fetch(`${BACKEND_URL}/api/user/target-goals`, {
+        headers: { 'Authorization': `Bearer ${sessionToken}` }
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setWeeklyTarget(data.weekly_target?.toString() || '10');
+        setMonthlyTarget(data.monthly_target?.toString() || '40');
+      }
+    } catch (error) {
+      console.log('Error fetching target goals:', error);
+    }
+  };
+
+  // Save target goals to backend
+  const saveTargetGoals = async () => {
+    setSavingTargets(true);
+    try {
+      const response = await fetch(`${BACKEND_URL}/api/user/target-goals`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${sessionToken}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          weekly_target: parseInt(weeklyTarget) || 10,
+          monthly_target: parseInt(monthlyTarget) || 40
+        })
+      });
+      if (response.ok) {
+        Alert.alert('Success', 'Target goals updated successfully');
+      }
+    } catch (error) {
+      console.log('Error saving target goals:', error);
+      Alert.alert('Error', 'Failed to save target goals');
+    } finally {
+      setSavingTargets(false);
+    }
+  };
 
   // Update editing state when user data loads
   React.useEffect(() => {
