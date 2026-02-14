@@ -411,6 +411,108 @@ async def apple_auth(auth_data: AppleAuthRequest):
         logging.error(f"Apple auth error: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Authentication failed: {str(e)}")
 
+# Target Goals endpoints
+@api_router.get("/user/target-goals")
+async def get_target_goals(current_user: User = Depends(get_current_user)):
+    """Get user's application target goals"""
+    user_doc = await db.users.find_one(
+        {"user_id": current_user.user_id},
+        {"_id": 0, "target_goals": 1}
+    )
+    
+    # Default targets if not set
+    default_targets = {"weekly_target": 10, "monthly_target": 40}
+    
+    if user_doc and "target_goals" in user_doc:
+        return user_doc["target_goals"]
+    return default_targets
+
+@api_router.put("/user/target-goals")
+async def update_target_goals(goals: TargetGoalsUpdate, current_user: User = Depends(get_current_user)):
+    """Update user's application target goals"""
+    update_data = {}
+    if goals.weekly_target is not None:
+        update_data["target_goals.weekly_target"] = goals.weekly_target
+    if goals.monthly_target is not None:
+        update_data["target_goals.monthly_target"] = goals.monthly_target
+    
+    if update_data:
+        await db.users.update_one(
+            {"user_id": current_user.user_id},
+            {"$set": update_data}
+        )
+    
+    # Return updated goals
+    return await get_target_goals(current_user)
+
+@api_router.get("/dashboard/target-progress")
+async def get_target_progress(current_user: User = Depends(get_current_user)):
+    """Get user's progress towards target goals"""
+    from datetime import datetime, timedelta
+    
+    # Get target goals
+    user_doc = await db.users.find_one(
+        {"user_id": current_user.user_id},
+        {"_id": 0, "target_goals": 1}
+    )
+    targets = user_doc.get("target_goals", {"weekly_target": 10, "monthly_target": 40}) if user_doc else {"weekly_target": 10, "monthly_target": 40}
+    
+    # Calculate date ranges
+    now = datetime.now()
+    
+    # Weekly: Start from Monday of current week
+    days_since_monday = now.weekday()
+    week_start = (now - timedelta(days=days_since_monday)).replace(hour=0, minute=0, second=0, microsecond=0)
+    
+    # Monthly: Start from 1st of current month
+    month_start = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+    
+    # Count applications this week
+    weekly_count = await db.job_applications.count_documents({
+        "user_id": current_user.user_id,
+        "created_at": {"$gte": week_start}
+    })
+    
+    # Count applications this month
+    monthly_count = await db.job_applications.count_documents({
+        "user_id": current_user.user_id,
+        "created_at": {"$gte": month_start}
+    })
+    
+    # Calculate percentages
+    weekly_target = targets.get("weekly_target", 10)
+    monthly_target = targets.get("monthly_target", 40)
+    
+    weekly_percentage = min(100, round((weekly_count / weekly_target) * 100)) if weekly_target > 0 else 0
+    monthly_percentage = min(100, round((monthly_count / monthly_target) * 100)) if monthly_target > 0 else 0
+    
+    # Generate motivational message
+    overall_percentage = (weekly_percentage + monthly_percentage) / 2
+    if overall_percentage >= 100:
+        message = "🎉 Outstanding! You've exceeded your targets!"
+    elif overall_percentage >= 75:
+        message = "🔥 You're on fire! Almost at your goal!"
+    elif overall_percentage >= 50:
+        message = "💪 Great progress! Keep the momentum going!"
+    elif overall_percentage >= 25:
+        message = "🚀 Good start! You're building momentum!"
+    else:
+        message = "✨ Every application counts! Let's get started!"
+    
+    return {
+        "weekly": {
+            "current": weekly_count,
+            "target": weekly_target,
+            "percentage": weekly_percentage
+        },
+        "monthly": {
+            "current": monthly_count,
+            "target": monthly_target,
+            "percentage": monthly_percentage
+        },
+        "message": message
+    }
+
 @api_router.get("/jobs")
 async def get_jobs(
     current_user: User = Depends(get_current_user),
