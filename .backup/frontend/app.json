@@ -50,7 +50,7 @@
       "typedRoutes": true
     },
     "extra": {
-      "EXPO_PUBLIC_BACKEND_URL": "https://launchready-4.preview.emergentagent.com"
+      "EXPO_PUBLIC_BACKEND_URL": "https://apptracker-19.preview.emergentagent.com"
     }
   }
 }

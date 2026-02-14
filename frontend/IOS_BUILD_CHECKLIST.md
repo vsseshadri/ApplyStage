@@ -13,7 +13,7 @@ The most important step - update the backend URL in `app.json`:
 }
 ```
 
-**⚠️ WARNING**: The current URL (`https://launchready-4.preview.emergentagent.com`) is a development URL and will NOT work in production. You MUST replace it with your actual production backend URL.
+**⚠️ WARNING**: The current URL (`https://apptracker-19.preview.emergentagent.com`) is a development URL and will NOT work in production. You MUST replace it with your actual production backend URL.
 
 ### 2. Verify Backend is Running
 Before building, ensure your production backend is:
