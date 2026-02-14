@@ -349,12 +349,6 @@ const styles = StyleSheet.create({
     height: 1,
     marginVertical: 10,
   },
-  titleRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    marginBottom: 16,
-  },
   title: {
     fontSize: 15,
     fontWeight: '600',
@@ -371,6 +365,22 @@ const styles = StyleSheet.create({
   },
   listContainer: {
     maxHeight: 300,
+  },
+  listItem: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    paddingVertical: 8,
+  },
+  listItemNumber: {
+    fontSize: 14,
+    fontWeight: '600',
+    marginRight: 8,
+    minWidth: 20,
+  },
+  listItemText: {
+    fontSize: 14,
+    lineHeight: 20,
+    flex: 1,
   },
   checkItem: {
     flexDirection: 'row',
