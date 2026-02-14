@@ -644,9 +644,6 @@ export default function SettingsScreen() {
       paddingVertical: 8,
       paddingHorizontal: 4,
     },
-    saveTargetButtonDisabled: {
-      opacity: 0.6,
-    },
     
     // Email field styles
     emailFieldContainer: {
