@@ -2352,34 +2352,54 @@ export default function MyJobsScreen() {
                 </TouchableOpacity>
               </View>
 
-              {/* State and City - Custom Dropdowns */}
+              {/* Work Mode - Moved after Position Type */}
               <View style={dynamicStyles.formSection}>
-                <Text style={dynamicStyles.label}>Location *</Text>
-                <View style={dynamicStyles.locationRow}>
-                  {/* State Dropdown Button */}
-                  <TouchableOpacity 
-                    style={dynamicStyles.dropdownButton}
-                    onPress={() => setShowStateDropdown(true)}
-                  >
-                    <Text style={[dynamicStyles.dropdownButtonText, !selectedState && dynamicStyles.dropdownPlaceholder]}>
-                      {selectedState || `Select ${stateLabel}`}
-                    </Text>
-                    <Ionicons name="chevron-down" size={20} color={colors.textSecondary} />
-                  </TouchableOpacity>
-
-                  {/* City Dropdown Button */}
-                  <TouchableOpacity 
-                    style={[dynamicStyles.dropdownButton, !selectedState && dynamicStyles.dropdownDisabled]}
-                    onPress={() => selectedState && setShowCityDropdown(true)}
-                    disabled={!selectedState}
-                  >
-                    <Text style={[dynamicStyles.dropdownButtonText, !selectedCity && dynamicStyles.dropdownPlaceholder]}>
-                      {selectedCity || 'Select City'}
-                    </Text>
-                    <Ionicons name="chevron-down" size={20} color={colors.textSecondary} />
-                  </TouchableOpacity>
+                <Text style={dynamicStyles.label}>Work Mode *</Text>
+                <View style={dynamicStyles.workModeContainer}>
+                  {WORK_MODES.map((mode) => (
+                    <TouchableOpacity
+                      key={mode}
+                      style={[dynamicStyles.workModeButton, formData.work_mode === mode && dynamicStyles.workModeButtonSelected]}
+                      onPress={() => setFormData({ ...formData, work_mode: mode })}
+                    >
+                      <Text style={[dynamicStyles.workModeButtonText, formData.work_mode === mode && dynamicStyles.workModeButtonTextSelected]}>
+                        {formatWorkMode(mode)}
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
                 </View>
               </View>
+
+              {/* State and City - Only visible when Work Mode is NOT Remote */}
+              {formData.work_mode !== 'remote' && (
+                <View style={dynamicStyles.formSection}>
+                  <Text style={dynamicStyles.label}>Location {formData.work_mode !== 'remote' ? '*' : ''}</Text>
+                  <View style={dynamicStyles.locationRow}>
+                    {/* State Dropdown Button */}
+                    <TouchableOpacity 
+                      style={dynamicStyles.dropdownButton}
+                      onPress={() => setShowStateDropdown(true)}
+                    >
+                      <Text style={[dynamicStyles.dropdownButtonText, !selectedState && dynamicStyles.dropdownPlaceholder]}>
+                        {selectedState || `Select ${stateLabel}`}
+                      </Text>
+                      <Ionicons name="chevron-down" size={20} color={colors.textSecondary} />
+                    </TouchableOpacity>
+
+                    {/* City Dropdown Button - Now optional */}
+                    <TouchableOpacity 
+                      style={[dynamicStyles.dropdownButton, !selectedState && dynamicStyles.dropdownDisabled]}
+                      onPress={() => selectedState && setShowCityDropdown(true)}
+                      disabled={!selectedState}
+                    >
+                      <Text style={[dynamicStyles.dropdownButtonText, !selectedCity && dynamicStyles.dropdownPlaceholder]}>
+                        {selectedCity || 'City (Optional)'}
+                      </Text>
+                      <Ionicons name="chevron-down" size={20} color={colors.textSecondary} />
+                    </TouchableOpacity>
+                  </View>
+                </View>
+              )}
 
               {/* Date Applied - Calendar Modal Date Picker */}
               <View style={dynamicStyles.formSection}>
@@ -2405,24 +2425,6 @@ export default function MyJobsScreen() {
                   maxDate={new Date()}
                   colors={colors}
                 />
-              </View>
-
-              {/* Work Mode */}
-              <View style={dynamicStyles.formSection}>
-                <Text style={dynamicStyles.label}>Work Mode *</Text>
-                <View style={dynamicStyles.workModeContainer}>
-                  {WORK_MODES.map((mode) => (
-                    <TouchableOpacity
-                      key={mode}
-                      style={[dynamicStyles.workModeButton, formData.work_mode === mode && dynamicStyles.workModeButtonSelected]}
-                      onPress={() => setFormData({ ...formData, work_mode: mode })}
-                    >
-                      <Text style={[dynamicStyles.workModeButtonText, formData.work_mode === mode && dynamicStyles.workModeButtonTextSelected]}>
-                        {formatWorkMode(mode)}
-                      </Text>
-                    </TouchableOpacity>
-                  ))}
-                </View>
               </View>
 
               {/* Application Status with Dropdown + Custom Option */}
