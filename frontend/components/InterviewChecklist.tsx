@@ -268,46 +268,19 @@ const InterviewChecklist: React.FC<InterviewChecklistProps> = ({
           ) : (
             <ScrollView style={styles.listContainer} showsVerticalScrollIndicator={false}>
               {items.map((item, index) => (
-                <TouchableOpacity
-                  key={item.id}
-                  style={styles.checkItem}
-                  onPress={() => toggleItem(item.id)}
-                  activeOpacity={0.7}
-                >
-                  <View style={[
-                    styles.checkbox,
-                    { borderColor: completedItems.has(item.id) ? colors.primary : colors.border },
-                    completedItems.has(item.id) && { backgroundColor: colors.primary }
-                  ]}>
-                    {completedItems.has(item.id) && (
-                      <Ionicons name="checkmark" size={14} color="white" />
-                    )}
-                  </View>
-                  <View style={styles.checkItemContent}>
-                    <Text style={[
-                      styles.checkItemText,
-                      { color: colors.text },
-                      completedItems.has(item.id) && styles.checkedText
-                    ]}>
-                      {item.text}
-                    </Text>
-                    {item.company_specific && (
-                      <View style={[styles.companyTag, { backgroundColor: colors.primary + '15' }]}>
-                        <Text style={[styles.companyTagText, { color: colors.primary }]}>
-                          {company}-specific
-                        </Text>
-                      </View>
-                    )}
-                  </View>
-                </TouchableOpacity>
+                <View key={item.id} style={styles.listItem}>
+                  <Text style={[styles.listItemNumber, { color: colors.primary }]}>
+                    {index + 1}.
+                  </Text>
+                  <Text style={[styles.listItemText, { color: colors.text }]}>
+                    {item.text}
+                  </Text>
+                </View>
               ))}
             </ScrollView>
           )}
 
-          {/* Footer */}
-          {!loading && items.length > 0 && (
-            <View style={[styles.footer, { borderTopColor: colors.border }]}>
-              <Text style={[styles.progressText, { color: colors.textSecondary }]}>
+          {/* Footer removed - no longer tracking completion */}
                 {completedCount}/{totalCount} completed
               </Text>
               {completedCount === totalCount && (
