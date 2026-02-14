@@ -188,18 +188,6 @@ const InterviewChecklist: React.FC<InterviewChecklistProps> = ({
     return items;
   };
 
-  const toggleItem = (id: string) => {
-    setCompletedItems(prev => {
-      const newSet = new Set(prev);
-      if (newSet.has(id)) {
-        newSet.delete(id);
-      } else {
-        newSet.add(id);
-      }
-      return newSet;
-    });
-  };
-
   const formatStageName = (s: string): string => {
     return s.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
   };
@@ -216,8 +204,6 @@ const InterviewChecklist: React.FC<InterviewChecklistProps> = ({
   };
 
   const urgency = getUrgencyLabel();
-  const completedCount = completedItems.size;
-  const totalCount = items.length;
 
   if (!visible) return null;
 
