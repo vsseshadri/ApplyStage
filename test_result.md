@@ -270,6 +270,21 @@ backend:
         agent: "testing"
         comment: "✅ PASS - All checklist progress persistence endpoints working perfectly. GET /api/checklist-progress/{job_id}/{stage} returns empty completed_items for new jobs, PUT /api/checklist-progress successfully saves progress with job_id/stage/completed_items array, GET returns saved completed_items correctly. Tested persistence across different stages. Interview checklist endpoint GET /api/interview-checklist/{stage}?company={company} also working with proper company parameter handling. NOTE: Endpoints work perfectly on internal port but have routing issues via external URL due to ingress/proxy configuration - this is infrastructure issue, not backend code issue."
 
+  - task: "Target Goals functionality"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "Implemented target goals functionality with endpoints: PUT /api/preferences (with query params), GET/PUT /api/user/target-goals, GET /api/dashboard/target-progress, and integrated target_progress into /api/dashboard/stats"
+      - working: true
+        agent: "testing"
+        comment: "✅ PASS - All 12 target goals API tests PASSED (100% success rate). PUT /api/preferences?weekly_target=15&monthly_target=50 successfully saves target goals via query parameters. GET/PUT /api/user/target-goals endpoints working correctly with proper persistence verification. GET /api/dashboard/target-progress returns proper structure with weekly/monthly current/target/percentage and motivational message. GET /api/dashboard/stats correctly includes target_progress field with all required data. Fixed timedelta import issue in dashboard stats endpoint during testing. All target goals functionality is production-ready and working as specified in review request."
+
 frontend:
   - task: "Tab navigation with 4 tabs"
     implemented: true
