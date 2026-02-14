@@ -991,15 +991,11 @@ export default function SettingsScreen() {
 
         {/* Target Goals Section */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Application Target Goals</Text>
+          <Text style={styles.sectionTitle}>Application Goals</Text>
           <View style={styles.card}>
-            <Text style={styles.targetDescription}>
-              Set your weekly and monthly application targets to track your progress
-            </Text>
-            
             <View style={styles.targetRow}>
               <View style={styles.targetInputContainer}>
-                <Text style={styles.targetLabel}>Weekly Target</Text>
+                <Text style={styles.targetLabel}>Weekly</Text>
                 <TextInput
                   style={styles.targetInput}
                   value={weeklyTarget}
@@ -1012,7 +1008,7 @@ export default function SettingsScreen() {
               </View>
               
               <View style={styles.targetInputContainer}>
-                <Text style={styles.targetLabel}>Monthly Target</Text>
+                <Text style={styles.targetLabel}>Monthly</Text>
                 <TextInput
                   style={styles.targetInput}
                   value={monthlyTarget}
@@ -1023,17 +1019,17 @@ export default function SettingsScreen() {
                 />
                 <Text style={styles.targetUnit}>apps/month</Text>
               </View>
+              
+              <TouchableOpacity 
+                style={[styles.saveButton, savingTargets && styles.saveTargetButtonDisabled]}
+                onPress={saveTargetGoals}
+                disabled={savingTargets}
+              >
+                <Text style={styles.saveButtonText}>
+                  {savingTargets ? 'Saving...' : 'Save'}
+                </Text>
+              </TouchableOpacity>
             </View>
-            
-            <TouchableOpacity 
-              style={[styles.saveTargetButton, savingTargets && styles.saveTargetButtonDisabled]}
-              onPress={saveTargetGoals}
-              disabled={savingTargets}
-            >
-              <Text style={styles.saveTargetButtonText}>
-                {savingTargets ? 'Saving...' : 'Save Targets'}
-              </Text>
-            </TouchableOpacity>
           </View>
         </View>
 
