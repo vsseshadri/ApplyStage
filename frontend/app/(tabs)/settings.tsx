@@ -594,12 +594,6 @@ export default function SettingsScreen() {
     },
     
     // Target Goals styles
-    targetDescription: {
-      fontSize: 13,
-      color: colors.textSecondary,
-      marginBottom: 16,
-      lineHeight: 18,
-    },
     targetRow: {
       flexDirection: 'row',
       alignItems: 'center',
