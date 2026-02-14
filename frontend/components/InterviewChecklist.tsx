@@ -279,15 +279,6 @@ const InterviewChecklist: React.FC<InterviewChecklistProps> = ({
               ))}
             </ScrollView>
           )}
-
-          {/* Footer removed - no longer tracking completion */}
-                {completedCount}/{totalCount} completed
-              </Text>
-              {completedCount === totalCount && (
-                <Text style={styles.readyText}>You're ready! 🎉</Text>
-              )}
-            </View>
-          )}
         </View>
       </View>
     </Modal>
