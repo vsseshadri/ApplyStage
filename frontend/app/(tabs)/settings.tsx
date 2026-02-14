@@ -48,6 +48,7 @@ export default function SettingsScreen() {
   const [weeklyTarget, setWeeklyTarget] = useState<string>('10');
   const [monthlyTarget, setMonthlyTarget] = useState<string>('40');
   const [savingTargets, setSavingTargets] = useState(false);
+  const [isEditingTargets, setIsEditingTargets] = useState(true); // Start in edit mode until goals are fetched
 
   React.useEffect(() => {
     checkBiometricType();
