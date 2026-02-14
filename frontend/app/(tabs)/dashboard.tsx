@@ -297,11 +297,17 @@ export default function DashboardScreen() {
 
       if (statsRes.ok) {
         const statsData = await statsRes.json();
+        console.log('Dashboard stats response:', JSON.stringify(statsData, null, 2));
         setStats(statsData);
         // Target progress is now included in stats response
         if (statsData.target_progress) {
+          console.log('Setting target progress:', statsData.target_progress);
           setTargetProgress(statsData.target_progress);
+        } else {
+          console.log('No target_progress in response');
         }
+      } else {
+        console.log('Stats request failed:', statsRes.status);
       }
 
       if (insightsRes.ok) {
