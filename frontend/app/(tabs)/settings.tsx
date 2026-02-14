@@ -632,19 +632,8 @@ export default function SettingsScreen() {
       color: colors.textSecondary,
       marginTop: 4,
     },
-    saveTargetButton: {
-      backgroundColor: colors.primary,
-      borderRadius: 10,
-      paddingVertical: 12,
-      alignItems: 'center',
-    },
     saveTargetButtonDisabled: {
       opacity: 0.6,
-    },
-    saveTargetButtonText: {
-      color: 'white',
-      fontSize: 15,
-      fontWeight: '600',
     },
     
     // Email field styles
