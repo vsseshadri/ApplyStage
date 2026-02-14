@@ -756,7 +756,6 @@ async def get_dashboard_stats(current_user: User = Depends(get_current_user)):
     stats["last_10_days"] = recent_count
     
     # Include target progress in stats (to avoid new route issues)
-    from datetime import timedelta
     
     # Get target goals
     user_doc = await db.users.find_one(
