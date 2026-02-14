@@ -1220,7 +1220,8 @@ export default function MyJobsScreen() {
     console.log('Form Data on Submit:', formData);
     console.log('Position Value:', formData.position);
     
-    // Only Company Name, Position, Location (State & City), Date Applied, and Position Type are mandatory
+    // Only Company Name, Position, Date Applied, and Position Type are mandatory
+    // Location (State & City) is only mandatory if Work Mode is NOT Remote
     if (!formData.company_name.trim()) {
       Alert.alert('Error', 'Company Name is required');
       return;
@@ -1230,10 +1231,13 @@ export default function MyJobsScreen() {
       console.log('Position validation failed:', formData.position);
       return;
     }
-    if (!selectedState || !selectedCity) {
-      Alert.alert('Error', 'Location (State and City) is required');
+    
+    // Location validation - only required if Work Mode is not Remote
+    if (formData.work_mode !== 'remote' && !selectedState) {
+      Alert.alert('Error', 'State is required for non-remote positions');
       return;
     }
+    // City is always optional now
 
     // Date Applied is mandatory
     if (!dateAppliedText.trim()) {
