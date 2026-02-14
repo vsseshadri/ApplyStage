@@ -66,6 +66,7 @@ export default function SettingsScreen() {
         if (data.target_progress) {
           setWeeklyTarget(data.target_progress.weekly.target?.toString() || '10');
           setMonthlyTarget(data.target_progress.monthly.target?.toString() || '40');
+          setIsEditingTargets(false); // Show in view mode after fetching
         }
       }
     } catch (error) {
