@@ -54,16 +54,18 @@ export default function SettingsScreen() {
     fetchTargetGoals();
   }, []);
 
-  // Fetch target goals from backend
+  // Fetch target goals from backend (via dashboard stats which includes target_progress)
   const fetchTargetGoals = async () => {
     try {
-      const response = await fetch(`${BACKEND_URL}/api/user/target-goals`, {
+      const response = await fetch(`${BACKEND_URL}/api/dashboard/stats`, {
         headers: { 'Authorization': `Bearer ${sessionToken}` }
       });
       if (response.ok) {
         const data = await response.json();
-        setWeeklyTarget(data.weekly_target?.toString() || '10');
-        setMonthlyTarget(data.monthly_target?.toString() || '40');
+        if (data.target_progress) {
+          setWeeklyTarget(data.target_progress.weekly.target?.toString() || '10');
+          setMonthlyTarget(data.target_progress.monthly.target?.toString() || '40');
+        }
       }
     } catch (error) {
       console.log('Error fetching target goals:', error);
@@ -74,7 +76,7 @@ export default function SettingsScreen() {
   const saveTargetGoals = async () => {
     setSavingTargets(true);
     try {
-      const response = await fetch(`${BACKEND_URL}/api/user/target-goals`, {
+      const response = await fetch(`${BACKEND_URL}/api/preferences/extended`, {
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${sessionToken}`,
@@ -87,6 +89,8 @@ export default function SettingsScreen() {
       });
       if (response.ok) {
         Alert.alert('Success', 'Target goals updated successfully');
+      } else {
+        Alert.alert('Error', 'Failed to save target goals');
       }
     } catch (error) {
       console.log('Error saving target goals:', error);
