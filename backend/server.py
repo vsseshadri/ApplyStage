@@ -755,6 +755,57 @@ async def get_dashboard_stats(current_user: User = Depends(get_current_user)):
     
     stats["last_10_days"] = recent_count
     
+    # Include target progress in stats (to avoid new route issues)
+    from datetime import timedelta
+    
+    # Get target goals
+    user_doc = await db.users.find_one(
+        {"user_id": current_user.user_id},
+        {"_id": 0, "target_goals": 1}
+    )
+    targets = user_doc.get("target_goals", {"weekly_target": 10, "monthly_target": 40}) if user_doc else {"weekly_target": 10, "monthly_target": 40}
+    
+    # Calculate date ranges for target progress
+    now = datetime.now(timezone.utc)
+    days_since_monday = now.weekday()
+    week_start = (now - timedelta(days=days_since_monday)).replace(hour=0, minute=0, second=0, microsecond=0)
+    month_start = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+    
+    # Count applications this week and month
+    weekly_count = await db.job_applications.count_documents({
+        "user_id": current_user.user_id,
+        "created_at": {"$gte": week_start}
+    })
+    monthly_count = await db.job_applications.count_documents({
+        "user_id": current_user.user_id,
+        "created_at": {"$gte": month_start}
+    })
+    
+    # Calculate percentages
+    weekly_target = targets.get("weekly_target", 10)
+    monthly_target = targets.get("monthly_target", 40)
+    weekly_percentage = min(100, round((weekly_count / weekly_target) * 100)) if weekly_target > 0 else 0
+    monthly_percentage = min(100, round((monthly_count / monthly_target) * 100)) if monthly_target > 0 else 0
+    
+    # Generate motivational message
+    overall_percentage = (weekly_percentage + monthly_percentage) / 2
+    if overall_percentage >= 100:
+        message = "🎉 Outstanding! You've exceeded your targets!"
+    elif overall_percentage >= 75:
+        message = "🔥 You're on fire! Almost at your goal!"
+    elif overall_percentage >= 50:
+        message = "💪 Great progress! Keep the momentum going!"
+    elif overall_percentage >= 25:
+        message = "🚀 Good start! You're building momentum!"
+    else:
+        message = "✨ Every application counts! Let's get started!"
+    
+    stats["target_progress"] = {
+        "weekly": {"current": weekly_count, "target": weekly_target, "percentage": weekly_percentage},
+        "monthly": {"current": monthly_count, "target": monthly_target, "percentage": monthly_percentage},
+        "message": message
+    }
+    
     return stats
 
 @api_router.get("/dashboard/upcoming-interviews")
