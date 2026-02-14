@@ -924,6 +924,54 @@ export default function SettingsScreen() {
           </View>
         </View>
 
+        {/* Target Goals Section */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Application Target Goals</Text>
+          <View style={styles.card}>
+            <Text style={styles.targetDescription}>
+              Set your weekly and monthly application targets to track your progress
+            </Text>
+            
+            <View style={styles.targetRow}>
+              <View style={styles.targetInputContainer}>
+                <Text style={styles.targetLabel}>Weekly Target</Text>
+                <TextInput
+                  style={styles.targetInput}
+                  value={weeklyTarget}
+                  onChangeText={setWeeklyTarget}
+                  keyboardType="number-pad"
+                  placeholder="10"
+                  placeholderTextColor={colors.textSecondary}
+                />
+                <Text style={styles.targetUnit}>apps/week</Text>
+              </View>
+              
+              <View style={styles.targetInputContainer}>
+                <Text style={styles.targetLabel}>Monthly Target</Text>
+                <TextInput
+                  style={styles.targetInput}
+                  value={monthlyTarget}
+                  onChangeText={setMonthlyTarget}
+                  keyboardType="number-pad"
+                  placeholder="40"
+                  placeholderTextColor={colors.textSecondary}
+                />
+                <Text style={styles.targetUnit}>apps/month</Text>
+              </View>
+            </View>
+            
+            <TouchableOpacity 
+              style={[styles.saveTargetButton, savingTargets && styles.saveTargetButtonDisabled]}
+              onPress={saveTargetGoals}
+              disabled={savingTargets}
+            >
+              <Text style={styles.saveTargetButtonText}>
+                {savingTargets ? 'Saving...' : 'Save Targets'}
+              </Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+
         {/* Appearance Section */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Appearance</Text>
