@@ -917,53 +917,50 @@ export default function DashboardScreen() {
               )}
             </View>
 
-            {/* Two Column Layout for Work Mode and Position */}
-            <View style={dynamicStyles.tabletChartsRow}>
-              {/* Work Mode Chart - Compact */}
-              <View style={[dynamicStyles.section, { flex: 0.35, marginRight: 8 }]}>
-                <Text style={dynamicStyles.sectionTitle}>By Work Mode</Text>
+            {/* By Position Chart - Full Width and Bigger */}
+            {positionChartData.length > 0 && (
+              <View style={dynamicStyles.section}>
+                <Text style={dynamicStyles.sectionTitle}>By Position</Text>
                 <View style={dynamicStyles.chartCard}>
-                  {maxWorkModeValue > 0 ? (
-                    <View style={dynamicStyles.workModeContainerCompact}>
-                      {workModeBarData.map((item, index) => (
-                        <TouchableOpacity key={index} style={dynamicStyles.workModeRowCompact} onPress={() => handleWorkModePress(item.label.toLowerCase())} activeOpacity={0.7}>
-                          <View style={dynamicStyles.workModeBarWrapperCompact}>
-                            <View style={[dynamicStyles.workModeBar, { height: `${(item.value / maxWorkModeValue) * 100}%`, backgroundColor: item.frontColor }]} />
-                          </View>
-                          <Text style={dynamicStyles.workModeValueCompact}>{item.value}</Text>
-                          <Text style={dynamicStyles.workModeLabelCompact}>{item.label}</Text>
-                        </TouchableOpacity>
-                      ))}
+                  {positionChartData.map((item, index) => (
+                    <View key={index} style={dynamicStyles.barRow}>
+                      <Text style={dynamicStyles.barLabelWide} numberOfLines={1}>{item.label}</Text>
+                      <View style={dynamicStyles.barContainer}>
+                        <View style={[dynamicStyles.bar, { width: `${(item.value / maxPositionValue) * 100}%`, backgroundColor: item.color }]} />
+                      </View>
+                      <Text style={dynamicStyles.barValue}>{item.value}</Text>
                     </View>
-                  ) : (
-                    <View style={dynamicStyles.emptyChartSmall}>
-                      <Ionicons name="analytics-outline" size={32} color={colors.textSecondary} />
-                      <Text style={dynamicStyles.emptySubtext}>No work mode data</Text>
-                    </View>
-                  )}
+                  ))}
                 </View>
               </View>
+            )}
 
-              {/* Position Chart - Expanded */}
-              {positionChartData.length > 0 && (
-                <View style={[dynamicStyles.section, { flex: 0.65, marginLeft: 8 }]}>
-                  <Text style={dynamicStyles.sectionTitle}>By Position</Text>
-                  <View style={dynamicStyles.chartCard}>
-                    {positionChartData.map((item, index) => (
-                      <View key={index} style={dynamicStyles.barRow}>
-                        <Text style={dynamicStyles.barLabelWide} numberOfLines={1}>{item.label}</Text>
-                        <View style={dynamicStyles.barContainer}>
-                          <View style={[dynamicStyles.bar, { width: `${(item.value / maxPositionValue) * 100}%`, backgroundColor: item.color }]} />
+            {/* By Work Mode Chart - Below By Position */}
+            <View style={dynamicStyles.section}>
+              <Text style={dynamicStyles.sectionTitle}>By Work Mode</Text>
+              <View style={dynamicStyles.chartCard}>
+                {maxWorkModeValue > 0 ? (
+                  <View style={dynamicStyles.workModeContainerCompact}>
+                    {workModeBarData.map((item, index) => (
+                      <TouchableOpacity key={index} style={dynamicStyles.workModeRowCompact} onPress={() => handleWorkModePress(item.label.toLowerCase())} activeOpacity={0.7}>
+                        <View style={dynamicStyles.workModeBarWrapperCompact}>
+                          <View style={[dynamicStyles.workModeBar, { height: `${(item.value / maxWorkModeValue) * 100}%`, backgroundColor: item.frontColor }]} />
                         </View>
-                        <Text style={dynamicStyles.barValue}>{item.value}</Text>
-                      </View>
+                        <Text style={dynamicStyles.workModeValueCompact}>{item.value}</Text>
+                        <Text style={dynamicStyles.workModeLabelCompact}>{item.label}</Text>
+                      </TouchableOpacity>
                     ))}
                   </View>
-                </View>
-              )}
+                ) : (
+                  <View style={dynamicStyles.emptyChartSmall}>
+                    <Ionicons name="analytics-outline" size={32} color={colors.textSecondary} />
+                    <Text style={dynamicStyles.emptySubtext}>No work mode data</Text>
+                  </View>
+                )}
+              </View>
             </View>
 
-            {/* Location Chart */}
+            {/* Location Chart - Same styling as phone (donut chart) */}
             {pieChartData.length > 0 && (
               <View style={dynamicStyles.section}>
                 <Text style={dynamicStyles.sectionTitle}>By Location</Text>
