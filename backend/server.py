@@ -1692,10 +1692,24 @@ async def create_reminder(reminder_data: ReminderCreate, current_user: User = De
     return reminder
 
 @api_router.put("/preferences")
-async def update_preferences(preferences: UserPreferences, current_user: User = Depends(get_current_user)):
+async def update_preferences(
+    preferences: UserPreferences, 
+    current_user: User = Depends(get_current_user),
+    weekly_target: Optional[int] = None,
+    monthly_target: Optional[int] = None
+):
+    # Update basic preferences
+    update_dict = {"preferences": preferences.model_dump()}
+    
+    # Also update target goals if provided via query params
+    if weekly_target is not None:
+        update_dict["target_goals.weekly_target"] = weekly_target
+    if monthly_target is not None:
+        update_dict["target_goals.monthly_target"] = monthly_target
+    
     await db.users.update_one(
         {"user_id": current_user.user_id},
-        {"$set": {"preferences": preferences.model_dump()}}
+        {"$set": update_dict}
     )
     
     return {"message": "Preferences updated"}
