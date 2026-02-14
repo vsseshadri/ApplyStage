@@ -2096,4 +2096,61 @@ const createStyles = (colors: any, isDark: boolean) => StyleSheet.create({
     fontWeight: '600',
     marginTop: 4,
   },
+  // Target Progress Styles
+  targetProgressCard: {
+    backgroundColor: colors.card,
+    borderRadius: 12,
+    padding: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.08,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  targetMessage: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: colors.text,
+    textAlign: 'center',
+    marginBottom: 16,
+  },
+  targetProgressRow: {
+    flexDirection: 'row',
+    gap: 16,
+  },
+  targetProgressItem: {
+    flex: 1,
+  },
+  targetProgressHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  targetProgressLabel: {
+    fontSize: 13,
+    color: colors.textSecondary,
+    fontWeight: '500',
+  },
+  targetProgressPercent: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: colors.text,
+  },
+  targetProgressBarBg: {
+    height: 8,
+    backgroundColor: colors.border,
+    borderRadius: 4,
+    overflow: 'hidden',
+  },
+  targetProgressBarFill: {
+    height: '100%',
+    borderRadius: 4,
+  },
+  targetProgressCount: {
+    fontSize: 12,
+    color: colors.textSecondary,
+    textAlign: 'center',
+    marginTop: 6,
+  },
 });
