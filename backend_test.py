@@ -1,309 +1,406 @@
 #!/usr/bin/env python3
 """
-Backend API Testing for Checklist Progress Persistence
-Testing the new checklist progress endpoints and related functionality
+Backend API Testing for CareerFlow Target Goals Functionality
+Tests the target goals endpoints and dashboard integration
 """
 
-import requests
+import asyncio
+import httpx
 import json
-import sys
 from datetime import datetime
 
 # Configuration
-BASE_URL = "https://repo-preview-43.emergent.host"
+BASE_URL = "https://apptracker-19.preview.emergentagent.com"
 TEST_TOKEN = "test_token_abc123"
 HEADERS = {
     "Authorization": f"Bearer {TEST_TOKEN}",
     "Content-Type": "application/json"
 }
 
-def log_test(test_name, status, details=""):
-    """Log test results with timestamp"""
-    timestamp = datetime.now().strftime("%H:%M:%S")
-    status_symbol = "✅" if status == "PASS" else "❌" if status == "FAIL" else "⚠️"
-    print(f"[{timestamp}] {status_symbol} {test_name}: {status}")
-    if details:
-        print(f"    {details}")
+class TestResults:
+    def __init__(self):
+        self.tests = []
+        self.passed = 0
+        self.failed = 0
+    
+    def add_test(self, name, passed, details="", error=""):
+        self.tests.append({
+            "name": name,
+            "passed": passed,
+            "details": details,
+            "error": error,
+            "timestamp": datetime.now().isoformat()
+        })
+        if passed:
+            self.passed += 1
+        else:
+            self.failed += 1
+    
+    def print_summary(self):
+        print(f"\n{'='*60}")
+        print(f"TARGET GOALS API TEST RESULTS")
+        print(f"{'='*60}")
+        print(f"Total Tests: {len(self.tests)}")
+        print(f"Passed: {self.passed}")
+        print(f"Failed: {self.failed}")
+        print(f"Success Rate: {(self.passed/len(self.tests)*100):.1f}%" if self.tests else "0%")
+        print(f"{'='*60}")
+        
+        for test in self.tests:
+            status = "✅ PASS" if test["passed"] else "❌ FAIL"
+            print(f"{status} - {test['name']}")
+            if test["details"]:
+                print(f"    Details: {test['details']}")
+            if test["error"]:
+                print(f"    Error: {test['error']}")
+            print()
 
-def test_backend_connectivity():
+async def test_backend_connectivity():
     """Test basic backend connectivity"""
+    results = TestResults()
+    
     try:
-        response = requests.get(f"{BASE_URL}/api/auth/me", headers=HEADERS, timeout=10)
-        if response.status_code == 200:
-            user_data = response.json()
-            log_test("Backend Connectivity", "PASS", f"Connected as user: {user_data.get('email', 'Unknown')}")
-            return True
-        else:
-            log_test("Backend Connectivity", "FAIL", f"Status: {response.status_code}")
-            return False
-    except Exception as e:
-        log_test("Backend Connectivity", "FAIL", f"Error: {str(e)}")
-        return False
-
-def test_interview_checklist_endpoint():
-    """Test the interview checklist endpoint that previously had routing issues"""
-    try:
-        # Test different stages
-        stages = ["system_design", "phone_screen", "coding_round_1", "behavioural"]
-        
-        for stage in stages:
-            # Test without company parameter
-            response = requests.get(f"{BASE_URL}/api/interview-checklist/{stage}", headers=HEADERS, timeout=10)
-            if response.status_code == 200:
-                data = response.json()
-                if "title" in data and "items" in data:
-                    log_test(f"Interview Checklist - {stage}", "PASS", f"Returned {len(data['items'])} checklist items")
-                else:
-                    log_test(f"Interview Checklist - {stage}", "FAIL", "Missing required fields in response")
-                    return False
-            else:
-                log_test(f"Interview Checklist - {stage}", "FAIL", f"Status: {response.status_code}")
-                return False
+        async with httpx.AsyncClient(timeout=30.0) as client:
+            response = await client.get(f"{BASE_URL}/api/auth/me", headers=HEADERS)
             
-            # Test with company parameter
-            response = requests.get(f"{BASE_URL}/api/interview-checklist/{stage}?company=Google", headers=HEADERS, timeout=10)
             if response.status_code == 200:
-                data = response.json()
-                if "company" in data and data["company"] == "Google":
-                    log_test(f"Interview Checklist - {stage} with company", "PASS", "Company parameter handled correctly")
+                user_data = response.json()
+                results.add_test(
+                    "Backend Connectivity", 
+                    True, 
+                    f"Connected successfully. User: {user_data.get('email', 'Unknown')}"
+                )
+            else:
+                results.add_test(
+                    "Backend Connectivity", 
+                    False, 
+                    f"HTTP {response.status_code}: {response.text}"
+                )
+                
+    except Exception as e:
+        results.add_test("Backend Connectivity", False, error=str(e))
+    
+    return results
+
+async def test_preferences_endpoint():
+    """Test /api/preferences endpoint with query parameters for target goals"""
+    results = TestResults()
+    
+    try:
+        async with httpx.AsyncClient(timeout=30.0) as client:
+            # Test PUT /api/preferences with query parameters
+            url = f"{BASE_URL}/api/preferences?weekly_target=15&monthly_target=50"
+            body = {"weekly_email": True, "monthly_email": True}
+            
+            response = await client.put(url, headers=HEADERS, json=body)
+            
+            if response.status_code == 200:
+                results.add_test(
+                    "PUT /api/preferences with target goals", 
+                    True, 
+                    f"Successfully updated preferences with target goals. Response: {response.json()}"
+                )
+            elif response.status_code == 404:
+                results.add_test(
+                    "PUT /api/preferences with target goals", 
+                    False, 
+                    "Endpoint not found - /api/preferences endpoint may not be implemented",
+                    f"HTTP 404: {response.text}"
+                )
+            else:
+                results.add_test(
+                    "PUT /api/preferences with target goals", 
+                    False, 
+                    f"HTTP {response.status_code}: {response.text}"
+                )
+                
+    except Exception as e:
+        results.add_test("PUT /api/preferences with target goals", False, error=str(e))
+    
+    return results
+
+async def test_target_goals_endpoints():
+    """Test dedicated target goals endpoints"""
+    results = TestResults()
+    
+    try:
+        async with httpx.AsyncClient(timeout=30.0) as client:
+            
+            # Test 1: GET /api/user/target-goals (initial state)
+            response = await client.get(f"{BASE_URL}/api/user/target-goals", headers=HEADERS)
+            
+            if response.status_code == 200:
+                initial_goals = response.json()
+                results.add_test(
+                    "GET /api/user/target-goals (initial)", 
+                    True, 
+                    f"Retrieved initial target goals: {initial_goals}"
+                )
+            else:
+                results.add_test(
+                    "GET /api/user/target-goals (initial)", 
+                    False, 
+                    f"HTTP {response.status_code}: {response.text}"
+                )
+                return results
+            
+            # Test 2: PUT /api/user/target-goals
+            new_goals = {"weekly_target": 20, "monthly_target": 60}
+            response = await client.put(f"{BASE_URL}/api/user/target-goals", headers=HEADERS, json=new_goals)
+            
+            if response.status_code == 200:
+                updated_goals = response.json()
+                results.add_test(
+                    "PUT /api/user/target-goals", 
+                    True, 
+                    f"Successfully updated target goals: {updated_goals}"
+                )
+                
+                # Verify the update worked
+                if (updated_goals.get("weekly_target") == 20 and 
+                    updated_goals.get("monthly_target") == 60):
+                    results.add_test(
+                        "Target goals update verification", 
+                        True, 
+                        "Target goals were updated correctly"
+                    )
                 else:
-                    log_test(f"Interview Checklist - {stage} with company", "FAIL", "Company parameter not handled")
-                    return False
+                    results.add_test(
+                        "Target goals update verification", 
+                        False, 
+                        f"Expected weekly_target=20, monthly_target=60, got {updated_goals}"
+                    )
             else:
-                log_test(f"Interview Checklist - {stage} with company", "FAIL", f"Status: {response.status_code}")
-                return False
-        
-        return True
+                results.add_test(
+                    "PUT /api/user/target-goals", 
+                    False, 
+                    f"HTTP {response.status_code}: {response.text}"
+                )
+            
+            # Test 3: GET /api/user/target-goals (after update)
+            response = await client.get(f"{BASE_URL}/api/user/target-goals", headers=HEADERS)
+            
+            if response.status_code == 200:
+                final_goals = response.json()
+                results.add_test(
+                    "GET /api/user/target-goals (after update)", 
+                    True, 
+                    f"Retrieved updated target goals: {final_goals}"
+                )
+                
+                # Verify persistence
+                if (final_goals.get("weekly_target") == 20 and 
+                    final_goals.get("monthly_target") == 60):
+                    results.add_test(
+                        "Target goals persistence verification", 
+                        True, 
+                        "Target goals persisted correctly in database"
+                    )
+                else:
+                    results.add_test(
+                        "Target goals persistence verification", 
+                        False, 
+                        f"Target goals not persisted correctly: {final_goals}"
+                    )
+            else:
+                results.add_test(
+                    "GET /api/user/target-goals (after update)", 
+                    False, 
+                    f"HTTP {response.status_code}: {response.text}"
+                )
+                
     except Exception as e:
-        log_test("Interview Checklist Endpoint", "FAIL", f"Error: {str(e)}")
-        return False
+        results.add_test("Target Goals Endpoints", False, error=str(e))
+    
+    return results
 
-def test_checklist_progress_persistence():
-    """Test the new checklist progress persistence endpoints"""
+async def test_target_progress_endpoint():
+    """Test /api/dashboard/target-progress endpoint"""
+    results = TestResults()
+    
     try:
-        # Create a test job first to get a valid job_id
-        job_data = {
-            "company_name": "TestCompany",
-            "position": "Software Engineer",
-            "location": {"city": "San Francisco", "state": "California"},
-            "salary_range": {"min": 100000, "max": 150000},
-            "work_mode": "remote",
-            "job_type": "full_time",
-            "status": "applied",
-            "is_priority": True
-        }
-        
-        response = requests.post(f"{BASE_URL}/api/jobs", headers=HEADERS, json=job_data, timeout=10)
-        if response.status_code != 200:
-            log_test("Create Test Job for Checklist", "FAIL", f"Status: {response.status_code}")
-            return False
-        
-        job = response.json()
-        job_id = job["job_id"]
-        stage = "system_design"
-        
-        log_test("Create Test Job for Checklist", "PASS", f"Created job with ID: {job_id}")
-        
-        # Test 1: GET checklist progress for new job (should return empty)
-        response = requests.get(f"{BASE_URL}/api/checklist-progress/{job_id}/{stage}", headers=HEADERS, timeout=10)
-        if response.status_code == 200:
-            data = response.json()
-            if "completed_items" in data and data["completed_items"] == []:
-                log_test("GET Checklist Progress (Empty)", "PASS", "Returns empty completed_items for new job")
+        async with httpx.AsyncClient(timeout=30.0) as client:
+            response = await client.get(f"{BASE_URL}/api/dashboard/target-progress", headers=HEADERS)
+            
+            if response.status_code == 200:
+                progress_data = response.json()
+                results.add_test(
+                    "GET /api/dashboard/target-progress", 
+                    True, 
+                    f"Retrieved target progress: {progress_data}"
+                )
+                
+                # Verify structure
+                required_fields = ["weekly", "monthly", "message"]
+                weekly_fields = ["current", "target", "percentage"]
+                monthly_fields = ["current", "target", "percentage"]
+                
+                missing_fields = []
+                for field in required_fields:
+                    if field not in progress_data:
+                        missing_fields.append(field)
+                
+                if "weekly" in progress_data:
+                    for field in weekly_fields:
+                        if field not in progress_data["weekly"]:
+                            missing_fields.append(f"weekly.{field}")
+                
+                if "monthly" in progress_data:
+                    for field in monthly_fields:
+                        if field not in progress_data["monthly"]:
+                            missing_fields.append(f"monthly.{field}")
+                
+                if not missing_fields:
+                    results.add_test(
+                        "Target progress structure validation", 
+                        True, 
+                        "All required fields present in target progress response"
+                    )
+                else:
+                    results.add_test(
+                        "Target progress structure validation", 
+                        False, 
+                        f"Missing fields: {missing_fields}"
+                    )
+                    
             else:
-                log_test("GET Checklist Progress (Empty)", "FAIL", f"Expected empty array, got: {data}")
-                return False
-        else:
-            log_test("GET Checklist Progress (Empty)", "FAIL", f"Status: {response.status_code}")
-            return False
-        
-        # Test 2: PUT checklist progress (save some completed items)
-        progress_data = {
-            "job_id": job_id,
-            "stage": stage,
-            "completed_items": ["sd1", "sd2", "sd3"]
-        }
-        
-        response = requests.put(f"{BASE_URL}/api/checklist-progress", headers=HEADERS, json=progress_data, timeout=10)
-        if response.status_code == 200:
-            data = response.json()
-            if "message" in data and "completed_items" in data:
-                log_test("PUT Checklist Progress", "PASS", f"Saved {len(progress_data['completed_items'])} completed items")
-            else:
-                log_test("PUT Checklist Progress", "FAIL", "Missing required fields in response")
-                return False
-        else:
-            log_test("PUT Checklist Progress", "FAIL", f"Status: {response.status_code}")
-            return False
-        
-        # Test 3: GET checklist progress again (should return saved items)
-        response = requests.get(f"{BASE_URL}/api/checklist-progress/{job_id}/{stage}", headers=HEADERS, timeout=10)
-        if response.status_code == 200:
-            data = response.json()
-            if "completed_items" in data and data["completed_items"] == ["sd1", "sd2", "sd3"]:
-                log_test("GET Checklist Progress (Saved)", "PASS", "Returns saved completed_items correctly")
-            else:
-                log_test("GET Checklist Progress (Saved)", "FAIL", f"Expected ['sd1', 'sd2', 'sd3'], got: {data['completed_items']}")
-                return False
-        else:
-            log_test("GET Checklist Progress (Saved)", "FAIL", f"Status: {response.status_code}")
-            return False
-        
-        # Test 4: Update checklist progress (modify existing)
-        updated_progress_data = {
-            "job_id": job_id,
-            "stage": stage,
-            "completed_items": ["sd1", "sd2", "sd3", "sd4", "sd5"]
-        }
-        
-        response = requests.put(f"{BASE_URL}/api/checklist-progress", headers=HEADERS, json=updated_progress_data, timeout=10)
-        if response.status_code == 200:
-            log_test("PUT Checklist Progress (Update)", "PASS", "Updated existing progress successfully")
-        else:
-            log_test("PUT Checklist Progress (Update)", "FAIL", f"Status: {response.status_code}")
-            return False
-        
-        # Test 5: Verify updated progress
-        response = requests.get(f"{BASE_URL}/api/checklist-progress/{job_id}/{stage}", headers=HEADERS, timeout=10)
-        if response.status_code == 200:
-            data = response.json()
-            if "completed_items" in data and len(data["completed_items"]) == 5:
-                log_test("GET Updated Checklist Progress", "PASS", f"Returns {len(data['completed_items'])} updated items")
-            else:
-                log_test("GET Updated Checklist Progress", "FAIL", f"Expected 5 items, got: {len(data.get('completed_items', []))}")
-                return False
-        else:
-            log_test("GET Updated Checklist Progress", "FAIL", f"Status: {response.status_code}")
-            return False
-        
-        # Test 6: Test different stage for same job
-        different_stage = "phone_screen"
-        response = requests.get(f"{BASE_URL}/api/checklist-progress/{job_id}/{different_stage}", headers=HEADERS, timeout=10)
-        if response.status_code == 200:
-            data = response.json()
-            if "completed_items" in data and data["completed_items"] == []:
-                log_test("GET Different Stage Progress", "PASS", "Different stage returns empty progress correctly")
-            else:
-                log_test("GET Different Stage Progress", "FAIL", "Different stage should return empty progress")
-                return False
-        else:
-            log_test("GET Different Stage Progress", "FAIL", f"Status: {response.status_code}")
-            return False
-        
-        # Clean up: Delete the test job
-        response = requests.delete(f"{BASE_URL}/api/jobs/{job_id}", headers=HEADERS, timeout=10)
-        if response.status_code == 200:
-            log_test("Cleanup Test Job", "PASS", "Test job deleted successfully")
-        else:
-            log_test("Cleanup Test Job", "WARN", f"Could not delete test job: {response.status_code}")
-        
-        return True
-        
+                results.add_test(
+                    "GET /api/dashboard/target-progress", 
+                    False, 
+                    f"HTTP {response.status_code}: {response.text}"
+                )
+                
     except Exception as e:
-        log_test("Checklist Progress Persistence", "FAIL", f"Error: {str(e)}")
-        return False
+        results.add_test("Target Progress Endpoint", False, error=str(e))
+    
+    return results
 
-def test_ghosted_status_in_dashboard():
-    """Test that ghosted status is correctly handled in dashboard stats"""
+async def test_dashboard_stats_target_integration():
+    """Test if /api/dashboard/stats includes target_progress field"""
+    results = TestResults()
+    
     try:
-        # Create a test job with ghosted status
-        job_data = {
-            "company_name": "GhostedCompany",
-            "position": "Software Engineer",
-            "location": {"city": "San Francisco", "state": "California"},
-            "salary_range": {"min": 100000, "max": 150000},
-            "work_mode": "remote",
-            "job_type": "full_time",
-            "status": "ghosted",
-            "is_priority": False
-        }
-        
-        response = requests.post(f"{BASE_URL}/api/jobs", headers=HEADERS, json=job_data, timeout=10)
-        if response.status_code != 200:
-            log_test("Create Ghosted Job", "FAIL", f"Status: {response.status_code}")
-            return False
-        
-        job = response.json()
-        job_id = job["job_id"]
-        log_test("Create Ghosted Job", "PASS", f"Created ghosted job with ID: {job_id}")
-        
-        # Test dashboard stats include ghosted status
-        response = requests.get(f"{BASE_URL}/api/dashboard/stats", headers=HEADERS, timeout=10)
-        if response.status_code == 200:
-            stats = response.json()
-            if "ghosted" in stats and isinstance(stats["ghosted"], int):
-                log_test("Dashboard Stats - Ghosted Status", "PASS", f"Ghosted count: {stats['ghosted']}")
+        async with httpx.AsyncClient(timeout=30.0) as client:
+            response = await client.get(f"{BASE_URL}/api/dashboard/stats", headers=HEADERS)
+            
+            if response.status_code == 200:
+                stats_data = response.json()
+                results.add_test(
+                    "GET /api/dashboard/stats", 
+                    True, 
+                    f"Retrieved dashboard stats successfully"
+                )
+                
+                # Check if target_progress is included
+                if "target_progress" in stats_data:
+                    target_progress = stats_data["target_progress"]
+                    results.add_test(
+                        "Dashboard stats target_progress integration", 
+                        True, 
+                        f"target_progress field found in dashboard stats: {target_progress}"
+                    )
+                    
+                    # Verify target_progress structure
+                    required_fields = ["weekly", "monthly", "message"]
+                    missing_fields = [field for field in required_fields if field not in target_progress]
+                    
+                    if not missing_fields:
+                        results.add_test(
+                            "Dashboard target_progress structure validation", 
+                            True, 
+                            "target_progress has all required fields in dashboard stats"
+                        )
+                    else:
+                        results.add_test(
+                            "Dashboard target_progress structure validation", 
+                            False, 
+                            f"Missing fields in target_progress: {missing_fields}"
+                        )
+                else:
+                    results.add_test(
+                        "Dashboard stats target_progress integration", 
+                        False, 
+                        "target_progress field not found in dashboard stats response"
+                    )
+                    
             else:
-                log_test("Dashboard Stats - Ghosted Status", "FAIL", "Ghosted status not found in dashboard stats")
-                return False
-        else:
-            log_test("Dashboard Stats - Ghosted Status", "FAIL", f"Status: {response.status_code}")
-            return False
-        
-        # Test AI insights handle ghosted jobs correctly
-        response = requests.get(f"{BASE_URL}/api/dashboard/ai-insights", headers=HEADERS, timeout=10)
-        if response.status_code == 200:
-            insights = response.json()
-            if "insights" in insights and "follow_ups" in insights:
-                log_test("AI Insights - Ghosted Handling", "PASS", "AI insights endpoint working with ghosted jobs")
-            else:
-                log_test("AI Insights - Ghosted Handling", "FAIL", "AI insights missing required fields")
-                return False
-        else:
-            log_test("AI Insights - Ghosted Handling", "FAIL", f"Status: {response.status_code}")
-            return False
-        
-        # Clean up: Delete the ghosted test job
-        response = requests.delete(f"{BASE_URL}/api/jobs/{job_id}", headers=HEADERS, timeout=10)
-        if response.status_code == 200:
-            log_test("Cleanup Ghosted Job", "PASS", "Ghosted test job deleted successfully")
-        else:
-            log_test("Cleanup Ghosted Job", "WARN", f"Could not delete ghosted test job: {response.status_code}")
-        
-        return True
-        
+                results.add_test(
+                    "GET /api/dashboard/stats", 
+                    False, 
+                    f"HTTP {response.status_code}: {response.text}"
+                )
+                
     except Exception as e:
-        log_test("Ghosted Status Dashboard", "FAIL", f"Error: {str(e)}")
-        return False
+        results.add_test("Dashboard Stats Target Integration", False, error=str(e))
+    
+    return results
 
-def main():
-    """Run all backend tests"""
-    print("=" * 80)
-    print("BACKEND API TESTING - CHECKLIST PROGRESS PERSISTENCE")
-    print("=" * 80)
+async def main():
+    """Run all target goals tests"""
+    print("Starting CareerFlow Target Goals API Testing...")
     print(f"Backend URL: {BASE_URL}")
     print(f"Test Token: {TEST_TOKEN}")
-    print("-" * 80)
+    print("-" * 60)
     
-    tests = [
-        ("Backend Connectivity", test_backend_connectivity),
-        ("Interview Checklist Endpoint", test_interview_checklist_endpoint),
-        ("Checklist Progress Persistence", test_checklist_progress_persistence),
-        ("Ghosted Status Dashboard", test_ghosted_status_in_dashboard)
-    ]
+    all_results = TestResults()
     
-    passed = 0
-    total = len(tests)
+    # Test 1: Backend connectivity
+    print("Testing backend connectivity...")
+    connectivity_results = await test_backend_connectivity()
+    all_results.tests.extend(connectivity_results.tests)
+    all_results.passed += connectivity_results.passed
+    all_results.failed += connectivity_results.failed
     
-    for test_name, test_func in tests:
-        print(f"\n🧪 Running: {test_name}")
-        print("-" * 40)
-        
-        if test_func():
-            passed += 1
-        else:
-            print(f"❌ {test_name} FAILED - stopping further tests")
-            break
+    if connectivity_results.failed > 0:
+        print("❌ Backend connectivity failed. Stopping tests.")
+        all_results.print_summary()
+        return
     
-    print("\n" + "=" * 80)
-    print(f"TESTING COMPLETE: {passed}/{total} test suites passed")
+    # Test 2: Preferences endpoint with query parameters
+    print("Testing /api/preferences endpoint with target goals...")
+    preferences_results = await test_preferences_endpoint()
+    all_results.tests.extend(preferences_results.tests)
+    all_results.passed += preferences_results.passed
+    all_results.failed += preferences_results.failed
     
-    if passed == total:
-        print("🎉 ALL TESTS PASSED - Backend endpoints are working correctly!")
-        return 0
+    # Test 3: Dedicated target goals endpoints
+    print("Testing dedicated target goals endpoints...")
+    target_goals_results = await test_target_goals_endpoints()
+    all_results.tests.extend(target_goals_results.tests)
+    all_results.passed += target_goals_results.passed
+    all_results.failed += target_goals_results.failed
+    
+    # Test 4: Target progress endpoint
+    print("Testing target progress endpoint...")
+    target_progress_results = await test_target_progress_endpoint()
+    all_results.tests.extend(target_progress_results.tests)
+    all_results.passed += target_progress_results.passed
+    all_results.failed += target_progress_results.failed
+    
+    # Test 5: Dashboard stats integration
+    print("Testing dashboard stats target integration...")
+    dashboard_results = await test_dashboard_stats_target_integration()
+    all_results.tests.extend(dashboard_results.tests)
+    all_results.passed += dashboard_results.passed
+    all_results.failed += dashboard_results.failed
+    
+    # Print final results
+    all_results.print_summary()
+    
+    # Summary for main agent
+    print(f"\n{'='*60}")
+    print("SUMMARY FOR MAIN AGENT:")
+    print(f"{'='*60}")
+    
+    if all_results.failed == 0:
+        print("✅ ALL TARGET GOALS TESTS PASSED")
+        print("All target goals functionality is working correctly.")
     else:
-        print("❌ SOME TESTS FAILED - Check the details above")
-        return 1
+        print(f"❌ {all_results.failed} TEST(S) FAILED")
+        print("Issues found with target goals functionality:")
+        for test in all_results.tests:
+            if not test["passed"]:
+                print(f"  - {test['name']}: {test.get('error', test.get('details', 'Unknown error'))}")
 
 if __name__ == "__main__":
-    sys.exit(main())
+    asyncio.run(main())
