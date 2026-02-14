@@ -623,10 +623,26 @@ export default function SettingsScreen() {
       borderWidth: 1,
       borderColor: colors.border,
     },
+    targetValueDisplay: {
+      width: '100%',
+      paddingHorizontal: 12,
+      paddingVertical: 8,
+      fontSize: 18,
+      fontWeight: '700',
+      color: colors.textSecondary,
+      textAlign: 'center',
+    },
     targetUnit: {
       fontSize: 10,
       color: colors.textSecondary,
       marginTop: 4,
+    },
+    targetActionText: {
+      fontSize: 13,
+      fontWeight: '600',
+      color: colors.primary,
+      paddingVertical: 8,
+      paddingHorizontal: 4,
     },
     saveTargetButtonDisabled: {
       opacity: 0.6,
