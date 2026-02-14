@@ -283,7 +283,7 @@ export default function DashboardScreen() {
     if (!sessionToken) return;
     
     try {
-      const [statsRes, insightsRes, upcomingRes] = await Promise.all([
+      const [statsRes, insightsRes, upcomingRes, targetRes] = await Promise.all([
         fetch(`${BACKEND_URL}/api/dashboard/stats`, {
           headers: { 'Authorization': `Bearer ${sessionToken}` }
         }),
@@ -291,6 +291,9 @@ export default function DashboardScreen() {
           headers: { 'Authorization': `Bearer ${sessionToken}` }
         }),
         fetch(`${BACKEND_URL}/api/dashboard/upcoming-interviews`, {
+          headers: { 'Authorization': `Bearer ${sessionToken}` }
+        }),
+        fetch(`${BACKEND_URL}/api/dashboard/target-progress`, {
           headers: { 'Authorization': `Bearer ${sessionToken}` }
         })
       ]);
@@ -312,6 +315,11 @@ export default function DashboardScreen() {
       if (upcomingRes.ok) {
         const upcomingData = await upcomingRes.json();
         setUpcomingInterviews(upcomingData || []);
+      }
+      
+      if (targetRes.ok) {
+        const targetData = await targetRes.json();
+        setTargetProgress(targetData);
       }
     } catch (error) {
       console.error('Error fetching data:', error);
