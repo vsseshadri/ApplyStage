@@ -72,21 +72,27 @@ export default function SettingsScreen() {
     }
   };
 
-  // Save target goals to backend
+  // Save target goals to backend (using existing preferences endpoint with query params)
   const saveTargetGoals = async () => {
     setSavingTargets(true);
     try {
-      const response = await fetch(`${BACKEND_URL}/api/preferences/extended`, {
-        method: 'PUT',
-        headers: {
-          'Authorization': `Bearer ${sessionToken}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          weekly_target: parseInt(weeklyTarget) || 10,
-          monthly_target: parseInt(monthlyTarget) || 40
-        })
-      });
+      const weeklyVal = parseInt(weeklyTarget) || 10;
+      const monthlyVal = parseInt(monthlyTarget) || 40;
+      
+      const response = await fetch(
+        `${BACKEND_URL}/api/preferences?weekly_target=${weeklyVal}&monthly_target=${monthlyVal}`, 
+        {
+          method: 'PUT',
+          headers: {
+            'Authorization': `Bearer ${sessionToken}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            weekly_email: weeklyEmail,
+            monthly_email: monthlyEmail
+          })
+        }
+      );
       if (response.ok) {
         Alert.alert('Success', 'Target goals updated successfully');
       } else {
