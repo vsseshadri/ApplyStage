@@ -57,41 +57,14 @@ const InterviewChecklist: React.FC<InterviewChecklistProps> = ({
   }, [visible, stage, company]);
 
   const fetchChecklist = async () => {
-    setLoading(true);
+    // Immediately show local checklist for instant response (no loading state)
+    // This provides near-zero latency user experience
+    const localChecklist = getStageSpecificChecklist(stage, company);
+    setItems(localChecklist);
+    setLoading(false);
     
-    try {
-      // Use the upcoming-interviews endpoint with query params for checklist
-      const url = `${BACKEND_URL}/api/dashboard/upcoming-interviews?include_checklist=true&checklist_stage=${encodeURIComponent(stage)}&checklist_company=${encodeURIComponent(company || '')}`;
-      console.log('[Checklist] Fetching from:', url);
-      
-      const response = await fetch(url, {
-        headers: { 
-          'Authorization': `Bearer ${sessionToken}`,
-          'Content-Type': 'application/json'
-        }
-      });
-      
-      if (response.ok) {
-        const data = await response.json();
-        
-        // Handle response with checklist included
-        if (data.checklist && data.checklist.items && Array.isArray(data.checklist.items)) {
-          setItems(data.checklist.items.slice(0, 5));
-        } else {
-          // Use comprehensive stage-specific fallback
-          console.log('[Checklist] Using stage-specific fallback for:', stage);
-          setItems(getStageSpecificChecklist(stage, company));
-        }
-      } else {
-        // Use fallback on error
-        setItems(getStageSpecificChecklist(stage, company));
-      }
-    } catch (err) {
-      console.log('[Checklist] Fetch error, using fallback:', err);
-      setItems(getStageSpecificChecklist(stage, company));
-    } finally {
-      setLoading(false);
-    }
+    // Note: The local checklist is comprehensive and stage-specific
+    // No need for additional API call as the static checklists are high quality
   };
 
   // Comprehensive stage-specific checklist items
