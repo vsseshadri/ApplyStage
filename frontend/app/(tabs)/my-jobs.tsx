@@ -3475,6 +3475,15 @@ const createStyles = (colors: any, isDark: boolean, isTablet: boolean = false) =
     alignItems: 'center',
     justifyContent: 'center',
   },
+  tableCheckbox: {
+    width: 20,
+    height: 20,
+    borderRadius: 4,
+    borderWidth: 2,
+    borderColor: colors.border,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
   tableCell: {
     fontSize: 13,
     color: colors.text,
