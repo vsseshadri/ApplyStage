@@ -45,7 +45,6 @@ const InterviewChecklist: React.FC<InterviewChecklistProps> = ({
   sessionToken,
 }) => {
   const [items, setItems] = useState<ChecklistItem[]>([]);
-  const [completedItems, setCompletedItems] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
 
   const BACKEND_URL = getBackendUrl();
@@ -54,6 +53,7 @@ const InterviewChecklist: React.FC<InterviewChecklistProps> = ({
     if (visible && stage) {
       fetchChecklist();
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [visible, stage, company]);
 
   const fetchChecklist = async () => {
