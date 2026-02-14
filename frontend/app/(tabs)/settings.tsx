@@ -583,6 +583,61 @@ export default function SettingsScreen() {
       marginTop: 2,
     },
     
+    // Target Goals styles
+    targetDescription: {
+      fontSize: 13,
+      color: colors.textSecondary,
+      marginBottom: 16,
+      lineHeight: 18,
+    },
+    targetRow: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      gap: 16,
+      marginBottom: 16,
+    },
+    targetInputContainer: {
+      flex: 1,
+      alignItems: 'center',
+    },
+    targetLabel: {
+      fontSize: 13,
+      color: colors.textSecondary,
+      marginBottom: 8,
+    },
+    targetInput: {
+      width: '100%',
+      backgroundColor: colors.inputBackground,
+      borderRadius: 10,
+      paddingHorizontal: 16,
+      paddingVertical: 12,
+      fontSize: 24,
+      fontWeight: '700',
+      color: colors.text,
+      textAlign: 'center',
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+    targetUnit: {
+      fontSize: 11,
+      color: colors.textSecondary,
+      marginTop: 6,
+    },
+    saveTargetButton: {
+      backgroundColor: colors.primary,
+      borderRadius: 10,
+      paddingVertical: 12,
+      alignItems: 'center',
+    },
+    saveTargetButtonDisabled: {
+      opacity: 0.6,
+    },
+    saveTargetButtonText: {
+      color: 'white',
+      fontSize: 15,
+      fontWeight: '600',
+    },
+    
     // Email field styles
     emailFieldContainer: {
       width: '100%',
