@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, ReactNode } from 'react';
 
-export type FilterType = 'all' | 'last_10_days' | 'final_round' | 'offers' | 'work_mode';
+export type FilterType = 'all' | 'last_10_days' | 'final_round' | 'offers' | 'work_mode' | 'rejected';
 export type WorkModeType = 'all' | 'remote' | 'onsite' | 'hybrid';
 
 interface FilterContextType {
@@ -26,6 +26,7 @@ export function FilterProvider({ children }: { children: ReactNode }) {
     'final_round': 'Final Round',
     'offers': 'Offers',
     'work_mode': 'By Work Mode',
+    'rejected': 'Rejected',
   };
 
   const setFilter = (newFilter: FilterType, workMode?: string) => {
