@@ -1466,11 +1466,16 @@ export default function MyJobsScreen() {
     );
   }
 
-  // Tablet Table View
+  // Tablet Table View - Updated to support selection mode
   const renderTableView = () => (
     <View style={dynamicStyles.tableContainer}>
       {/* Table Header */}
       <View style={dynamicStyles.tableHeader}>
+        {selectMode && (
+          <View style={[dynamicStyles.tableHeaderCellContainer, { flex: 0.3 }]}>
+            <Text style={dynamicStyles.tableHeaderCell}>Select</Text>
+          </View>
+        )}
         <View style={[dynamicStyles.tableHeaderCellContainer, { flex: 1.3 }]}>
           <Text style={dynamicStyles.tableHeaderCell}>Company</Text>
         </View>
@@ -1501,13 +1506,39 @@ export default function MyJobsScreen() {
       {filteredJobs.map((job) => {
         const daysAgo = getDaysAgo(job.date_applied || job.created_at);
         const appliedDate = job.date_applied ? format(new Date(job.date_applied), 'MM/dd/yy') : '-';
+        const isSelected = selectedJobs.has(job.job_id);
+        const locationText = job.location.city 
+          ? `${job.location.city}, ${getStateAbbreviation(job.location.state)}`
+          : job.location.state 
+            ? getStateAbbreviation(job.location.state)
+            : 'Remote';
+        
         return (
           <TouchableOpacity
             key={job.job_id}
-            style={dynamicStyles.tableRow}
-            onPress={() => openEditModal(job)}
+            style={[
+              dynamicStyles.tableRow,
+              isSelected && { backgroundColor: colors.primary + '15' }
+            ]}
+            onPress={() => selectMode ? toggleJobSelection(job.job_id) : openEditModal(job)}
+            onLongPress={() => {
+              if (!selectMode) {
+                setSelectMode(true);
+                toggleJobSelection(job.job_id);
+              }
+            }}
             activeOpacity={0.7}
           >
+            {selectMode && (
+              <View style={[dynamicStyles.tableCellContainer, { flex: 0.3, justifyContent: 'center', alignItems: 'center' }]}>
+                <View style={[
+                  dynamicStyles.tableCheckbox,
+                  isSelected && { backgroundColor: colors.primary, borderColor: colors.primary }
+                ]}>
+                  {isSelected && <Ionicons name="checkmark" size={14} color="white" />}
+                </View>
+              </View>
+            )}
             <View style={[dynamicStyles.tableCellContainer, { flex: 1.3 }]}>
               <Text style={[dynamicStyles.tableCell, { fontWeight: '600' }]} numberOfLines={1}>
                 {job.company_name}
@@ -1520,12 +1551,14 @@ export default function MyJobsScreen() {
             </View>
             <View style={[dynamicStyles.tableCellContainer, { flex: 0.9 }]}>
               <Text style={dynamicStyles.tableCell} numberOfLines={1}>
-                {job.location.city}, {getStateAbbreviation(job.location.state)}
+                {locationText}
               </Text>
             </View>
             <View style={[dynamicStyles.tableCellContainer, { flex: 0.7 }]}>
               <Text style={dynamicStyles.tableCell}>
-                ${(job.salary_range.min / 1000).toFixed(0)}k-${(job.salary_range.max / 1000).toFixed(0)}k
+                {job.salary_range.min > 0 || job.salary_range.max > 0 
+                  ? `${currencyInfo.symbol}${(job.salary_range.min / 1000).toFixed(0)}k-${(job.salary_range.max / 1000).toFixed(0)}k`
+                  : '-'}
               </Text>
             </View>
             <View style={[dynamicStyles.tableCellContainer, { flex: 0.5 }]}>
