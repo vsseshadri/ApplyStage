@@ -96,7 +96,7 @@ export default function SettingsScreen() {
         }
       );
       if (response.ok) {
-        Alert.alert('Success', 'Target goals updated successfully');
+        setIsEditingTargets(false); // Switch to view mode after successful save
       } else {
         Alert.alert('Error', 'Failed to save target goals');
       }
