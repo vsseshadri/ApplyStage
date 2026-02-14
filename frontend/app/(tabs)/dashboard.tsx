@@ -908,6 +908,54 @@ export default function DashboardScreen() {
               </TouchableOpacity>
             </View>
 
+            {/* Target Progress Section - Above Application Status */}
+            {targetProgress && (
+              <View style={dynamicStyles.section}>
+                <Text style={dynamicStyles.sectionTitle}>Application Targets</Text>
+                <View style={dynamicStyles.targetProgressCard}>
+                  {/* Motivational Message */}
+                  <Text style={dynamicStyles.targetMessage}>{targetProgress.message}</Text>
+                  
+                  {/* Progress Bars */}
+                  <View style={dynamicStyles.targetProgressRow}>
+                    {/* Weekly Progress */}
+                    <View style={dynamicStyles.targetProgressItem}>
+                      <View style={dynamicStyles.targetProgressHeader}>
+                        <Text style={dynamicStyles.targetProgressLabel}>Weekly</Text>
+                        <Text style={dynamicStyles.targetProgressPercent}>{targetProgress.weekly.percentage}%</Text>
+                      </View>
+                      <View style={dynamicStyles.targetProgressBarBg}>
+                        <View style={[dynamicStyles.targetProgressBarFill, { 
+                          width: `${targetProgress.weekly.percentage}%`,
+                          backgroundColor: targetProgress.weekly.percentage >= 100 ? '#22C55E' : targetProgress.weekly.percentage >= 50 ? '#F59E0B' : colors.primary
+                        }]} />
+                      </View>
+                      <Text style={dynamicStyles.targetProgressCount}>
+                        {targetProgress.weekly.current} / {targetProgress.weekly.target}
+                      </Text>
+                    </View>
+                    
+                    {/* Monthly Progress */}
+                    <View style={dynamicStyles.targetProgressItem}>
+                      <View style={dynamicStyles.targetProgressHeader}>
+                        <Text style={dynamicStyles.targetProgressLabel}>Monthly</Text>
+                        <Text style={dynamicStyles.targetProgressPercent}>{targetProgress.monthly.percentage}%</Text>
+                      </View>
+                      <View style={dynamicStyles.targetProgressBarBg}>
+                        <View style={[dynamicStyles.targetProgressBarFill, { 
+                          width: `${targetProgress.monthly.percentage}%`,
+                          backgroundColor: targetProgress.monthly.percentage >= 100 ? '#22C55E' : targetProgress.monthly.percentage >= 50 ? '#F59E0B' : colors.primary
+                        }]} />
+                      </View>
+                      <Text style={dynamicStyles.targetProgressCount}>
+                        {targetProgress.monthly.current} / {targetProgress.monthly.target}
+                      </Text>
+                    </View>
+                  </View>
+                </View>
+              </View>
+            )}
+
             {/* Application Status Chart */}
             <View style={dynamicStyles.section}>
               <Text style={dynamicStyles.sectionTitle}>By Application Status</Text>
