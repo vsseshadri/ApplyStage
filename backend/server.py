@@ -1700,6 +1700,44 @@ async def update_preferences(preferences: UserPreferences, current_user: User = 
     
     return {"message": "Preferences updated"}
 
+# Extended preferences endpoint to handle target goals (uses existing route for proxy compatibility)
+class PreferencesWithTargets(BaseModel):
+    weekly_email: Optional[bool] = None
+    monthly_email: Optional[bool] = None
+    weekly_target: Optional[int] = None
+    monthly_target: Optional[int] = None
+
+@api_router.put("/preferences/extended")
+async def update_preferences_extended(data: PreferencesWithTargets, current_user: User = Depends(get_current_user)):
+    update_dict = {}
+    
+    if data.weekly_email is not None:
+        update_dict["preferences.weekly_email"] = data.weekly_email
+    if data.monthly_email is not None:
+        update_dict["preferences.monthly_email"] = data.monthly_email
+    if data.weekly_target is not None:
+        update_dict["target_goals.weekly_target"] = data.weekly_target
+    if data.monthly_target is not None:
+        update_dict["target_goals.monthly_target"] = data.monthly_target
+    
+    if update_dict:
+        await db.users.update_one(
+            {"user_id": current_user.user_id},
+            {"$set": update_dict}
+        )
+    
+    # Return updated data
+    user_doc = await db.users.find_one(
+        {"user_id": current_user.user_id},
+        {"_id": 0, "preferences": 1, "target_goals": 1}
+    )
+    
+    return {
+        "message": "Preferences updated",
+        "preferences": user_doc.get("preferences", {}),
+        "target_goals": user_doc.get("target_goals", {"weekly_target": 10, "monthly_target": 40})
+    }
+
 @api_router.put("/user/display-name")
 async def update_display_name(data: DisplayNameUpdate, current_user: User = Depends(get_current_user)):
     """Update the user's preferred display name"""
