@@ -143,6 +143,13 @@ export default function DashboardScreen() {
   const [upcomingInterviews, setUpcomingInterviews] = useState<any[]>([]);
   const [screenWidth, setScreenWidth] = useState(Dimensions.get('window').width);
   
+  // Target progress state
+  const [targetProgress, setTargetProgress] = useState<{
+    weekly: { current: number; target: number; percentage: number };
+    monthly: { current: number; target: number; percentage: number };
+    message: string;
+  } | null>(null);
+  
   // Interview checklist state
   const [checklistVisible, setChecklistVisible] = useState(false);
   const [selectedInterview, setSelectedInterview] = useState<{stage: string; company: string; daysUntil: number; jobId: string} | null>(null);
