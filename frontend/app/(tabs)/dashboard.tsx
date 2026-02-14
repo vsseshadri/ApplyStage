@@ -330,7 +330,7 @@ export default function DashboardScreen() {
     fetchData();
   };
 
-  const handleStatCardPress = (filterType: 'all' | 'last_10_days' | 'final_round' | 'offers') => {
+  const handleStatCardPress = (filterType: 'all' | 'last_10_days' | 'final_round' | 'offers' | 'rejected') => {
     setFilter(filterType);
     router.push('/(tabs)/my-jobs');
   };

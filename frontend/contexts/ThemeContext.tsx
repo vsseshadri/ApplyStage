@@ -16,6 +16,7 @@ interface ThemeColors {
   inputBackground: string;
   inputText: string;
   inputBorder: string;
+  error: string;
 }
 
 interface ThemeContextType {
