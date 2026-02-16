@@ -242,6 +242,10 @@ export default function MyJobsScreen() {
   const [dateAppliedText, setDateAppliedText] = useState('');
   const [screenWidth, setScreenWidth] = useState(Dimensions.get('window').width);
   
+  // Refs for auto-focus on custom input fields
+  const customPositionInputRef = useRef<TextInput>(null);
+  const customStatusInputRef = useRef<TextInput>(null);
+  
   // Check for openAdd param to trigger modal from tab button
   const params = require('expo-router').useLocalSearchParams();
   
