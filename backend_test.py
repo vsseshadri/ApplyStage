@@ -310,13 +310,23 @@ class ReportGenerationTester:
                     await self.log_test("Report Data Accuracy", False, f"Could not generate report: HTTP {report_response.status_code}")
                     return False
                 
-                report = report_response.json()
+                report_summary = report_response.json()
+                report_id = report_summary.get("report_id")
+                
+                # Fetch the full report content
+                detail_response = await client.get(f"{self.base_url}/api/reports/{report_id}", headers=self.headers)
+                
+                if detail_response.status_code != 200:
+                    await self.log_test("Report Data Accuracy", False, f"Could not fetch report details: HTTP {detail_response.status_code}")
+                    return False
+                
+                report = detail_response.json()
                 content = report.get("content", "")
                 
                 # Check if report reflects the user's data state
                 if total_jobs == 0:
-                    # If no jobs, report should reflect this
-                    if "0" in content or "no applications" in content.lower() or "get started" in content.lower():
+                    # If no jobs, report should reflect this with 0 applications
+                    if "0" in content and ("Applications" in content or "applications" in content):
                         await self.log_test("Report Data Accuracy", True, "Report correctly reflects empty job state")
                         return True
                     else:
