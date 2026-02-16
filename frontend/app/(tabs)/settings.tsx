@@ -560,9 +560,7 @@ export default function SettingsScreen() {
       fontWeight: '600',
     },
     editButton: {
-      backgroundColor: colors.primary + '15',
-      borderRadius: 8,
-      paddingHorizontal: 14,
+      paddingHorizontal: 4,
       paddingVertical: 6,
     },
     editButtonText: {
