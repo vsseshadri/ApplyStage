@@ -73,18 +73,22 @@ def test_email_summary_endpoints():
                 print(f"   📅 Date Range: {data['from_date']} to {data['to_date']}")
                 print(f"   📊 Stats: {data['stats']}")
                 
-                # Verify date range is last 7 days
-                from_date = datetime.fromisoformat(data['from_date'].replace('Z', '+00:00'))
-                to_date = datetime.fromisoformat(data['to_date'].replace('Z', '+00:00'))
-                expected_days = 7
-                actual_days = (to_date - from_date).days
-                
-                if abs(actual_days - expected_days) <= 1:  # Allow 1 day tolerance
-                    print(f"   ✅ Date range correct: {actual_days} days")
-                    test_results.append(("GET /api/email-summary/weekly", "PASS", "Structure and date range correct"))
-                else:
-                    print(f"   ❌ Date range incorrect: {actual_days} days (expected ~{expected_days})")
-                    test_results.append(("GET /api/email-summary/weekly", "FAIL", f"Date range: {actual_days} days"))
+                # Verify date range is last 7 days (dates are in format "Feb-09-2026")
+                try:
+                    from_date = datetime.strptime(data['from_date'], "%b-%d-%Y")
+                    to_date = datetime.strptime(data['to_date'], "%b-%d-%Y")
+                    expected_days = 7
+                    actual_days = (to_date - from_date).days
+                    
+                    if abs(actual_days - expected_days) <= 1:  # Allow 1 day tolerance
+                        print(f"   ✅ Date range correct: {actual_days} days")
+                        test_results.append(("GET /api/email-summary/weekly", "PASS", "Structure and date range correct"))
+                    else:
+                        print(f"   ❌ Date range incorrect: {actual_days} days (expected ~{expected_days})")
+                        test_results.append(("GET /api/email-summary/weekly", "FAIL", f"Date range: {actual_days} days"))
+                except ValueError as e:
+                    print(f"   ❌ Date format error: {e}")
+                    test_results.append(("GET /api/email-summary/weekly", "FAIL", f"Date format error: {e}"))
         else:
             print(f"❌ FAIL - Status: {response.status_code}, Response: {response.text}")
             test_results.append(("GET /api/email-summary/weekly", "FAIL", f"Status {response.status_code}"))
