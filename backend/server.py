@@ -26,6 +26,285 @@ mongo_url = os.environ['MONGO_URL']
 client = AsyncIOMotorClient(mongo_url)
 db = client[os.environ['DB_NAME']]
 
+# Initialize the scheduler
+scheduler = AsyncIOScheduler()
+
+# Scheduled report generation functions
+async def generate_weekly_reports_for_all_users():
+    """Generate weekly reports for all users who have weekly_email enabled"""
+    import calendar
+    
+    logging.info("Running scheduled weekly report generation...")
+    
+    try:
+        # Get all users with weekly_email preference enabled
+        users = await db.users.find({
+            "preferences.weekly_email": True
+        }).to_list(None)
+        
+        logging.info(f"Found {len(users)} users with weekly reports enabled")
+        
+        today = datetime.now(timezone.utc)
+        week_start = today - timedelta(days=7)
+        from_date = week_start.strftime("%b-%d-%Y")
+        to_date = today.strftime("%b-%d-%Y")
+        
+        for user_doc in users:
+            try:
+                user_id = user_doc.get("user_id")
+                user_name = user_doc.get("preferred_display_name") or user_doc.get("name") or "Job Seeker"
+                
+                # Get user's jobs
+                all_jobs = await db.job_applications.find({"user_id": user_id}).to_list(1000)
+                
+                # Filter jobs applied in the last week
+                weekly_jobs = []
+                for j in all_jobs:
+                    if j.get("date_applied"):
+                        date_applied = j.get("date_applied")
+                        if isinstance(date_applied, str):
+                            try:
+                                date_applied = datetime.fromisoformat(date_applied.replace("Z", "+00:00"))
+                            except:
+                                continue
+                        elif isinstance(date_applied, datetime) and date_applied.tzinfo is None:
+                            date_applied = date_applied.replace(tzinfo=timezone.utc)
+                        if date_applied >= week_start:
+                            weekly_jobs.append(j)
+                
+                # Calculate stats
+                weekly_applications = len(weekly_jobs)
+                status_counts = {}
+                for job in weekly_jobs:
+                    status = job.get("status", "applied")
+                    status_counts[status] = status_counts.get(status, 0) + 1
+                
+                # Get follow-up reminders
+                follow_ups = []
+                for j in all_jobs:
+                    if j.get("status") == "applied" and j.get("date_applied"):
+                        date_applied = j.get("date_applied")
+                        if isinstance(date_applied, str):
+                            try:
+                                date_applied = datetime.fromisoformat(date_applied.replace("Z", "+00:00"))
+                            except:
+                                continue
+                        elif isinstance(date_applied, datetime) and date_applied.tzinfo is None:
+                            date_applied = date_applied.replace(tzinfo=timezone.utc)
+                        if (today - date_applied).days > 7:
+                            follow_ups.append(j)
+                
+                # Generate HTML content
+                title = f"Weekly Summary for the week {from_date} - {to_date}"
+                
+                content = f'''<div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+<h1 style="color: #2563EB;">📊 Weekly Job Search Summary</h1>
+<p>Hi {user_name}, here's your weekly summary for {from_date} - {to_date}.</p>
+<div style="background: #F3F4F6; border-radius: 12px; padding: 20px; margin: 20px 0;">
+<h2>📈 Weekly Metrics</h2>
+<div style="display: flex; gap: 15px; flex-wrap: wrap;">
+<div style="background: white; padding: 15px; border-radius: 8px; flex: 1; min-width: 120px; text-align: center;"><div style="font-size: 28px; font-weight: bold; color: #2563EB;">{weekly_applications}</div><div>Applications</div></div>
+<div style="background: white; padding: 15px; border-radius: 8px; flex: 1; min-width: 120px; text-align: center;"><div style="font-size: 28px; font-weight: bold; color: #10B981;">{status_counts.get('interviewing', 0)}</div><div>Interviews</div></div>
+<div style="background: white; padding: 15px; border-radius: 8px; flex: 1; min-width: 120px; text-align: center;"><div style="font-size: 28px; font-weight: bold; color: #22C55E;">{status_counts.get('offer', 0)}</div><div>Offers</div></div>
+</div></div>
+<div style="background: white; border: 1px solid #E5E7EB; border-radius: 12px; padding: 20px; margin: 20px 0;">
+<h2>📋 Applications This Week</h2>'''
+                
+                for job in weekly_jobs[:10]:
+                    content += f'<div style="padding: 10px 0; border-bottom: 1px solid #F3F4F6;"><strong>{job.get("company_name", "N/A")}</strong> - {job.get("position", "N/A")} <span style="color: #6B7280;">({job.get("status", "applied")})</span></div>'
+                
+                if len(weekly_jobs) > 10:
+                    content += f'<div style="padding: 10px 0; color: #6B7280;">...and {len(weekly_jobs) - 10} more applications</div>'
+                
+                content += f'''</div>
+<div style="background: #FEF3C7; border-radius: 12px; padding: 20px; margin: 20px 0;">
+<h2>⏰ Follow-up Reminders</h2>
+<p>You have <strong>{len(follow_ups)}</strong> application(s) that may need follow-up.</p>'''
+                
+                for reminder in follow_ups[:5]:
+                    date_applied = reminder.get("date_applied")
+                    if isinstance(date_applied, str):
+                        date_applied = datetime.fromisoformat(date_applied.replace("Z", "+00:00"))
+                    elif isinstance(date_applied, datetime) and date_applied.tzinfo is None:
+                        date_applied = date_applied.replace(tzinfo=timezone.utc)
+                    days_ago = (today - date_applied).days
+                    content += f'<div style="padding: 8px 0;"><strong>{reminder.get("company_name", "N/A")}</strong> - {reminder.get("position", "N/A")} ({days_ago} days ago)</div>'
+                
+                content += f'''</div>
+<div style="background: #E0F2FE; border-radius: 12px; padding: 20px; margin: 20px 0;">
+<h2>💡 Key Insights</h2>
+<ul>
+<li>Total Active Applications: {len([j for j in all_jobs if j.get('status') not in ['rejected', 'withdrawn']])}</li>
+<li>Response Rate: {round((len([j for j in all_jobs if j.get('status') != 'applied']) / len(all_jobs) * 100) if all_jobs else 0, 1)}%</li>
+</ul>
+<p>Keep up the momentum!</p>
+</div>
+<p style="color: #6B7280; font-size: 12px;">This report was automatically generated based on your CareerFlow data.</p>
+</div>'''
+                
+                # Save report to database
+                report_doc = {
+                    "report_id": str(uuid.uuid4()),
+                    "user_id": user_id,
+                    "report_type": "weekly",
+                    "title": title,
+                    "date_range": f"{from_date} - {to_date}",
+                    "content": content,
+                    "created_at": today.isoformat(),
+                    "is_read": False
+                }
+                
+                await db.reports.insert_one(report_doc)
+                logging.info(f"Generated weekly report for user {user_id}")
+                
+            except Exception as e:
+                logging.error(f"Error generating weekly report for user {user_doc.get('user_id')}: {e}")
+                continue
+        
+        logging.info("Weekly report generation completed")
+        
+    except Exception as e:
+        logging.error(f"Error in weekly report generation: {e}")
+
+
+async def generate_monthly_reports_for_all_users():
+    """Generate monthly reports for all users who have monthly_email enabled"""
+    import calendar
+    
+    logging.info("Running scheduled monthly report generation...")
+    
+    try:
+        # Get all users with monthly_email preference enabled
+        users = await db.users.find({
+            "preferences.monthly_email": True
+        }).to_list(None)
+        
+        logging.info(f"Found {len(users)} users with monthly reports enabled")
+        
+        today = datetime.now(timezone.utc)
+        month_year = today.strftime("%B %Y")
+        
+        # Calculate the start of the month
+        month_start = today.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+        
+        for user_doc in users:
+            try:
+                user_id = user_doc.get("user_id")
+                user_name = user_doc.get("preferred_display_name") or user_doc.get("name") or "Job Seeker"
+                
+                # Get user's jobs
+                all_jobs = await db.job_applications.find({"user_id": user_id}).to_list(1000)
+                
+                # Filter jobs applied this month
+                monthly_jobs = []
+                for j in all_jobs:
+                    if j.get("date_applied"):
+                        date_applied = j.get("date_applied")
+                        if isinstance(date_applied, str):
+                            try:
+                                date_applied = datetime.fromisoformat(date_applied.replace("Z", "+00:00"))
+                            except:
+                                continue
+                        elif isinstance(date_applied, datetime) and date_applied.tzinfo is None:
+                            date_applied = date_applied.replace(tzinfo=timezone.utc)
+                        if date_applied >= month_start:
+                            monthly_jobs.append(j)
+                
+                # Calculate stats
+                monthly_applications = len(monthly_jobs)
+                status_counts = {}
+                for job in monthly_jobs:
+                    status = job.get("status", "applied")
+                    status_counts[status] = status_counts.get(status, 0) + 1
+                
+                # Position type breakdown
+                position_types = {}
+                for job in monthly_jobs:
+                    pt = job.get("job_type", "Other")
+                    position_types[pt] = position_types.get(pt, 0) + 1
+                
+                # Work mode breakdown  
+                work_modes = {}
+                for job in monthly_jobs:
+                    wm = job.get("work_mode", "Other")
+                    work_modes[wm] = work_modes.get(wm, 0) + 1
+                
+                title = f"Monthly Report - {month_year}"
+                
+                content = f'''<div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+<h1 style="color: #8B5CF6;">📊 Monthly Job Search Report - {month_year}</h1>
+<p>Hi {user_name}, here's your comprehensive monthly report.</p>
+
+<div style="background: #F3F4F6; border-radius: 12px; padding: 20px; margin: 20px 0;">
+<h2>📈 Monthly Overview</h2>
+<div style="display: flex; gap: 15px; flex-wrap: wrap;">
+<div style="background: white; padding: 15px; border-radius: 8px; flex: 1; min-width: 100px; text-align: center;"><div style="font-size: 28px; font-weight: bold; color: #3B82F6;">{monthly_applications}</div><div>Applications</div></div>
+<div style="background: white; padding: 15px; border-radius: 8px; flex: 1; min-width: 100px; text-align: center;"><div style="font-size: 28px; font-weight: bold; color: #F59E0B;">{status_counts.get('interviewing', 0) + status_counts.get('phone_screen', 0) + status_counts.get('coding_round_1', 0)}</div><div>Interviews</div></div>
+<div style="background: white; padding: 15px; border-radius: 8px; flex: 1; min-width: 100px; text-align: center;"><div style="font-size: 28px; font-weight: bold; color: #10B981;">{status_counts.get('final_round', 0)}</div><div>Final Rounds</div></div>
+<div style="background: white; padding: 15px; border-radius: 8px; flex: 1; min-width: 100px; text-align: center;"><div style="font-size: 28px; font-weight: bold; color: #22C55E;">{status_counts.get('offer', 0)}</div><div>Offers</div></div>
+</div></div>
+
+<div style="background: white; border: 1px solid #E5E7EB; border-radius: 12px; padding: 20px; margin: 20px 0;">
+<h2>📋 Applications by Status</h2>'''
+                
+                for status, count in sorted(status_counts.items(), key=lambda x: x[1], reverse=True):
+                    content += f'<div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #F3F4F6;"><span>{status.replace("_", " ").title()}</span><strong>{count}</strong></div>'
+                
+                content += f'''</div>
+
+<div style="background: white; border: 1px solid #E5E7EB; border-radius: 12px; padding: 20px; margin: 20px 0;">
+<h2>💼 By Position Type</h2>'''
+                
+                for pt, count in sorted(position_types.items(), key=lambda x: x[1], reverse=True):
+                    content += f'<div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #F3F4F6;"><span>{pt.replace("_", " ").title()}</span><strong>{count}</strong></div>'
+                
+                content += f'''</div>
+
+<div style="background: white; border: 1px solid #E5E7EB; border-radius: 12px; padding: 20px; margin: 20px 0;">
+<h2>🏢 By Work Mode</h2>'''
+                
+                for wm, count in sorted(work_modes.items(), key=lambda x: x[1], reverse=True):
+                    content += f'<div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #F3F4F6;"><span>{wm.replace("_", " ").title()}</span><strong>{count}</strong></div>'
+                
+                content += f'''</div>
+
+<div style="background: #E0F2FE; border-radius: 12px; padding: 20px; margin: 20px 0;">
+<h2>💡 Monthly Insights</h2>
+<ul>
+<li>Total Applications This Month: {monthly_applications}</li>
+<li>Response Rate: {round((len([j for j in monthly_jobs if j.get('status') != 'applied']) / monthly_applications * 100) if monthly_applications else 0, 1)}%</li>
+<li>Most Applied Position Type: {max(position_types.items(), key=lambda x: x[1])[0].replace("_", " ").title() if position_types else "N/A"}</li>
+<li>Preferred Work Mode: {max(work_modes.items(), key=lambda x: x[1])[0].replace("_", " ").title() if work_modes else "N/A"}</li>
+</ul>
+</div>
+
+<p style="color: #6B7280; font-size: 12px;">This report was automatically generated based on your CareerFlow data.</p>
+</div>'''
+                
+                # Save report to database
+                report_doc = {
+                    "report_id": str(uuid.uuid4()),
+                    "user_id": user_id,
+                    "report_type": "monthly",
+                    "title": title,
+                    "date_range": month_year,
+                    "content": content,
+                    "created_at": today.isoformat(),
+                    "is_read": False
+                }
+                
+                await db.reports.insert_one(report_doc)
+                logging.info(f"Generated monthly report for user {user_id}")
+                
+            except Exception as e:
+                logging.error(f"Error generating monthly report for user {user_doc.get('user_id')}: {e}")
+                continue
+        
+        logging.info("Monthly report generation completed")
+        
+    except Exception as e:
+        logging.error(f"Error in monthly report generation: {e}")
+
 app = FastAPI()
 api_router = APIRouter(prefix="/api")
 
