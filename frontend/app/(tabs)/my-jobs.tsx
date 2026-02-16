@@ -2542,16 +2542,16 @@ export default function MyJobsScreen() {
                   <TextInput
                     style={[dynamicStyles.input, dynamicStyles.halfInput]}
                     value={formData.min_salary}
-                    onChangeText={(text) => setFormData({ ...formData, min_salary: text })}
-                    placeholder={`Min (e.g., ${currencyInfo.code === 'INR' ? '1000000' : '100000'})`}
+                    onChangeText={(text) => handleSalaryChange('min_salary', text)}
+                    placeholder={`Min (e.g., ${currencyInfo.code === 'INR' ? '10,00,000' : '100,000'})`}
                     keyboardType="numeric"
                     placeholderTextColor={colors.textSecondary}
                   />
                   <TextInput
                     style={[dynamicStyles.input, dynamicStyles.halfInput]}
                     value={formData.max_salary}
-                    onChangeText={(text) => setFormData({ ...formData, max_salary: text })}
-                    placeholder={`Max (e.g., ${currencyInfo.code === 'INR' ? '1500000' : '150000'})`}
+                    onChangeText={(text) => handleSalaryChange('max_salary', text)}
+                    placeholder={`Max (e.g., ${currencyInfo.code === 'INR' ? '15,00,000' : '150,000'})`}
                     keyboardType="numeric"
                     placeholderTextColor={colors.textSecondary}
                   />
