@@ -97,35 +97,6 @@ export default function NotificationsScreen() {
   const [reportModalVisible, setReportModalVisible] = useState(false);
   const [selectedReport, setSelectedReport] = useState<Report | null>(null);
   const [loadingReport, setLoadingReport] = useState(false);
-  const [generatingReport, setGeneratingReport] = useState<string | null>(null);
-
-  // Generate report function
-  const handleGenerateReport = async (reportType: 'weekly' | 'monthly') => {
-    setGeneratingReport(reportType);
-    try {
-      const response = await fetch(`${BACKEND_URL}/api/reports/generate/${reportType}`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${sessionToken}`,
-        },
-      });
-      
-      if (response.ok) {
-        const data = await response.json();
-        Alert.alert('Success', `${reportType.charAt(0).toUpperCase() + reportType.slice(1)} report generated!`);
-        // Refresh reports list
-        fetchReports();
-      } else {
-        const error = await response.json();
-        Alert.alert('Error', error.detail || `Failed to generate ${reportType} report.`);
-      }
-    } catch (error) {
-      console.error(`Error generating ${reportType} report:`, error);
-      Alert.alert('Error', `Failed to generate ${reportType} report.`);
-    } finally {
-      setGeneratingReport(null);
-    }
-  };
 
   useFocusEffect(
     React.useCallback(() => {
