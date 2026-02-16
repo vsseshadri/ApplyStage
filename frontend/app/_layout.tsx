@@ -248,11 +248,13 @@ export default function RootLayout() {
           <AuthProvider>
             <FilterProvider>
               <AppInitializer>
-                <Stack screenOptions={{ headerShown: false }}>
-                  <Stack.Screen name="index" />
-                  <Stack.Screen name="onboarding" />
-                  <Stack.Screen name="(tabs)" />
-                </Stack>
+                <ShareHandler>
+                  <Stack screenOptions={{ headerShown: false }}>
+                    <Stack.Screen name="index" />
+                    <Stack.Screen name="onboarding" />
+                    <Stack.Screen name="(tabs)" />
+                  </Stack>
+                </ShareHandler>
               </AppInitializer>
             </FilterProvider>
           </AuthProvider>
