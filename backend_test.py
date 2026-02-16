@@ -109,8 +109,8 @@ def test_email_summary_endpoints():
         if response.status_code == 200:
             data = response.json()
             
-            # Verify response structure
-            required_fields = ["subject", "body", "to_email", "from_date", "to_date", "stats"]
+            # Verify response structure (monthly uses month_year instead of from_date/to_date)
+            required_fields = ["subject", "body", "to_email", "month_year", "stats"]
             missing_fields = [field for field in required_fields if field not in data]
             
             if missing_fields:
@@ -119,21 +119,18 @@ def test_email_summary_endpoints():
             else:
                 print("✅ PASS - Monthly summary structure correct")
                 print(f"   📧 Subject: {data['subject'][:50]}...")
-                print(f"   📅 Date Range: {data['from_date']} to {data['to_date']}")
+                print(f"   📅 Month/Year: {data['month_year']}")
                 print(f"   📊 Stats: {data['stats']}")
                 
-                # Verify date range is last 30 days
-                from_date = datetime.fromisoformat(data['from_date'].replace('Z', '+00:00'))
-                to_date = datetime.fromisoformat(data['to_date'].replace('Z', '+00:00'))
-                expected_days = 30
-                actual_days = (to_date - from_date).days
-                
-                if abs(actual_days - expected_days) <= 2:  # Allow 2 day tolerance for month variations
-                    print(f"   ✅ Date range correct: {actual_days} days")
-                    test_results.append(("GET /api/email-summary/monthly", "PASS", "Structure and date range correct"))
-                else:
-                    print(f"   ❌ Date range incorrect: {actual_days} days (expected ~{expected_days})")
-                    test_results.append(("GET /api/email-summary/monthly", "FAIL", f"Date range: {actual_days} days"))
+                # Verify month_year format (should be like "Feb-2026")
+                try:
+                    month_year = data['month_year']
+                    datetime.strptime(month_year, "%b-%Y")
+                    print(f"   ✅ Month/Year format correct: {month_year}")
+                    test_results.append(("GET /api/email-summary/monthly", "PASS", "Structure and month format correct"))
+                except ValueError as e:
+                    print(f"   ❌ Month/Year format error: {e}")
+                    test_results.append(("GET /api/email-summary/monthly", "FAIL", f"Month format error: {e}"))
         else:
             print(f"❌ FAIL - Status: {response.status_code}, Response: {response.text}")
             test_results.append(("GET /api/email-summary/monthly", "FAIL", f"Status {response.status_code}"))
