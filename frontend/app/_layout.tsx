@@ -114,6 +114,132 @@ function AppInitializer({ children }: { children: React.ReactNode }) {
   return <>{children}</>;
 }
 
+// Share handler component - handles incoming shared content
+function ShareHandler({ children }: { children: React.ReactNode }) {
+  const { isAuthenticated } = useAuth();
+  const router = useRouter();
+  const [shareModalVisible, setShareModalVisible] = useState(false);
+  const [sharedUrl, setSharedUrl] = useState('');
+  const [sharedText, setSharedText] = useState<string | undefined>();
+
+  // Handle shared data
+  const handleSharedData = (data: SharedJobData) => {
+    if (data.url) {
+      console.log('Received shared content:', data);
+      setSharedUrl(data.url);
+      setSharedText(data.text);
+      
+      // Only show modal if user is authenticated
+      if (isAuthenticated) {
+        setShareModalVisible(true);
+      } else {
+        // Store for later and navigate to login
+        storeSharedData(data);
+        console.log('User not authenticated, storing share data for later');
+      }
+    }
+  };
+
+  // Check for shared content on mount and app state changes
+  useEffect(() => {
+    // Check initial URL (app launched from share)
+    const checkInitialUrl = async () => {
+      try {
+        const initialUrl = await Linking.getInitialURL();
+        if (initialUrl) {
+          handleDeepLink(initialUrl);
+        }
+      } catch (error) {
+        console.error('Error checking initial URL:', error);
+      }
+    };
+
+    // Handle deep link URL
+    const handleDeepLink = (url: string) => {
+      console.log('Deep link received:', url);
+      
+      if (url.startsWith('careerflow://share')) {
+        try {
+          const params = new URLSearchParams(url.split('?')[1]);
+          const sharedUrlParam = params.get('url');
+          const textParam = params.get('text');
+          
+          if (sharedUrlParam) {
+            handleSharedData({
+              url: decodeURIComponent(sharedUrlParam),
+              text: textParam ? decodeURIComponent(textParam) : undefined,
+              timestamp: Date.now(),
+            });
+          }
+        } catch (error) {
+          console.error('Error parsing share URL:', error);
+        }
+      }
+    };
+
+    // Check for pending shared data from AsyncStorage (from extension)
+    const checkPendingShareData = async () => {
+      try {
+        const storedData = await AsyncStorage.getItem('SHARED_JOB_DATA');
+        if (storedData && isAuthenticated) {
+          const data = JSON.parse(storedData);
+          await AsyncStorage.removeItem('SHARED_JOB_DATA');
+          handleSharedData(data);
+        }
+      } catch (error) {
+        console.error('Error checking pending share data:', error);
+      }
+    };
+
+    checkInitialUrl();
+    
+    // Check pending data when auth state changes
+    if (isAuthenticated) {
+      checkPendingShareData();
+    }
+
+    // Setup URL listener for when app is already running
+    const subscription = Linking.addEventListener('url', (event) => {
+      handleDeepLink(event.url);
+    });
+
+    // Check for shared data when app comes to foreground
+    const appStateSubscription = AppState.addEventListener('change', (nextState: AppStateStatus) => {
+      if (nextState === 'active' && isAuthenticated) {
+        checkPendingShareData();
+      }
+    });
+
+    return () => {
+      subscription.remove();
+      appStateSubscription.remove();
+    };
+  }, [isAuthenticated]);
+
+  // Handle job created callback
+  const handleJobCreated = () => {
+    // Navigate to My Jobs tab to show the new job
+    router.push('/(tabs)/my-jobs');
+  };
+
+  return (
+    <>
+      {children}
+      <ShareJobModal
+        visible={shareModalVisible}
+        sharedUrl={sharedUrl}
+        sharedText={sharedText}
+        onClose={() => {
+          setShareModalVisible(false);
+          setSharedUrl('');
+          setSharedText(undefined);
+        }}
+        onJobCreated={handleJobCreated}
+      />
+    </>
+  );
+}
+
 export default function RootLayout() {
   return (
     <ErrorBoundary>
