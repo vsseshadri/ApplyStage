@@ -211,7 +211,8 @@ class ReportGenerationTester:
                     # If we have reports, verify their structure
                     if reports:
                         sample_report = reports[0]
-                        required_fields = ["report_id", "title", "content", "created_at", "report_type"]
+                        # Reports listing doesn't include content for performance reasons
+                        required_fields = ["report_id", "title", "created_at", "report_type"]
                         missing_fields = [field for field in required_fields if field not in sample_report]
                         
                         if missing_fields:
