@@ -3313,13 +3313,11 @@ const createStyles = (colors: any, isDark: boolean, isTablet: boolean = false) =
     flex: 1,
   },
   addPositionButton: {
-    backgroundColor: colors.primary,
-    paddingHorizontal: 16,
+    paddingHorizontal: 8,
     paddingVertical: 12,
-    borderRadius: 8,
   },
   addPositionButtonText: {
-    color: 'white',
+    color: colors.primary,
     fontWeight: '600',
     fontSize: 14,
   },
