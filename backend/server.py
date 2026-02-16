@@ -311,7 +311,7 @@ api_router = APIRouter(prefix="/api")
 # Create database indexes on startup
 @app.on_event("startup")
 async def create_indexes():
-    """Create compound indexes for better query performance"""
+    """Create compound indexes for better query performance and start scheduler"""
     try:
         # Job applications indexes
         await db.job_applications.create_index([("user_id", 1), ("created_at", -1)])
@@ -334,8 +334,35 @@ async def create_indexes():
         await db.reports.create_index([("user_id", 1), ("report_type", 1)])
         
         logging.info("Database indexes created successfully")
+        
+        # Start the scheduler for automatic report generation
+        # Weekly reports: Every Sunday at 1:00 AM UTC
+        scheduler.add_job(
+            generate_weekly_reports_for_all_users,
+            CronTrigger(day_of_week='sun', hour=1, minute=0),
+            id='weekly_report_job',
+            replace_existing=True
+        )
+        
+        # Monthly reports: Last day of month at 9:00 AM UTC
+        # Using day='last' for last day of month
+        scheduler.add_job(
+            generate_monthly_reports_for_all_users,
+            CronTrigger(day='last', hour=9, minute=0),
+            id='monthly_report_job',
+            replace_existing=True
+        )
+        
+        scheduler.start()
+        logging.info("Report scheduler started - Weekly: Sunday 1:00 AM, Monthly: Last day 9:00 AM")
+        
     except Exception as e:
         logging.warning(f"Index creation warning (may already exist): {e}")
+
+@app.on_event("shutdown")
+async def shutdown_scheduler():
+    """Shutdown the scheduler gracefully"""
+    scheduler.shutdown()
 
 class User(BaseModel):
     user_id: str
