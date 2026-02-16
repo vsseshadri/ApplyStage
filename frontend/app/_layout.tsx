@@ -144,6 +144,9 @@ function ShareHandler({ children }: { children: React.ReactNode }) {
 
   // Check for shared content on mount and app state changes
   useEffect(() => {
+    // Initialize Android share listener
+    const cleanupAndroidListener = initializeShareListener(handleSharedData);
+    
     // Check initial URL (app launched from share)
     const checkInitialUrl = async () => {
       try {
