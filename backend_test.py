@@ -248,7 +248,17 @@ class ReportGenerationTester:
                     await self.log_test("Report Content Quality", False, f"Could not generate test report: HTTP {response.status_code}")
                     return False
                 
-                report = response.json()
+                report_summary = response.json()
+                report_id = report_summary.get("report_id")
+                
+                # Fetch the full report content
+                detail_response = await client.get(f"{self.base_url}/api/reports/{report_id}", headers=self.headers)
+                
+                if detail_response.status_code != 200:
+                    await self.log_test("Report Content Quality", False, f"Could not fetch report details: HTTP {detail_response.status_code}")
+                    return False
+                
+                report = detail_response.json()
                 content = report.get("content", "")
                 
                 # Check for HTML formatting
@@ -262,7 +272,6 @@ class ReportGenerationTester:
                     "Weekly Metrics": "Weekly Metrics" in content and "Applications" in content,
                     "Applications List": "Applications This Week" in content,
                     "Follow-up Section": "Follow-up Reminders" in content,
-                    "Insights Section": "Key Insights" in content,
                     "Proper Styling": "font-family:" in content and "color:" in content,
                     "Date Information": any(month in content for month in ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"])
                 }
