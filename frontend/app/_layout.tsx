@@ -7,7 +7,7 @@ import { FilterProvider } from '../contexts/FilterContext';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import * as SplashScreen from 'expo-splash-screen';
 import ShareJobModal from '../components/ShareJobModal';
-import { checkForSharedContent, setupShareListener, SharedJobData, storeSharedData } from '../utils/shareReceiver';
+import { checkForSharedContent, setupShareListener, SharedJobData, storeSharedData, initializeShareListener } from '../utils/shareReceiver';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // Prevent the splash screen from auto-hiding
