@@ -2368,7 +2368,13 @@ export default function MyJobsScreen() {
               <View style={dynamicStyles.formSection}>
                 <View style={dynamicStyles.labelRow}>
                   <Text style={dynamicStyles.label}>Position *</Text>
-                  <TouchableOpacity onPress={() => setShowPositionInput(!showPositionInput)}>
+                  <TouchableOpacity onPress={() => {
+                    setShowPositionInput(!showPositionInput);
+                    if (!showPositionInput) {
+                      // Focus the input after a short delay to allow render
+                      setTimeout(() => customPositionInputRef.current?.focus(), 100);
+                    }
+                  }}>
                     <Text style={dynamicStyles.addCustomText}>{showPositionInput ? 'Select from list' : '+ Add custom'}</Text>
                   </TouchableOpacity>
                 </View>
@@ -2376,11 +2382,13 @@ export default function MyJobsScreen() {
                 {showPositionInput ? (
                   <View style={dynamicStyles.customPositionRow}>
                     <TextInput
+                      ref={customPositionInputRef}
                       style={[dynamicStyles.input, dynamicStyles.customPositionInput]}
                       value={newPosition}
                       onChangeText={handleCustomPositionChange}
                       placeholder="Enter custom position"
                       placeholderTextColor={colors.textSecondary}
+                      autoFocus={true}
                     />
                     <TouchableOpacity style={dynamicStyles.addPositionButton} onPress={handleAddCustomPosition}>
                       <Text style={dynamicStyles.addPositionButtonText}>Add</Text>
