@@ -1,10 +1,14 @@
 /**
  * Share Receiver Utility
  * Handles shared content from other apps on both iOS and Android
+ * 
+ * iOS: Uses App Groups to receive data from Share Extension
+ * Android: Uses react-native-receive-sharing-intent for intent handling
  */
 
-import { Platform, Linking, NativeModules, AppState, AppStateStatus } from 'react-native';
+import { Platform, Linking, AppState, AppStateStatus } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import ReceiveSharingIntent from 'react-native-receive-sharing-intent';
 
 export interface SharedJobData {
   url: string;
@@ -30,6 +34,7 @@ export interface ParsedJobData {
 
 const SHARED_DATA_KEY = 'SHARED_JOB_DATA';
 const PROCESSED_URLS_KEY = 'PROCESSED_SHARE_URLS';
+const APP_GROUP_KEY = 'SharedJobData'; // Must match iOS Share Extension
 
 /**
  * Parse job details from URL and text using common patterns
@@ -184,12 +189,49 @@ function formatCompanyName(slug: string): string {
 }
 
 /**
- * Check for shared data on iOS using App Groups (via AsyncStorage bridge)
+ * Initialize share intent listener (for Android)
  */
-async function checkIOSSharedData(): Promise<SharedJobData | null> {
+export function initializeShareListener(callback: (data: SharedJobData) => void): () => void {
+  if (Platform.OS === 'android') {
+    // Get initial shared files on app launch
+    ReceiveSharingIntent.getReceivedFiles(
+      (files: any[]) => {
+        if (files && files.length > 0) {
+          const file = files[0];
+          const url = file.weblink || file.text || '';
+          if (url) {
+            callback({
+              url: url,
+              text: file.text,
+              timestamp: Date.now(),
+            });
+          }
+        }
+      },
+      (error: any) => {
+        console.log('Error getting shared files:', error);
+      },
+      'com.vsseshadri.careerflow' // Your app's package name
+    );
+
+    // Clear intent after processing
+    return () => {
+      ReceiveSharingIntent.clearReceivedFiles();
+    };
+  }
+  
+  return () => {};
+}
+
+/**
+ * Check for shared data from iOS App Group
+ */
+export async function checkIOSAppGroupData(): Promise<SharedJobData | null> {
+  if (Platform.OS !== 'ios') return null;
+  
   try {
-    // On iOS, we'll use AsyncStorage as a bridge
-    // The share extension should write to a shared file that we can read
+    // On iOS, we check AsyncStorage which should be bridged to App Group
+    // The Share Extension writes to the shared UserDefaults
     const sharedData = await AsyncStorage.getItem(SHARED_DATA_KEY);
     if (sharedData) {
       const parsed = JSON.parse(sharedData);
@@ -198,35 +240,17 @@ async function checkIOSSharedData(): Promise<SharedJobData | null> {
       return parsed;
     }
   } catch (error) {
-    console.log('Error checking iOS shared data:', error);
+    console.log('Error checking iOS App Group data:', error);
   }
   return null;
 }
 
 /**
- * Check for shared data on Android via Intent
+ * Check for shared content on app launch or resume
  */
-async function checkAndroidSharedData(): Promise<SharedJobData | null> {
+export async function checkForSharedContent(): Promise<SharedJobData | null> {
+  // Check AsyncStorage for any pending shared data
   try {
-    // Check if app was launched with shared data via Linking
-    const initialUrl = await Linking.getInitialURL();
-    if (initialUrl) {
-      // Parse the URL for shared content
-      if (initialUrl.startsWith('careerflow://share')) {
-        const params = new URLSearchParams(initialUrl.split('?')[1]);
-        const url = params.get('url');
-        const text = params.get('text');
-        if (url) {
-          return {
-            url: decodeURIComponent(url),
-            text: text ? decodeURIComponent(text) : undefined,
-            timestamp: Date.now(),
-          };
-        }
-      }
-    }
-    
-    // Also check AsyncStorage for Android bridge data
     const storedData = await AsyncStorage.getItem(SHARED_DATA_KEY);
     if (storedData) {
       const parsed = JSON.parse(storedData);
@@ -234,25 +258,14 @@ async function checkAndroidSharedData(): Promise<SharedJobData | null> {
       return parsed;
     }
   } catch (error) {
-    console.log('Error checking Android shared data:', error);
+    console.error('Error checking shared content:', error);
   }
+  
   return null;
 }
 
 /**
- * Main function to check for shared content
- */
-export async function checkForSharedContent(): Promise<SharedJobData | null> {
-  if (Platform.OS === 'ios') {
-    return checkIOSSharedData();
-  } else if (Platform.OS === 'android') {
-    return checkAndroidSharedData();
-  }
-  return null;
-}
-
-/**
- * Store shared data (called from native bridge)
+ * Store shared data (called from native bridge or deep link)
  */
 export async function storeSharedData(data: SharedJobData): Promise<void> {
   try {
