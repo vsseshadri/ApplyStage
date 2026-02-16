@@ -553,6 +553,36 @@ export default function NotificationsScreen() {
           <Text style={[styles.emptySubtext, { color: colors.textSecondary }]}>
             You're all caught up! Reminders and reports will appear here.
           </Text>
+          <View style={styles.generateButtonsContainer}>
+            <TouchableOpacity 
+              style={[styles.generateButton, { backgroundColor: colors.primary }]}
+              onPress={() => handleGenerateReport('weekly')}
+              disabled={generatingReport !== null}
+            >
+              {generatingReport === 'weekly' ? (
+                <ActivityIndicator size="small" color="#fff" />
+              ) : (
+                <>
+                  <Ionicons name="calendar-outline" size={18} color="#fff" />
+                  <Text style={styles.generateButtonText}>Generate Weekly</Text>
+                </>
+              )}
+            </TouchableOpacity>
+            <TouchableOpacity 
+              style={[styles.generateButton, { backgroundColor: '#8B5CF6' }]}
+              onPress={() => handleGenerateReport('monthly')}
+              disabled={generatingReport !== null}
+            >
+              {generatingReport === 'monthly' ? (
+                <ActivityIndicator size="small" color="#fff" />
+              ) : (
+                <>
+                  <Ionicons name="calendar" size={18} color="#fff" />
+                  <Text style={styles.generateButtonText}>Generate Monthly</Text>
+                </>
+              )}
+            </TouchableOpacity>
+          </View>
         </View>
       ) : (
         <ScrollView 
@@ -563,6 +593,38 @@ export default function NotificationsScreen() {
           overScrollMode="always"
           contentContainerStyle={styles.scrollContentContainer}
         >
+          {/* Generate Report Buttons */}
+          <View style={styles.generateButtonsRow}>
+            <TouchableOpacity 
+              style={[styles.generateButtonSmall, { backgroundColor: colors.primary }]}
+              onPress={() => handleGenerateReport('weekly')}
+              disabled={generatingReport !== null}
+            >
+              {generatingReport === 'weekly' ? (
+                <ActivityIndicator size="small" color="#fff" />
+              ) : (
+                <>
+                  <Ionicons name="calendar-outline" size={16} color="#fff" />
+                  <Text style={styles.generateButtonSmallText}>Weekly</Text>
+                </>
+              )}
+            </TouchableOpacity>
+            <TouchableOpacity 
+              style={[styles.generateButtonSmall, { backgroundColor: '#8B5CF6' }]}
+              onPress={() => handleGenerateReport('monthly')}
+              disabled={generatingReport !== null}
+            >
+              {generatingReport === 'monthly' ? (
+                <ActivityIndicator size="small" color="#fff" />
+              ) : (
+                <>
+                  <Ionicons name="calendar" size={16} color="#fff" />
+                  <Text style={styles.generateButtonSmallText}>Monthly</Text>
+                </>
+              )}
+            </TouchableOpacity>
+          </View>
+
           {/* Reports Section */}
           {reports.length > 0 && (
             <>
