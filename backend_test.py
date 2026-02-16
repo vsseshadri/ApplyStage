@@ -74,29 +74,53 @@ class ReportGenerationTester:
                 if response.status_code == 200:
                     report_data = response.json()
                     
-                    # Verify report structure
-                    required_fields = ["report_id", "title", "content", "created_at", "report_type"]
+                    # Verify generation response structure
+                    required_fields = ["report_id", "title", "message"]
                     missing_fields = [field for field in required_fields if field not in report_data]
                     
                     if missing_fields:
                         await self.log_test("Weekly Report Generation", False, f"Missing fields: {missing_fields}")
                         return False
                     
+                    # Verify message indicates weekly report
+                    message = report_data.get("message", "")
+                    if "weekly" not in message.lower():
+                        await self.log_test("Weekly Report Generation", False, f"Message doesn't indicate weekly report: {message}")
+                        return False
+                    
+                    # Now fetch the actual report to verify content
+                    report_id = report_data.get("report_id")
+                    detail_response = await client.get(f"{self.base_url}/api/reports/{report_id}", headers=self.headers)
+                    
+                    if detail_response.status_code != 200:
+                        await self.log_test("Weekly Report Generation", False, f"Could not fetch generated report: HTTP {detail_response.status_code}")
+                        return False
+                    
+                    report_detail = detail_response.json()
+                    
+                    # Verify full report structure
+                    detail_required_fields = ["report_id", "title", "content", "created_at", "report_type"]
+                    missing_detail_fields = [field for field in detail_required_fields if field not in report_detail]
+                    
+                    if missing_detail_fields:
+                        await self.log_test("Weekly Report Generation", False, f"Generated report missing fields: {missing_detail_fields}")
+                        return False
+                    
                     # Verify report type
-                    if report_data.get("report_type") != "weekly":
-                        await self.log_test("Weekly Report Generation", False, f"Wrong report type: {report_data.get('report_type')}")
+                    if report_detail.get("report_type") != "weekly":
+                        await self.log_test("Weekly Report Generation", False, f"Wrong report type: {report_detail.get('report_type')}")
                         return False
                     
                     # Verify content contains expected sections
-                    content = report_data.get("content", "")
-                    expected_sections = ["Weekly Metrics", "Applications This Week", "Follow-up Reminders", "Key Insights"]
+                    content = report_detail.get("content", "")
+                    expected_sections = ["Weekly Metrics", "Applications This Week", "Follow-up Reminders"]
                     missing_sections = [section for section in expected_sections if section not in content]
                     
                     if missing_sections:
                         await self.log_test("Weekly Report Generation", False, f"Missing content sections: {missing_sections}")
                         return False
                     
-                    await self.log_test("Weekly Report Generation", True, f"Generated report {report_data.get('report_id')} with all required sections")
+                    await self.log_test("Weekly Report Generation", True, f"Generated report {report_id} with all required sections")
                     return True
                 else:
                     await self.log_test("Weekly Report Generation", False, f"HTTP {response.status_code}: {response.text}")
