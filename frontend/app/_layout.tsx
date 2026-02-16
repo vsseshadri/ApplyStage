@@ -116,11 +116,13 @@ function AppInitializer({ children }: { children: React.ReactNode }) {
 
 // Share handler component - handles incoming shared content
 function ShareHandler({ children }: { children: React.ReactNode }) {
-  const { isAuthenticated } = useAuth();
+  const { user, sessionToken } = useAuth();
   const router = useRouter();
   const [shareModalVisible, setShareModalVisible] = useState(false);
   const [sharedUrl, setSharedUrl] = useState('');
   const [sharedText, setSharedText] = useState<string | undefined>();
+  
+  const isAuthenticated = user !== null && sessionToken !== null;
 
   // Handle shared data
   const handleSharedData = (data: SharedJobData) => {
