@@ -218,6 +218,7 @@ function ShareHandler({ children }: { children: React.ReactNode }) {
     return () => {
       subscription.remove();
       appStateSubscription.remove();
+      cleanupAndroidListener();
     };
   }, [isAuthenticated]);
 
