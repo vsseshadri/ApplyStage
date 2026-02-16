@@ -520,6 +520,26 @@ export default function MyJobsScreen() {
     );
   };
 
+  // Helper function to format salary with commas for display
+  const formatSalaryWithCommas = (value: string): string => {
+    // Remove all non-numeric characters except decimal point
+    const numericValue = value.replace(/[^0-9]/g, '');
+    if (!numericValue) return '';
+    // Add commas for thousands
+    return numericValue.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+  };
+
+  // Helper function to remove formatting for storage
+  const unformatSalary = (value: string): string => {
+    return value.replace(/,/g, '');
+  };
+
+  // Handle salary input change with real-time formatting
+  const handleSalaryChange = (field: 'min_salary' | 'max_salary', value: string) => {
+    const formatted = formatSalaryWithCommas(value);
+    setFormData({ ...formData, [field]: formatted });
+  };
+
   // ============ CSV HELPER FUNCTIONS ============
   // Helper function to parse a CSV line handling quoted values
   const parseCSVLine = (line: string): string[] => {
