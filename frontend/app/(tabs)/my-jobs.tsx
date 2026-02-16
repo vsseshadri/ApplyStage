@@ -1303,16 +1303,20 @@ export default function MyJobsScreen() {
       return;
     }
 
-    // Parse salary if provided (optional)
+    // Parse salary if provided (optional) - remove commas from formatted values
     let minSal = 0;
     let maxSal = 0;
     if (formData.min_salary && formData.max_salary) {
-      minSal = parseFloat(formData.min_salary);
-      maxSal = parseFloat(formData.max_salary);
+      minSal = parseFloat(unformatSalary(formData.min_salary));
+      maxSal = parseFloat(unformatSalary(formData.max_salary));
       if (minSal >= maxSal) {
         Alert.alert('Error', 'Maximum salary must be greater than minimum salary');
         return;
       }
+    } else if (formData.min_salary) {
+      minSal = parseFloat(unformatSalary(formData.min_salary));
+    } else if (formData.max_salary) {
+      maxSal = parseFloat(unformatSalary(formData.max_salary));
     }
 
     try {
