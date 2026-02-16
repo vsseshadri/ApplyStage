@@ -17,6 +17,7 @@
       "config": {
         "usesNonExemptEncryption": false
       },
+      "associatedDomains": ["applinks:repo-preview-43.emergent.host"],
       "infoPlist": {
         "NSUserTrackingUsageDescription": "Track your job applications and progress",
         "NSCalendarsUsageDescription": "Schedule reminders for job follow-ups",
@@ -24,7 +25,16 @@
         "NSCameraUsageDescription": "Take a profile photo",
         "NSFaceIDUsageDescription": "Use Face ID to login securely",
         "ITSAppUsesNonExemptEncryption": false,
-        "CFBundleDisplayName": "CareerFlow"
+        "CFBundleDisplayName": "CareerFlow",
+        "CFBundleURLTypes": [
+          {
+            "CFBundleURLName": "com.vsseshadri.careerflow",
+            "CFBundleURLSchemes": ["careerflow"]
+          }
+        ]
+      },
+      "entitlements": {
+        "com.apple.security.application-groups": ["group.com.vsseshadri.careerflow"]
       }
     },
     "android": {
