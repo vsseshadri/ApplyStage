@@ -119,6 +119,9 @@ backend:
       - working: true
         agent: "testing"
         comment: "✅ PASS - All 4 email summary API tests PASSED (100% success rate). PUT /api/user/communication-email validates email format correctly (accepts valid emails, rejects invalid with 400 error). GET /api/email-summary/weekly returns proper weekly summary with subject, body, to_email, and stats structure. GET /api/email-summary/monthly returns comprehensive monthly summary with all required fields and statistics. Fixed datetime handling issues during testing for proper date comparisons."
+      - working: true
+        agent: "testing"
+        comment: "✅ RE-TESTED AS REQUESTED - All 4 email summary API tests PASSED (100% success rate). Weekly endpoint returns proper 7-day date range (Feb-09-2026 to Feb-16-2026) with correct subject, body, to_email, from_date, to_date, and stats structure. Monthly endpoint returns proper monthly summary with subject, body, to_email, month_year (Feb-2026), and comprehensive stats including total_applications, status_counts, work_mode_counts, avg_salary_range, and response_rate. Email validation working correctly (rejects invalid emails with 400 error). All endpoints functioning as specified in review request."
 
   - task: "Auth endpoints (Google OAuth integration)"
     implemented: true
