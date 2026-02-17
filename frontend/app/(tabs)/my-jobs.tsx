@@ -258,6 +258,19 @@ export default function MyJobsScreen() {
     }
   }, [params?.openAdd, loading]);
   
+  // Handle shared data from Share Extension
+  useEffect(() => {
+    if (params?.openAddWithShare === 'true' && params?.sharedUrl && !loading) {
+      openAddModalWithSharedData(params.sharedUrl as string, params.sharedText as string);
+      // Clear the params after opening
+      require('expo-router').router.setParams({ 
+        openAddWithShare: undefined, 
+        sharedUrl: undefined, 
+        sharedText: undefined 
+      });
+    }
+  }, [params?.openAddWithShare, params?.sharedUrl, loading]);
+  
   // Date picker states
   const [showDateAppliedPicker, setShowDateAppliedPicker] = useState(false);
   const [showScheduledOnPicker, setShowScheduledOnPicker] = useState(false);
