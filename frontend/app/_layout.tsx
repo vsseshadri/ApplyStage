@@ -120,22 +120,26 @@ function AppInitializer({ children }: { children: React.ReactNode }) {
 function ShareHandler({ children }: { children: React.ReactNode }) {
   const { user, sessionToken } = useAuth();
   const router = useRouter();
-  const [shareModalVisible, setShareModalVisible] = useState(false);
-  const [sharedUrl, setSharedUrl] = useState('');
-  const [sharedText, setSharedText] = useState<string | undefined>();
   
   const isAuthenticated = user !== null && sessionToken !== null;
 
-  // Handle shared data
+  // Handle shared data - navigate to My Jobs with pre-populated form
   const handleSharedData = (data: SharedJobData) => {
     if (data.url) {
       console.log('Received shared content:', data);
-      setSharedUrl(data.url);
-      setSharedText(data.text);
       
-      // Only show modal if user is authenticated
+      // Only navigate if user is authenticated
       if (isAuthenticated) {
-        setShareModalVisible(true);
+        console.log('Navigating to My Jobs with shared data:', data);
+        // Navigate to My Jobs tab with shared data as params
+        router.push({
+          pathname: '/(tabs)/my-jobs',
+          params: {
+            sharedUrl: data.url,
+            sharedText: data.text || '',
+            openAddWithShare: 'true',
+          },
+        });
       } else {
         // Store for later and navigate to login
         storeSharedData(data);
@@ -166,28 +170,15 @@ function ShareHandler({ children }: { children: React.ReactNode }) {
       console.log('Deep link received:', url);
       
       if (url.startsWith('careerflow://share')) {
-        try {
-          const params = new URLSearchParams(url.split('?')[1]);
-          const sharedUrlParam = params.get('url');
-          const textParam = params.get('text');
-          
-          if (sharedUrlParam) {
-            handleSharedData({
-              url: decodeURIComponent(sharedUrlParam),
-              text: textParam ? decodeURIComponent(textParam) : undefined,
-              timestamp: Date.now(),
-            });
-          }
-        } catch (error) {
-          console.error('Error parsing share URL:', error);
-        }
+        // For deep links, check iOS App Group for the actual data
+        checkPendingShareData();
       }
     };
 
-    // Check for pending shared data from AsyncStorage or iOS App Group
+    // Check for pending shared data from iOS App Group
     const checkPendingShareData = async () => {
       try {
-        // First, check iOS App Group via native bridge (highest priority)
+        // Check iOS App Group via native bridge
         if (Platform.OS === 'ios') {
           const iosData = await checkIOSAppGroupData();
           if (iosData && iosData.url) {
@@ -239,40 +230,6 @@ function ShareHandler({ children }: { children: React.ReactNode }) {
       cleanupAndroidListener();
     };
   }, [isAuthenticated]);
-
-  // Handle shared data - navigate to My Jobs with pre-populated form
-  const handleSharedDataNavigation = (data: SharedJobData) => {
-    if (data.url && isAuthenticated) {
-      console.log('Navigating to My Jobs with shared data:', data);
-      // Navigate to My Jobs tab with shared data as params
-      router.push({
-        pathname: '/(tabs)/my-jobs',
-        params: {
-          sharedUrl: data.url,
-          sharedText: data.text || '',
-          openAddWithShare: 'true',
-        },
-      });
-    }
-  };
-
-  // Update handleSharedData to navigate instead of showing modal
-  const handleSharedDataUpdated = (data: SharedJobData) => {
-    if (data.url) {
-      console.log('Received shared content:', data);
-      setSharedUrl(data.url);
-      setSharedText(data.text);
-      
-      // Only navigate if user is authenticated
-      if (isAuthenticated) {
-        handleSharedDataNavigation(data);
-      } else {
-        // Store for later and navigate to login
-        storeSharedData(data);
-        console.log('User not authenticated, storing share data for later');
-      }
-    }
-  };
 
   return (
     <>
