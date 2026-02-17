@@ -4,8 +4,11 @@ import * as WebBrowser from 'expo-web-browser';
 import * as Linking from 'expo-linking';
 import * as LocalAuthentication from 'expo-local-authentication';
 import * as AppleAuthentication from 'expo-apple-authentication';
-import { Platform, Alert } from 'react-native';
+import { Platform, Alert, NativeModules } from 'react-native';
 import Constants from 'expo-constants';
+
+// Native module for storing auth token in App Group (iOS only)
+const { ShareDataBridge } = NativeModules;
 
 WebBrowser.maybeCompleteAuthSession();
 
