@@ -438,6 +438,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       // Keep biometric_session_token for future biometric logins if biometric is enabled
       // Only remove the active session_token
       await AsyncStorage.removeItem('session_token');
+      await clearTokenFromAppGroup(); // Clear from App Group on logout
       setSessionToken(null);
       setUser(null);
     } catch (error) {
