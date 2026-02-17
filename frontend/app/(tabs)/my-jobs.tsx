@@ -1174,6 +1174,57 @@ export default function MyJobsScreen() {
     setModalVisible(true);
   };
 
+  // Open add modal with pre-populated data from Share Extension
+  const openAddModalWithSharedData = (sharedUrl: string, sharedText?: string) => {
+    console.log('Opening add modal with shared data:', sharedUrl, sharedText);
+    
+    // Parse the shared content
+    const parsed = parseJobDetailsFromContent(sharedUrl, sharedText);
+    
+    // Map job_type from parsed format to form format
+    const jobTypeMap: {[key: string]: string} = {
+      'full_time': 'Full-Time',
+      'part_time': 'Part-Time',
+      'contract': 'Contract',
+      'internship': 'Internship',
+    };
+    
+    // Map work_mode from parsed format
+    const workModeMap: {[key: string]: string} = {
+      'remote': 'remote',
+      'hybrid': 'hybrid',
+      'onsite': 'onsite',
+    };
+    
+    setEditingJob(null);
+    setFormData({
+      company_name: parsed.company_name || '',
+      position: parsed.position || '',
+      min_salary: parsed.min_salary || '',
+      max_salary: parsed.max_salary || '',
+      work_mode: workModeMap[parsed.work_mode] || 'remote',
+      job_url: sharedUrl,
+      recruiter_email: '',
+      status: 'applied',
+      job_type: jobTypeMap[parsed.job_type] || '',
+      upcoming_stage: '',
+      upcoming_schedule: '',
+      notes: sharedText ? `Shared from: ${sharedText.substring(0, 500)}` : '',
+      follow_up_days: '7',
+      is_priority: false,
+    });
+    setSelectedState(parsed.location.state || '');
+    setSelectedCity(parsed.location.city || '');
+    setResumeFile(null);
+    setDateAppliedText(format(new Date(), 'MM/dd/yyyy'));
+    setUpcomingScheduleDate('');
+    setOriginalScheduledOn('');
+    setScheduledOnEdited(false);
+    setShowPositionInput(false);
+    setNewPosition('');
+    setModalVisible(true);
+  };
+
   const openEditModal = (job: any) => {
     setEditingJob(job);
     setFormData({
