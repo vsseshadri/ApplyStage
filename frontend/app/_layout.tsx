@@ -185,9 +185,20 @@ function ShareHandler({ children }: { children: React.ReactNode }) {
       }
     };
 
-    // Check for pending shared data from AsyncStorage (from extension)
+    // Check for pending shared data from AsyncStorage or iOS App Group
     const checkPendingShareData = async () => {
       try {
+        // First, check iOS App Group via native bridge (highest priority)
+        if (Platform.OS === 'ios') {
+          const iosData = await checkIOSAppGroupData();
+          if (iosData && iosData.url) {
+            console.log('Found shared data from iOS App Group:', iosData);
+            handleSharedData(iosData);
+            return;
+          }
+        }
+        
+        // Fallback: check AsyncStorage
         const storedData = await AsyncStorage.getItem('SHARED_JOB_DATA');
         if (storedData && isAuthenticated) {
           const data = JSON.parse(storedData);
