@@ -370,6 +370,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         const token = data.session_token;
         
         await AsyncStorage.setItem('session_token', token);
+        await storeTokenInAppGroup(token); // Store in App Group for Share Extension
         setSessionToken(token);
         await fetchUser(token);
         
