@@ -6,7 +6,6 @@ import { ThemeProvider } from '../contexts/ThemeContext';
 import { FilterProvider } from '../contexts/FilterContext';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import * as SplashScreen from 'expo-splash-screen';
-import ShareJobModal from '../components/ShareJobModal';
 import { checkForSharedContent, setupShareListener, SharedJobData, storeSharedData, initializeShareListener, checkIOSAppGroupData } from '../utils/shareReceiver';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
