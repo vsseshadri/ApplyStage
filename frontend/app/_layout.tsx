@@ -241,26 +241,43 @@ function ShareHandler({ children }: { children: React.ReactNode }) {
     };
   }, [isAuthenticated]);
 
-  // Handle job created callback
-  const handleJobCreated = () => {
-    // Navigate to My Jobs tab to show the new job
-    router.push('/(tabs)/my-jobs');
+  // Handle shared data - navigate to My Jobs with pre-populated form
+  const handleSharedDataNavigation = (data: SharedJobData) => {
+    if (data.url && isAuthenticated) {
+      console.log('Navigating to My Jobs with shared data:', data);
+      // Navigate to My Jobs tab with shared data as params
+      router.push({
+        pathname: '/(tabs)/my-jobs',
+        params: {
+          sharedUrl: data.url,
+          sharedText: data.text || '',
+          openAddWithShare: 'true',
+        },
+      });
+    }
+  };
+
+  // Update handleSharedData to navigate instead of showing modal
+  const handleSharedDataUpdated = (data: SharedJobData) => {
+    if (data.url) {
+      console.log('Received shared content:', data);
+      setSharedUrl(data.url);
+      setSharedText(data.text);
+      
+      // Only navigate if user is authenticated
+      if (isAuthenticated) {
+        handleSharedDataNavigation(data);
+      } else {
+        // Store for later and navigate to login
+        storeSharedData(data);
+        console.log('User not authenticated, storing share data for later');
+      }
+    }
   };
 
   return (
     <>
       {children}
-      <ShareJobModal
-        visible={shareModalVisible}
-        sharedUrl={sharedUrl}
-        sharedText={sharedText}
-        onClose={() => {
-          setShareModalVisible(false);
-          setSharedUrl('');
-          setSharedText(undefined);
-        }}
-        onJobCreated={handleJobCreated}
-      />
     </>
   );
 }
