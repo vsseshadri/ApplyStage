@@ -15,6 +15,7 @@ import { CANADA_PROVINCES_AND_CITIES, CANADA_PROVINCES } from '../../utils/canad
 import { INDIA_STATES_AND_CITIES, INDIA_STATES } from '../../utils/indiaStatesAndCities';
 import * as XLSX from 'xlsx';
 import CalendarPicker from '../../components/CalendarPicker';
+import { parseJobDetailsFromContent } from '../../utils/shareReceiver';
 
 // Currency mapping based on country
 const COUNTRY_CURRENCY = {
