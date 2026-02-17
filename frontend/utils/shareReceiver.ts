@@ -227,20 +227,25 @@ export function initializeShareListener(callback: (data: SharedJobData) => void)
 }
 
 /**
- * Check for shared data from iOS App Group
+ * Check for shared data from iOS App Group using native bridge
  */
 export async function checkIOSAppGroupData(): Promise<SharedJobData | null> {
   if (Platform.OS !== 'ios') return null;
   
   try {
-    // On iOS, we check AsyncStorage which should be bridged to App Group
-    // The Share Extension writes to the shared UserDefaults
-    const sharedData = await AsyncStorage.getItem(SHARED_DATA_KEY);
-    if (sharedData) {
-      const parsed = JSON.parse(sharedData);
-      // Clear after reading
-      await AsyncStorage.removeItem(SHARED_DATA_KEY);
-      return parsed;
+    // Use native bridge to read from App Group UserDefaults
+    if (ShareDataBridge && ShareDataBridge.getSharedData) {
+      const sharedData = await ShareDataBridge.getSharedData();
+      if (sharedData && sharedData.url) {
+        console.log('Retrieved shared data from iOS App Group:', sharedData);
+        return {
+          url: sharedData.url,
+          text: sharedData.text || undefined,
+          timestamp: sharedData.timestamp || Date.now(),
+        };
+      }
+    } else {
+      console.log('ShareDataBridge native module not available');
     }
   } catch (error) {
     console.log('Error checking iOS App Group data:', error);
