@@ -212,6 +212,11 @@ function ShareHandler({ children }: { children: React.ReactNode }) {
 
     checkInitialUrl();
     
+    // For iOS: also immediately check App Group on mount
+    if (Platform.OS === 'ios') {
+      checkPendingShareData();
+    }
+    
     // Check pending data when auth state changes
     if (isAuthenticated) {
       checkPendingShareData();
