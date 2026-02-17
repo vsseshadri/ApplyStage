@@ -68,6 +68,31 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [biometricAvailable, setBiometricAvailable] = useState(false);
   const [isNewUser, setIsNewUser] = useState(false);
 
+  // Helper function to store auth token in App Group for Share Extension (iOS only)
+  const storeTokenInAppGroup = async (token: string) => {
+    if (Platform.OS === 'ios' && ShareDataBridge?.setAuthToken) {
+      try {
+        await ShareDataBridge.setAuthToken(token);
+        await ShareDataBridge.setBackendUrl(BACKEND_URL);
+        console.log('Auth token stored in App Group for Share Extension');
+      } catch (error) {
+        console.error('Failed to store token in App Group:', error);
+      }
+    }
+  };
+
+  // Helper function to clear auth token from App Group (iOS only)
+  const clearTokenFromAppGroup = async () => {
+    if (Platform.OS === 'ios' && ShareDataBridge?.clearAuthToken) {
+      try {
+        await ShareDataBridge.clearAuthToken();
+        console.log('Auth token cleared from App Group');
+      } catch (error) {
+        console.error('Failed to clear token from App Group:', error);
+      }
+    }
+  };
+
   useEffect(() => {
     checkBiometricAvailability();
     loadSession();
