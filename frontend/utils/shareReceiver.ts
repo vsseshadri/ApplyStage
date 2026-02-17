@@ -2,13 +2,16 @@
  * Share Receiver Utility
  * Handles shared content from other apps on both iOS and Android
  * 
- * iOS: Uses App Groups to receive data from Share Extension
+ * iOS: Uses App Groups to receive data from Share Extension via native bridge
  * Android: Uses react-native-receive-sharing-intent for intent handling
  */
 
-import { Platform, Linking, AppState, AppStateStatus } from 'react-native';
+import { Platform, Linking, AppState, AppStateStatus, NativeModules } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import ReceiveSharingIntent from 'react-native-receive-sharing-intent';
+
+// Native module for iOS Share Extension data bridge
+const { ShareDataBridge } = NativeModules;
 
 export interface SharedJobData {
   url: string;
