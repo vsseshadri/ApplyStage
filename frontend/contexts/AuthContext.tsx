@@ -137,6 +137,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           const biometricSuccess = await authenticateWithBiometric();
           if (biometricSuccess) {
             setSessionToken(token);
+            await storeTokenInAppGroup(token); // Ensure token is in App Group
             await fetchUser(token);
           } else {
             // Biometric failed, clear tokens and require fresh login
@@ -149,6 +150,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         } else {
           // No biometric, just load the session
           setSessionToken(token);
+          await storeTokenInAppGroup(token); // Ensure token is in App Group
           await fetchUser(token);
         }
       }
