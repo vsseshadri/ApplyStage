@@ -1,16 +1,13 @@
 import React, { useEffect, useState } from 'react';
 import { Stack, useRouter } from 'expo-router';
-import { View, Text, StyleSheet, ActivityIndicator, Linking, Platform, AppState, AppStateStatus, NativeModules } from 'react-native';
+import { View, Text, StyleSheet, ActivityIndicator, Linking, Platform, AppState, AppStateStatus } from 'react-native';
 import { AuthProvider, useAuth } from '../contexts/AuthContext';
 import { ThemeProvider } from '../contexts/ThemeContext';
 import { FilterProvider } from '../contexts/FilterContext';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import * as SplashScreen from 'expo-splash-screen';
-import { checkForSharedContent, setupShareListener, SharedJobData, storeSharedData, initializeShareListener, checkIOSAppGroupData } from '../utils/shareReceiver';
+import { SharedJobData, storeSharedData, initializeShareListener, checkIOSAppGroupData } from '../utils/shareReceiver';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-
-// Native module for iOS Share Extension data bridge
-const { ShareDataBridge } = NativeModules;
 
 // Prevent the splash screen from auto-hiding
 SplashScreen.preventAutoHideAsync().catch(() => {
