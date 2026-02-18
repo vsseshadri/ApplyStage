@@ -1,252 +1,318 @@
 <analysis>
-
-**original_problem_statement**: The user wants to add a series of UI/UX improvements and fix several bugs, with the highest priority being the implementation of a cross-platform Share feature.
+**original_problem_statement**: The user wants to implement a cross-platform Share-to-App feature. The current focus is on the iOS implementation. After many iterations, the agreed-upon workflow is to have a native iOS job entry form appear directly within the Share Extension when the user shares a job posting (e.g., from LinkedIn).
 
 PRODUCT REQUIREMENTS:
-- **Share-to-App Feature (P0 - MVP Blocker)**:
-    - **Goal**: Allow users to create a new job entry by sharing a job posting URL from third-party apps (e.g., LinkedIn, browsers) on both iOS and Android.
+- **Share Extension Native Form (P0)**:
+    - **Goal**: When a user shares a job URL (e.g., from LinkedIn) and selects the CareerFlow app, a native iOS form should appear immediately within the Share Extension.
     - **Functional Requirements**:
-        - The app must appear in the system Share Sheet.
-        - On selection, the app must capture the URL, open, and display an overlay/modal.
-        - The modal should show pre-parsed job fields (Company, Position, etc.) derived from the shared content.
-        - The user can confirm or cancel. On confirmation, a new job entry is created in the My Jobs tab.
-    - **Technical Requirements**:
-        - **iOS**: A native Share Extension target (Swift),  configuration, App Groups for data sharing, and a deep link to open the main app.
-        - **Android**: Intent filters for , and a native module to bridge data to React Native.
-- **UI/UX Polish**:
-    - Make all Edit and Add buttons simple text links for consistency.
-    - Implement real-time formatting (e.g., add commas) for salary fields.
-    - Ensure the cursor auto-focuses on the input field when adding a custom value (e.g., custom position, status).
-- **Report Generation**:
-    - The user clarified that weekly/monthly reports should be **automatically generated** as PDFs under the Notifications tab, not sent via email. The generation should be triggered based on the toggles in the Settings tab (e.g., Weekly on Sunday @ 1 AM).
+        - The form must be pre-populated by parsing the shared content. The agent needs to fetch the URL's HTML content and parse it for key details.
+        - **Parsing Logic**:
+            - Prioritize Open Graph tags (, ) for instant population of Company Name and Job Title.
+            - Use platform-specific selectors (e.g., for LinkedIn's 'top-card' and 'description' sections).
+            - Clean the data, ignoring irrelevant text like Promoted or People also viewed.
+            - Infer  ('remote'/'hybrid') based on keywords.
+            - Extract salary ranges (e.g., 120k - 150k) into min/max numeric values.
+            - Parse shared text as a fallback if URL fetching is blocked or provides limited data.
+        - **Form Fields**: The form should mirror the app's My Jobs form, including , , , ,  (State/City, hidden for 'Remote'), ,  (pre-filled with today's date), and  (pre-filled with Applied).
+    - **Save Functionality**:
+        - On Save, the extension must make a direct API call to the backend () to create the new job entry.
+        - The user's authentication token must be accessible to the extension via App Groups.
+        - After a successful save, a confirmation message should be displayed, and the extension should close.
 
 **User's preferred language**: English
 
 **what currently exists?**
-- The application is a full-stack Expo (React Native) and FastAPI app.
-- All requested UI/UX polish tasks (text-based buttons, salary formatting, auto-focus) have been implemented and are working.
-- The automatic report generation feature has been implemented on the backend using APScheduler to run jobs at the specified times. Reports are generated and stored in the database, appearing on the Notifications tab.
-- An initial implementation for the Share-to-App feature exists. It uses the  library. The user has locally generated the native  folder, added a Share Extension target in Xcode, and committed the  directory to the repository, following the agent's guidance.
+- The app is a full-stack Expo (React Native) and FastAPI application.
+- An iOS build with a Share Extension target exists. When a user shares content, a native form UI appears correctly from within the Share Extension.
+- A native bridge () is in place to allow the React Native app to share the auth token and backend URL with the Share Extension via App Groups ().
+- The  is configured to save the session token and backend URL to the App Group upon user login.
+- The  file on the user's local Mac is correctly configured with the Share Extension target and all necessary files and capabilities.
 
 **Last working item**:
-    - Last item agent was working: Diagnosing a failed iOS build on EAS (Expo Application Services). The build failed during the  step.
-    - Status: BLOCKED
+    - Last item agent was working: Fixing the parsing logic within the native Share Extension () and ensuring the save functionality works. The previous agent provided a complete, updated  file to the user, which includes URL fetching, Open Graph/HTML parsing, and a corrected save method.
+    - Status: IN PROGRESS
     - Agent Testing Done: N
-    - Which testing method agent to use? The feature requires a native build and must be tested by the user on a physical device. The agent cannot test this.
-    - User Testing Done: Y (The previous build attempt was tested by the user and failed because the Share Extension was not included in the build, a problem the current strategy aims to solve).
+    - Which testing method agent to use? The user must manually apply the provided Swift code on their local Mac, commit the changes from their Mac, build the app using EAS, and test on a physical iOS device via TestFlight. The agent cannot test this feature.
+    - User Testing Done: Y (The user tested the previous version and confirmed the form appears but parsing and saving are broken, which prompted the last agent action).
 
 **All Pending/In progress Issue list**:
-  Issue 1: (P0) EAS iOS build fails during  step.
-  Issue 2: (P1)  reports that  is unmaintained and untested on the New Architecture.
-  Issue 3: (P2)  warns about native configuration in  while the  folder exists.
+  Issue 1:  (P0) Parsing logic in the native Share Extension is incorrect.
+  Issue 2:  (P0) The Save button in the native Share Extension form fails to create a job entry.
+  Issue 3:  (P1) The development workflow between the user's Mac (for native iOS changes) and the Emergent environment (for RN/backend changes) is fragile and has repeatedly caused project configuration to be lost.
   
   Issues Detail:
   - Issue 1: 
-     - Attempted fixes: The agent has correctly identified the root cause from the build logs. The user is using a very new version of Xcode (likely Xcode 16 from the logs mentioning Xcode 26.0 and macOS 15) on their local machine. This creates a project file () with , which is incompatible with the older, stable version of Xcode running on the EAS build servers.
-     - Next debug checklist:
-        1.  Guide the user to open  on their local machine.
-        2.  Instruct them to find the line  near the top of the file.
-        3.  Have them change this value to a more compatible version, such as  (which corresponds to Xcode 14.3).
-        4.  Instruct the user to save the file, commit the change to git, push, and then run the EAS build again.
-     - Why fix this issue and what will be achieved with the fix? This will resolve the  error on EAS Build by making the Xcode project file format compatible with the build environment, allowing the build to proceed. This is the final blocker for getting a testable build with the Share Extension.
+     - Attempted fixes: The previous agent completely rewrote  to include a sophisticated parsing strategy. This strategy involves fetching the URL's HTML content, parsing Open Graph () tags for a quick result, and then attempting a deeper parse of the HTML structure and any accompanying shared text.
+     - Next debug checklist: 
+        1. The user needs to replace the content of their local  with the latest code provided by the last agent.
+        2. The user must then build and test.
+        3. If parsing still fails, the next step is to debug the  and  functions in . This could involve logging the fetched HTML to see if LinkedIn is blocking the request or returning limited content, and then adjusting the parsing logic accordingly.
+     - Why fix this issue and what will be achieved with the fix? This is the core requirement of the feature. Fixing it will auto-populate the job form, creating a seamless user experience.
      - Status:  IN PROGRESS
-     - Is recurring issue? N
-     - Should Test frontend/backend/both after fix? User must test the resulting iOS build on a physical device.
-     - Blocked on other issue: None. This is the primary blocker.
+     - Is recurring issue? Y
+     - Should Test frontend/backend/both after fix? User testing on a physical iOS device is required.
+     - Blocked on other issue: None.
   - Issue 2: 
-     - Attempted fixes: N/A. This is a warning about a third-party library.
-     - Next debug checklist: Acknowledge the risk. If the library causes issues after a successful build, the next step would be to search for a more modern, maintained alternative. For now, the goal is to get the current implementation working as it's the most direct path.
-     - Why fix this issue and what will be achieved with the fix? Using a maintained library would ensure long-term stability and support for future React Native versions.
-     - Status:  NOT STARTED
+     - Attempted fixes: The latest version of  includes an updated  function. It ensures optional fields like salary and location are only included in the API payload if they have values and provides more detailed error alerts based on the API response.
+     - Next debug checklist:
+        1. After the user applies the new  code, they must test the save functionality.
+        2. If it still fails, the user should check the network request logs in Xcode's console while the Share Extension is running to see the exact payload being sent to  and the precise error response from the server.
+     - Why fix this issue and what will be achieved with the fix? This will make the entire Share Extension feature functional, allowing users to save jobs directly from the share sheet.
+     - Status:  IN PROGRESS
      - Is recurring issue? Y
-     - Should Test frontend/backend/both after fix? Both
-     - Blocked on other issue: Issue 1: EAS iOS build fails
+     - Should Test frontend/backend/both after fix? User testing on a physical iOS device is required.
+     - Blocked on other issue: None.
   - Issue 3: 
-     - Attempted fixes: N/A.
-     - Next debug checklist: This warning can be ignored. It's a standard  check that doesn't apply to our current strategy, which intentionally requires committing the  folder to preserve the native Share Extension changes. The agent can add  and  to a  in a later step if the project ever moves back to a fully managed workflow.
-     - Why fix this issue and what will be achieved with the fix? Resolving this would clean up the  output, but it's a low-priority issue.
-     - Status:  NOT STARTED
+     - Attempted fixes: The agent has identified the root cause: native Xcode project changes () made on the user's Mac were being overwritten by git operations originating from the Emergent environment. The agent guided the user through a complex usage: git [-v | --version] [-h | --help] [-C <path>] [-c <name>=<value>]
+           [--exec-path[=<path>]] [--html-path] [--man-path] [--info-path]
+           [-p | --paginate | -P | --no-pager] [--no-replace-objects] [--bare]
+           [--git-dir=<path>] [--work-tree=<path>] [--namespace=<name>]
+           [--super-prefix=<path>] [--config-env=<name>=<envvar>]
+           <command> [<args>]
+
+These are common Git commands used in various situations:
+
+start a working area (see also: git help tutorial)
+   clone     Clone a repository into a new directory
+   init      Create an empty Git repository or reinitialize an existing one
+
+work on the current change (see also: git help everyday)
+   add       Add file contents to the index
+   mv        Move or rename a file, a directory, or a symlink
+   restore   Restore working tree files
+   rm        Remove files from the working tree and from the index
+
+examine the history and state (see also: git help revisions)
+   bisect    Use binary search to find the commit that introduced a bug
+   diff      Show changes between commits, commit and working tree, etc
+   grep      Print lines matching a pattern
+   log       Show commit logs
+   show      Show various types of objects
+   status    Show the working tree status
+
+grow, mark and tweak your common history
+   branch    List, create, or delete branches
+   commit    Record changes to the repository
+   merge     Join two or more development histories together
+   rebase    Reapply commits on top of another base tip
+   reset     Reset current HEAD to the specified state
+   switch    Switch branches
+   tag       Create, list, delete or verify a tag object signed with GPG
+
+collaborate (see also: git help workflows)
+   fetch     Download objects and refs from another repository
+   pull      Fetch from and integrate with another repository or a local branch
+   push      Update remote refs along with associated objects
+
+'git help -a' and 'git help -g' list available subcommands and some
+concept guides. See 'git help <command>' or 'git help <concept>'
+to read about a specific subcommand or concept.
+See 'git help git' for an overview of the system. rebase/merge conflict resolution and established a clear workflow.
+     - Next debug checklist: The next agent MUST reinforce the correct workflow:
+        1. **All native iOS changes (modifying  files, adding targets in Xcode) MUST be done on the user's Mac.**
+        2. **The user MUST commit and push these changes from their Mac.**
+        3. The agent in the Emergent environment should NOT use any Save to Git feature without first ensuring the user's native changes have been pulled. The safest approach is for the agent to provide code snippets and have the user apply them locally.
+     - Why fix this issue and what will be achieved with the fix? Prevents catastrophic loss of work and user frustration. It stabilizes the development process for features requiring native code.
+     - Status:  IN PROGRESS
      - Is recurring issue? Y
-     - Should Test frontend/backend/both after fix? N/A
+     - Should Test frontend/backend/both after fix? N/A (Process issue)
      - Blocked on other issue: None.
 
 **In progress Task List**:
-  - Task 1: (P0) Implement the cross-platform Share-to-App feature.
+  - Task 1: (P0) Finalize and test the native iOS Share Extension with correct parsing and saving.
  Task Detail:
   - Task 1: 
-     - Where to resume: Guide the user to fix the Xcode project version incompatibility (Issue 1). After they have successfully run the EAS build, they will need to install it on their device and test the share functionality from another app (e.g., LinkedIn or Safari).
-     - What will be achieved with this? This will complete the user's last remaining MVP feature, unblocking their app launch.
+     - Where to resume: The user has been given the latest version of . The next agent should wait for the user to confirm they have applied this code on their Mac and are ready to build/test. The agent should be prepared to debug based on the user's test results.
+     - What will be achieved with this? This will complete the user's highest-priority feature, which has been the focus of the last several sessions.
      - Status:  IN PROGRESS
      - Should Test frontend/backend/both after fix? User must test on a physical iOS device.
-     - Blocked on something: Issue 1: EAS iOS build fails.
+     - Blocked on something: Waiting for the user to apply the code and test the new build.
 
 **Upcoming and Future Tasks**
   Upcoming Tasks:
-    - (P1) Thoroughly test the Share-to-App feature on a real device once a successful build is achieved.
-    - (P2) Investigate replacing the  library if it proves unstable.
-  Future Tasks:
-    - Re-implement the AI-powered dynamic checklist once the underlying infrastructure issue (Ingress Caching from previous sessions) is resolved.
+    - (P1) Once the iOS Share Extension is confirmed working, verify that the Android share functionality (which uses  and navigates to the  screen) is still functional.
+    - (P2) Address the  warning about the unmaintained  library by investigating a modern alternative for the Android implementation.
 
 **Completed work in this session**
-- **Features:**
-  - **Automatic Report Generation**: Implemented a backend scheduler () to automatically generate weekly and monthly reports, which now appear in the Notifications tab as requested.
-  - **Share Extension Setup**: Created all necessary React Native components (, ), config plugins (), and a detailed markdown guide () for the user to perform the required local Xcode setup.
-- **UI/UX Enhancements:**
-  - **Settings UI**: Refactored the Application Goals section to use a more consistent Save/Edit text-based toggle.
-  - **Form UI Consistency**: Changed Edit and Add buttons to simple text links across the app for a unified look.
-  - **Input Improvements**: Added real-time salary formatting (e.g., 100000 -> 100,000) and auto-focus for custom input fields in the job creation form.
-- **Production Readiness:**
-  - Updated all necessary configuration files (, ) to use the correct production backend URL.
-  - Guided the user through a complex local native setup process involving Xcode, Homebrew, CocoaPods, and Git, culminating in committing the native  project to the repository.
-  - Configured  to use the committed  directory, preventing EAS Build from overwriting the manual native changes.
+- **iOS Share Extension Major Refactor**:
+  - Pivoted from a React Native modal approach to a fully native UI form within the Share Extension.
+  - Created a complete native job entry form in  with fields for company, position, salary, location, etc.
+- **Authentication Bridge**:
+  - Updated  to store the user's session token and backend URL into the shared App Group  upon login and clear it on logout.
+  - Extended the native bridge ( and ) to include methods (, , ) for this purpose.
+- **Git Workflow & Project Recovery**:
+  - Diagnosed and resolved numerous critical usage: git [-v | --version] [-h | --help] [-C <path>] [-c <name>=<value>]
+           [--exec-path[=<path>]] [--html-path] [--man-path] [--info-path]
+           [-p | --paginate | -P | --no-pager] [--no-replace-objects] [--bare]
+           [--git-dir=<path>] [--work-tree=<path>] [--namespace=<name>]
+           [--super-prefix=<path>] [--config-env=<name>=<envvar>]
+           <command> [<args>]
+
+These are common Git commands used in various situations:
+
+start a working area (see also: git help tutorial)
+   clone     Clone a repository into a new directory
+   init      Create an empty Git repository or reinitialize an existing one
+
+work on the current change (see also: git help everyday)
+   add       Add file contents to the index
+   mv        Move or rename a file, a directory, or a symlink
+   restore   Restore working tree files
+   rm        Remove files from the working tree and from the index
+
+examine the history and state (see also: git help revisions)
+   bisect    Use binary search to find the commit that introduced a bug
+   diff      Show changes between commits, commit and working tree, etc
+   grep      Print lines matching a pattern
+   log       Show commit logs
+   show      Show various types of objects
+   status    Show the working tree status
+
+grow, mark and tweak your common history
+   branch    List, create, or delete branches
+   commit    Record changes to the repository
+   merge     Join two or more development histories together
+   rebase    Reapply commits on top of another base tip
+   reset     Reset current HEAD to the specified state
+   switch    Switch branches
+   tag       Create, list, delete or verify a tag object signed with GPG
+
+collaborate (see also: git help workflows)
+   fetch     Download objects and refs from another repository
+   pull      Fetch from and integrate with another repository or a local branch
+   push      Update remote refs along with associated objects
+
+'git help -a' and 'git help -g' list available subcommands and some
+concept guides. See 'git help <command>' or 'git help <concept>'
+to read about a specific subcommand or concept.
+See 'git help git' for an overview of the system. issues, including detached HEAD states, merge conflicts, and rebase problems.
+  - Recovered the user's corrupted/lost Xcode project configuration () multiple times.
+  - Established and communicated the correct, safe workflow for hybrid development between the user's local Mac and the Emergent environment.
+- **Build & Submission Fixes**:
+  - Resolved an EAS build failure by guiding the user to downgrade the Xcode project's  from 70 to 56.
+  - Resolved multiple App Store submission errors related to invalid  values in the Share Extension's .
 
 **Earlier issues found/mentioned but not fixed**
-   - The primary un-fixed issue from previous sessions is the root cause of the AI checklist not being dynamic: the **Kubernetes ingress caching problem**. This is an infrastructure issue beyond the agent's control.
-
-**Known issue recurrence from previous fork**
-  - Not applicable for this session's core tasks.
+   - The original Android implementation uses , which  flags as unmaintained. This is a technical debt that needs to be addressed after the iOS feature is stable.
 
 **Code Architecture**
-ios
+
 
 **Key Technical Concepts**
-- **Native iOS Share Extension**: The core feature being implemented. It involves creating a separate  target in Xcode that can be invoked from the iOS Share Sheet.
-- **Expo Prebuild & Bare Workflow**: The project has effectively transitioned to a bare-like state for iOS by running env: load .env
-env: export EXPO_TUNNEL_SUBDOMAIN EXPO_PACKAGER_HOSTNAME EXPO_PACKAGER_PROXY_URL EXPO_PUBLIC_BACKEND_URL EXPO_USE_FAST_RESOLVER METRO_CACHE_ROOT
-- Creating native directories (./ios and ./android)
-✔ Created native directories
-- Updating package.json
-✔ Updated package.json
-- Running prebuild
+- **Native iOS Share Extension**: A separate app target () that provides a UI within the iOS Share Sheet. It's written in Swift and runs independently of the main React Native app.
+- **App Groups**: The iOS mechanism for sharing data between a main app and its extensions. Used here to share  for the auth token and backend URL.
+- **URL Fetching & Parsing (in Swift)**: The current implementation uses  to fetch the HTML content of a shared job URL and then parses it using a combination of Open Graph tag extraction and regular expressions.
+- **Xcode Project Configuration ()**: The critical file that defines build targets, file memberships, and capabilities. This file has been the main source of project corruption and must be carefully managed in usage: git [-v | --version] [-h | --help] [-C <path>] [-c <name>=<value>]
+           [--exec-path[=<path>]] [--html-path] [--man-path] [--info-path]
+           [-p | --paginate | -P | --no-pager] [--no-replace-objects] [--bare]
+           [--git-dir=<path>] [--work-tree=<path>] [--namespace=<name>]
+           [--super-prefix=<path>] [--config-env=<name>=<envvar>]
+           <command> [<args>]
 
-╔════════════════════════════════════════════════════════════════════╗
-║                    SHARE EXTENSION SETUP                           ║
-╠════════════════════════════════════════════════════════════════════╣
-║  Share Extension files created at: /app/frontend/ios/ShareExtension                  
-║                                                                    ║
-║  IMPORTANT: After running 'npx expo prebuild', you need to:       ║
-║                                                                    ║
-║  1. Open the .xcworkspace file in Xcode                           ║
-║  2. File → New → Target → Share Extension                         ║
-║  3. Name it: ShareExtension                                            
-║  4. Replace the generated ShareViewController.swift               ║
-║     with the one in the ShareExtension folder                         
-║  5. Add App Group capability to both main app and extension       ║
-║     Group ID: group.com.vsseshadri.careerflow                           
-║  6. Build and run                                                 ║
-║                                                                    ║
-║  For Android, the intent filters are automatically configured.    ║
-╚════════════════════════════════════════════════════════════════════╝
-    
-- Running prebuild
-- Running prebuild
-- Running prebuild
-- Running prebuild
-✔ Finished prebuild and committing the native  folder. This is necessary to add custom native code like the Share Extension.
-- **EAS Build with Committed Native Code**: The  is configured to use the committed  project, preventing EAS Build from overwriting the manual Xcode changes. This is the correct strategy for this scenario.
-- **App Groups**: The iOS mechanism used for data sharing between the main application and its extension, configured via .
-- **URL Schemes / Deep Linking**: A URL scheme () is used to launch the main app from the Share Extension.
-- **Xcode Project Versioning**: The immediate build blocker is due to the user's local Xcode creating a project file with , which is incompatible with the EAS build environment.
-- **Backend Scheduling**:  was added to the FastAPI backend to run cron jobs for automatic report generation.
+These are common Git commands used in various situations:
+
+start a working area (see also: git help tutorial)
+   clone     Clone a repository into a new directory
+   init      Create an empty Git repository or reinitialize an existing one
+
+work on the current change (see also: git help everyday)
+   add       Add file contents to the index
+   mv        Move or rename a file, a directory, or a symlink
+   restore   Restore working tree files
+   rm        Remove files from the working tree and from the index
+
+examine the history and state (see also: git help revisions)
+   bisect    Use binary search to find the commit that introduced a bug
+   diff      Show changes between commits, commit and working tree, etc
+   grep      Print lines matching a pattern
+   log       Show commit logs
+   show      Show various types of objects
+   status    Show the working tree status
+
+grow, mark and tweak your common history
+   branch    List, create, or delete branches
+   commit    Record changes to the repository
+   merge     Join two or more development histories together
+   rebase    Reapply commits on top of another base tip
+   reset     Reset current HEAD to the specified state
+   switch    Switch branches
+   tag       Create, list, delete or verify a tag object signed with GPG
+
+collaborate (see also: git help workflows)
+   fetch     Download objects and refs from another repository
+   pull      Fetch from and integrate with another repository or a local branch
+   push      Update remote refs along with associated objects
+
+'git help -a' and 'git help -g' list available subcommands and some
+concept guides. See 'git help <command>' or 'git help <concept>'
+to read about a specific subcommand or concept.
+See 'git help git' for an overview of the system..
+- **EAS Build with Native Code**: The project uses a bare-like workflow where the  folder is committed to git.  is configured to use this folder directly without running , thus preserving the manual Xcode changes.
+- **Hybrid Git Workflow**: A fragile but necessary process where RN/backend code can be modified in Emergent, but all native iOS code and project settings must be modified, committed, and pushed from the user's local Mac.
 
 **key DB schema**
-- **reports**: , ,  ('weekly'/'monthly'), , .
+- No changes to the DB schema in this session. The Share Extension interacts with the existing  endpoint which writes to the  collection.
 
 **changes in tech stack**
-- **Backend**: Added  dependency.
-- **Frontend**: Added  dependency.
+- No new libraries or dependencies. The changes are primarily in native Swift code and React Native context files.
 
 **All files of reference**
-- : Critically modified to use the committed native project. This is key to the entire Share Extension strategy.
-- : This file, modified by the user locally, is the source of the current build error. It needs to be edited to change .
-- : The Expo config plugin that sets up  and .
-- : The React Native UI for the share confirmation overlay.
-- : Modified to listen for shared data and display the .
-- : Modified to add the  for automatic report generation.
-- : A critical document created to guide the user through the complex local setup.
-
-**Areas that need refactoring**:
-- The reliance on the unmaintained  library is a technical debt. Once the feature is working, a plan should be made to migrate to a more modern solution if one becomes available.
-
-**key api endpoints**
-- **POST /api/reports/generate/{report_type}**: Endpoint to manually (or, now, via scheduler) generate weekly or monthly reports.
+- : The most important file. Contains the entire native UI, parsing logic, and API call for the Share Extension. The user will be manually editing this file on their Mac.
+- : The fragile Xcode project file. It's correctly configured on the user's Mac, and the agent must not cause it to be overwritten.
+- : Modified to share the session token and backend URL with the native side via the .
+-  & : The native module files, updated to handle auth token and backend URL sharing.
+- : Updated with the correct, App Store-compliant .
 
 **Critical Info for New Agent**
-- **IMMEDIATE BLOCKER**: The EAS iOS build is failing because the user's very new Xcode version generated an incompatible project file (). Your first task is to guide the user to **manually edit  and change  to **.
-- **WORKFLOW**: The project now uses a commit the native folder strategy. **Do not run env: load .env
-env: export EXPO_TUNNEL_SUBDOMAIN EXPO_PACKAGER_HOSTNAME EXPO_PACKAGER_PROXY_URL EXPO_PUBLIC_BACKEND_URL EXPO_USE_FAST_RESOLVER METRO_CACHE_ROOT
-- Creating native directories (./ios and ./android)
-✔ Created native directories | reusing /android, /ios
-- Updating package.json
-✔ Updated package.json | no changes
-- Running prebuild
-
-╔════════════════════════════════════════════════════════════════════╗
-║                    SHARE EXTENSION SETUP                           ║
-╠════════════════════════════════════════════════════════════════════╣
-║  Share Extension files created at: /app/frontend/ios/ShareExtension                  
-║                                                                    ║
-║  IMPORTANT: After running 'npx expo prebuild', you need to:       ║
-║                                                                    ║
-║  1. Open the .xcworkspace file in Xcode                           ║
-║  2. File → New → Target → Share Extension                         ║
-║  3. Name it: ShareExtension                                            
-║  4. Replace the generated ShareViewController.swift               ║
-║     with the one in the ShareExtension folder                         
-║  5. Add App Group capability to both main app and extension       ║
-║     Group ID: group.com.vsseshadri.careerflow                           
-║  6. Build and run                                                 ║
-║                                                                    ║
-║  For Android, the intent filters are automatically configured.    ║
-╚════════════════════════════════════════════════════════════════════╝
-    
-- Running prebuild
-- Running prebuild
-- Running prebuild
-- Running prebuild
-✔ Finished prebuild**. All native changes must be made by the user in their local Xcode, committed to git, and then built via EAS. The agent cannot directly modify the Xcode project.
-- **USER'S STATE**: The user is frustrated after many failed attempts. Be clear, direct, and explain *why* changing the  will fix the build. Reassure them this is the final technical hurdle for this feature.
-- **TESTING**: You cannot test the Share Extension. Once the build succeeds, the user must install the  file on their iPhone and test it themselves. Be prepared to debug based on their feedback.
+- **USER FRUSTRATION**: The user is extremely frustrated after a very long and difficult process with many setbacks. Be empathetic, concise, and focused on providing a working solution.
+- **DO NOT COMMIT CODE**: Your primary role is to provide the correct Swift code for . The user will manually apply this code on their Mac, commit, and build. **Do not use Save to Git or perform any action that pushes from the Emergent environment**, as this risks overwriting the user's local Xcode project configuration.
+- **THE IMMEDIATE TASK**: The user needs the corrected parsing and saving logic for . The previous agent has already provided a comprehensive version of this file. Your first step is to wait for the user to confirm they've applied it and tested the build.
+- **DEBUGGING STRATEGY**: If the new code still fails, be prepared to guide the user on how to debug the Share Extension in Xcode. This may involve adding  statements in  and checking the Xcode console to see the fetched HTML and the API request/response.
+- **POTENTIAL BLOCKER**: LinkedIn may be blocking or rate-limiting the  request from the Share Extension. If the fetched HTML is empty or a login page, the parsing will fail. The fallback is to rely only on parsing the  that LinkedIn provides, which is less rich but more reliable. You should have this fallback plan ready.
+- **REINFORCE WORKFLOW**: Gently remind the user that all native iOS changes must be made and committed from their Mac to avoid the project-breaking issues experienced previously.
 
 **documents created in this job**
-- : A detailed step-by-step guide for the user to set up the native iOS Share Extension locally in Xcode.
+- No new documents were created. The  from the previous session is now partially outdated due to the pivot to a fully native UI.
 
 **Last 10 User Messages and any pending HUMAN messages** 
-1.  **User (Latest):** Provided the full EAS build error log, which shows a  failure due to an incompatible Xcode project version (). (Status: PENDING FIX)
-2.  **User:** Stated the previous build was successful but the feature didn't work, expressing frustration. (Status: ADDRESSED, agent explained why and proposed new strategy).
-3.  **User:** Asked for clarification on how to download the project to their local machine. (Status: COMPLETED).
-4.  **User:** Encountered a series of local setup issues: Unknown command: "not"
+1.  **User (Latest):** Confirmed everything is working except the parsing and saving. Provided very specific requirements for how a LinkedIn post should be parsed and requested the code to be provided without any git commits. (Status: ADDRESSED, agent provided the code).
+2.  **User:** Changed the  code and asked what to do next. (Status: ADDRESSED, agent provided git/build steps).
+3.  **User:** Everything is working now, but parsing is still not correct. Attached a screenshot of a LinkedIn job post and gave precise instructions on how each field should be mapped. (Status: ADDRESSED, agent provided new code with improved parsing).
+4.  **User:** Asked for the  code without any git commits. (Status: ACKNOWLEDGED).
+5.  **User:** The An Expo user account is required to proceed.
 
-To see a list of supported npm commands, run:
-  npm help, , Xcode organization identifier prompt, no profiles found error, case-sensitive bundle ID mismatch, and . (Status: COMPLETED, agent guided through each).
-5.  **User:** Confirmed they have  registered in the developer portal. (Status: COMPLETED).
-6.  **User:** Confirmed they are using the same Apple account for EAS and local development. (Status: COMPLETED).
-7.  **User:** Followed guidance to create the Share Extension target in Xcode. (Status: COMPLETED).
-8.  **User:** Asked for the Swift code to paste into . (Status: COMPLETED).
-9.  **User:** Indicated they need the Share Extension feature for their MVP and cannot skip it. (Status: ACKNOWLEDGED, agent pivoted to the commit native folder strategy).
-10. **User:** Stated the automatic report generation should happen in-app under Notifications, not via email. (Status: COMPLETED, agent re-implemented correctly).
+Log in to EAS with email or username (exit and run eas login --help to see other login options)
+Input is required, but stdin is not readable. Failed to display prompt: Email or username command failed with an unexpected argument: --skip-doctor. (Status: ADDRESSED, agent provided alternative flags).
+6.  **User:** An Expo user account is required to proceed.
+
+Log in to EAS with email or username (exit and run eas login --help to see other login options)
+Input is required, but stdin is not readable. Failed to display prompt: Email or username failed with a generic error message. (Status: ADDRESSED, agent provided debugging steps).
+7.  **User:** The app is not in the share sheet again. Stated they are frustrated. (Status: ADDRESSED, agent identified the root cause as the activation rule and provided a fix).
+8.  **User:** The build failed due to . Asked if they should change it to 56. (Status: ADDRESSED, agent confirmed and provided command).
+9.  **User:** Force push succeeded, asked if they can run An Expo user account is required to proceed.
+
+Log in to EAS with email or username (exit and run eas login --help to see other login options)
+Input is required, but stdin is not readable. Failed to display prompt: Email or username. (Status: ADDRESSED, agent confirmed).
+10. **User:** Asked how to check Target Membership in Xcode before pushing. (Status: ADDRESSED, agent provided detailed steps).
 
 **Project Health Check:**
 - **Broken:**
-    - The iOS build process on EAS is broken due to an incompatible Xcode project file format.
-    - The Share-to-App feature is consequently non-functional.
+    - The core Share-to-App feature is non-functional due to incorrect parsing and a failing save mechanism in the native Share Extension.
 - **Mocked:**
     - None.
 
 **3rd Party Integrations**
-- ****: Used for the Share-to-App feature. It is flagged as unmaintained by .
+- ****: Used for the Android part of the Share-to-App feature. It is flagged as unmaintained by .
 
 **Testing status**
-  - Testing agent used after significant changes: YES (Backend tester was used to verify the report generation endpoints).
-  - Troubleshoot agent used after agent stuck in loop: NO
+  - Testing agent used after significant changes: NO
+  - Troubleshoot agent used after agent stuck in loop: YES (Used to identify why the app wasn't opening from the share extension, leading to a change in strategy).
   - Test files created: None.
-  - Known regressions: None.
+  - Known regressions: The Share Extension functionality has been repeatedly lost and restored due to git/build process issues.
 
 **Credentials to test flow:**
-N/A. User is performing their own testing on their device.
+N/A. The user is performing all builds and testing on their own Mac and iPhone.
 
 **What agent forgot to execute**
-- The agent initially forgot that EAS Build would overwrite the  directory, causing a wasted build cycle for the user. This was later corrected with the commit native folder strategy.
-- The agent has not yet addressed the  warning about the unmaintained  library, which poses a future risk.
-
+- The agent and user repeatedly struggled with a stable Git workflow, leading to the user's Xcode project configuration being overwritten multiple times. The root cause (EAS prebuild wiping the  folder, or git conflicts from multiple development environments) was identified late in the process, causing significant user frustration and rework. The current workflow (user-managed native changes on Mac) is the resolution.
 </analysis>
