@@ -1748,7 +1748,7 @@ export default function MyJobsScreen() {
             <Text style={dynamicStyles.detailText}>{job.location.city}, {getStateAbbreviation(job.location.state)}</Text>
           </View>
           <Text style={dynamicStyles.salaryText}>
-            ${(job.salary_range.min / 1000).toFixed(0)}k-${(job.salary_range.max / 1000).toFixed(0)}k
+            {formatSalaryShort(job.salary_range?.min || 0, job.salary_range?.max || 0)}
           </Text>
         </View>
 
