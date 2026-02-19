@@ -1385,13 +1385,22 @@ export default function MyJobsScreen() {
     }
 
     try {
+      // Convert job_type from display format to backend format
+      const jobTypeToBackend: {[key: string]: string} = {
+        'Full-Time': 'full_time',
+        'Part-Time': 'part_time',
+        'Contract': 'contract',
+        'Internship': 'internship',
+      };
+      const backendJobType = jobTypeToBackend[formData.job_type] || formData.job_type.toLowerCase().replace('-', '_');
+      
       const payload: any = {
         company_name: formData.company_name.trim(),
         position: formData.position.trim(),
         location: { state: selectedState, city: selectedCity },
         salary_range: { min: minSal, max: maxSal },
         work_mode: formData.work_mode,
-        job_type: formData.job_type,
+        job_type: backendJobType,
         job_url: formData.job_url.trim() || null,
         recruiter_email: formData.recruiter_email.trim() || null,
         resume_file: resumeFile?.base64 || null,
