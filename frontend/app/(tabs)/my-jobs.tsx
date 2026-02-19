@@ -1473,6 +1473,39 @@ export default function MyJobsScreen() {
     return mode.charAt(0).toUpperCase() + mode.slice(1);
   };
 
+  // Format job type from backend format to display format
+  const formatJobType = (jobType: string): string => {
+    if (!jobType) return '';
+    const jobTypeMap: {[key: string]: string} = {
+      'full_time': 'Full-Time',
+      'part_time': 'Part-Time',
+      'contract': 'Contract',
+      'internship': 'Internship',
+    };
+    return jobTypeMap[jobType.toLowerCase()] || jobType;
+  };
+
+  // Format salary in short format (e.g., $120k-$150k)
+  const formatSalaryShort = (min: number, max: number): string => {
+    if (min === 0 && max === 0) return '-';
+    
+    const formatK = (num: number): string => {
+      if (num >= 1000) {
+        return `${currencyInfo.symbol}${(num / 1000).toFixed(0)}k`;
+      }
+      return `${currencyInfo.symbol}${num}`;
+    };
+    
+    if (min > 0 && max > 0) {
+      return `${formatK(min)}-${formatK(max)}`;
+    } else if (min > 0) {
+      return `${formatK(min)}+`;
+    } else if (max > 0) {
+      return `Up to ${formatK(max)}`;
+    }
+    return '-';
+  };
+
   const getWorkModeColor = (mode: string): { bg: string; text: string } => {
     switch (mode?.toLowerCase()) {
       case 'remote':
