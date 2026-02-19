@@ -1682,9 +1682,7 @@ export default function MyJobsScreen() {
             </View>
             <View style={[dynamicStyles.tableCellContainer, { flex: 0.7 }]}>
               <Text style={dynamicStyles.tableCell}>
-                {job.salary_range.min > 0 || job.salary_range.max > 0 
-                  ? `${currencyInfo.symbol}${(job.salary_range.min / 1000).toFixed(0)}k-${(job.salary_range.max / 1000).toFixed(0)}k`
-                  : '-'}
+                {formatSalaryShort(job.salary_range?.min || 0, job.salary_range?.max || 0)}
               </Text>
             </View>
             <View style={[dynamicStyles.tableCellContainer, { flex: 0.5 }]}>
