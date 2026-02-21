@@ -2398,14 +2398,15 @@ const createStyles = (colors: any, isDark: boolean) => StyleSheet.create({
   },
   awardTitleRow: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: 4,
+    flexWrap: 'wrap',
   },
   awardTitle: {
     fontSize: 16,
     fontWeight: '700',
     color: colors.text,
+    flex: 1,
   },
   awardStatsRow: {
     flexDirection: 'row',
@@ -2421,6 +2422,7 @@ const createStyles = (colors: any, isDark: boolean) => StyleSheet.create({
     fontSize: 12,
     fontWeight: '600',
     color: colors.primary,
+    marginLeft: 'auto',
   },
   // Awards Section Header - centered with icon
   awardsSectionHeader: {
