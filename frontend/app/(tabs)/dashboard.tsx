@@ -2437,4 +2437,43 @@ const createStyles = (colors: any, isDark: boolean) => StyleSheet.create({
     color: colors.text,
     lineHeight: 18,
   },
+  // Action Required Section Header - centered with icon
+  actionRequiredHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 12,
+    gap: 8,
+  },
+  actionRequiredTitle: {
+    fontSize: 17,
+    fontWeight: '600',
+    color: '#EF4444',
+    lineHeight: 18,
+  },
+  // Follow-up Reminders Section Header - centered with icon
+  followUpSectionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 12,
+    gap: 8,
+  },
+  followUpSectionTitle: {
+    fontSize: 17,
+    fontWeight: '600',
+    color: colors.text,
+    lineHeight: 18,
+  },
+  // Insights Section Header - centered with icon
+  insightsSectionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 12,
+    gap: 8,
+  },
+  insightsSectionTitle: {
+    fontSize: 17,
+    fontWeight: '600',
+    color: colors.text,
+    lineHeight: 18,
+  },
 });
