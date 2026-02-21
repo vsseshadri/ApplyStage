@@ -2498,18 +2498,20 @@ export default function MyJobsScreen() {
               <View style={dynamicStyles.formSection}>
                 <View style={dynamicStyles.labelRow}>
                   <Text style={dynamicStyles.label}>Position *</Text>
-                  <TouchableOpacity onPress={() => {
-                    setShowPositionInput(!showPositionInput);
-                    if (!showPositionInput) {
-                      // Focus the input after a short delay to allow render
-                      setTimeout(() => customPositionInputRef.current?.focus(), 100);
-                    }
-                  }}>
-                    <Text style={dynamicStyles.addCustomText}>{showPositionInput ? 'Select from list' : '+ Add custom'}</Text>
-                  </TouchableOpacity>
+                  {!partialEditMode && (
+                    <TouchableOpacity onPress={() => {
+                      setShowPositionInput(!showPositionInput);
+                      if (!showPositionInput) {
+                        // Focus the input after a short delay to allow render
+                        setTimeout(() => customPositionInputRef.current?.focus(), 100);
+                      }
+                    }}>
+                      <Text style={dynamicStyles.addCustomText}>{showPositionInput ? 'Select from list' : '+ Add custom'}</Text>
+                    </TouchableOpacity>
+                  )}
                 </View>
                 
-                {showPositionInput ? (
+                {showPositionInput && !partialEditMode ? (
                   <View style={dynamicStyles.customPositionRow}>
                     <TextInput
                       ref={customPositionInputRef}
@@ -2526,8 +2528,9 @@ export default function MyJobsScreen() {
                   </View>
                 ) : (
                   <TouchableOpacity 
-                    style={dynamicStyles.dropdownButton}
-                    onPress={() => setShowPositionDropdown(true)}
+                    style={[dynamicStyles.dropdownButton, partialEditMode && dynamicStyles.inputDisabled]}
+                    onPress={() => !partialEditMode && setShowPositionDropdown(true)}
+                    disabled={partialEditMode}
                   >
                     <Text style={[dynamicStyles.dropdownButtonText, !formData.position && dynamicStyles.dropdownPlaceholder]}>
                       {formData.position || 'Select Position'}
