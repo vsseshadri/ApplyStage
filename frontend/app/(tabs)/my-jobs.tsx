@@ -3441,6 +3441,10 @@ const createStyles = (colors: any, isDark: boolean, isTablet: boolean = false) =
     color: colors.inputText,
     borderColor: colors.inputBorder,
   },
+  inputDisabled: {
+    backgroundColor: isDark ? '#2A2A2A' : '#F0F0F0',
+    opacity: 0.6,
+  },
   datePickerButton: {
     flexDirection: 'row',
     alignItems: 'center',
