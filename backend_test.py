@@ -1,400 +1,277 @@
 #!/usr/bin/env python3
 """
-Backend Test Suite for CareerFlow Report Generation System
-Tests automatic report generation functionality including:
-1. Scheduler verification
-2. Manual report generation endpoints
-3. Report listing and content verification
+Backend API Testing for CareerFlow App - Upcoming Interviews Flow
+Tests the specific flow reported by user regarding missing "Upcoming Interviews" section
 """
 
-import asyncio
-import httpx
+import requests
 import json
-import os
-from datetime import datetime, timezone, timedelta
-from typing import Dict, Any, List
+from datetime import datetime, timedelta
+import sys
 
 # Configuration
 BACKEND_URL = "https://share-to-jobs.preview.emergentagent.com"
 TEST_TOKEN = "test_token_abc123"
+HEADERS = {
+    "Authorization": f"Bearer {TEST_TOKEN}",
+    "Content-Type": "application/json"
+}
 
-class ReportGenerationTester:
-    def __init__(self):
-        self.base_url = BACKEND_URL
-        self.headers = {"Authorization": f"Bearer {TEST_TOKEN}"}
-        self.test_results = []
+def log_test(test_name, status, details=""):
+    """Log test results with clear formatting"""
+    status_symbol = "✅" if status == "PASS" else "❌" if status == "FAIL" else "⚠️"
+    print(f"{status_symbol} {status} - {test_name}")
+    if details:
+        print(f"   Details: {details}")
+    print()
+
+def test_health_endpoint():
+    """Test 1: Check if backend is running properly via health endpoint"""
+    try:
+        response = requests.get(f"{BACKEND_URL}/api/health", timeout=10)
         
-    async def log_test(self, test_name: str, success: bool, details: str = ""):
-        """Log test results"""
-        status = "✅ PASS" if success else "❌ FAIL"
-        result = f"{status} - {test_name}"
-        if details:
-            result += f": {details}"
-        self.test_results.append(result)
-        print(result)
-        
-    async def test_backend_connectivity(self) -> bool:
-        """Test basic backend connectivity"""
-        try:
-            async with httpx.AsyncClient(timeout=30.0) as client:
-                response = await client.get(f"{self.base_url}/api/auth/me", headers=self.headers)
-                if response.status_code == 200:
-                    await self.log_test("Backend Connectivity", True, f"Server responding at {self.base_url}")
-                    return True
-                else:
-                    await self.log_test("Backend Connectivity", False, f"HTTP {response.status_code}")
-                    return False
-        except Exception as e:
-            await self.log_test("Backend Connectivity", False, f"Connection error: {str(e)}")
-            return False
-    
-    async def test_scheduler_status(self) -> bool:
-        """Verify scheduler is running by checking logs and health"""
-        try:
-            # Check if health endpoint exists and reports scheduler status
-            async with httpx.AsyncClient(timeout=30.0) as client:
-                response = await client.get(f"{self.base_url}/api/health", headers=self.headers)
-                if response.status_code == 200:
-                    health_data = response.json()
-                    await self.log_test("Scheduler Health Check", True, "Health endpoint accessible")
-                    return True
-                else:
-                    await self.log_test("Scheduler Health Check", False, f"Health endpoint returned {response.status_code}")
-                    return False
-        except Exception as e:
-            await self.log_test("Scheduler Health Check", False, f"Error: {str(e)}")
-            return False
-    
-    async def test_manual_weekly_report_generation(self) -> bool:
-        """Test manual weekly report generation endpoint"""
-        try:
-            async with httpx.AsyncClient(timeout=60.0) as client:
-                response = await client.post(f"{self.base_url}/api/reports/generate/weekly", headers=self.headers)
-                
-                if response.status_code == 200:
-                    report_data = response.json()
-                    
-                    # Verify generation response structure
-                    required_fields = ["report_id", "title", "message"]
-                    missing_fields = [field for field in required_fields if field not in report_data]
-                    
-                    if missing_fields:
-                        await self.log_test("Weekly Report Generation", False, f"Missing fields: {missing_fields}")
-                        return False
-                    
-                    # Verify message indicates weekly report
-                    message = report_data.get("message", "")
-                    if "weekly" not in message.lower():
-                        await self.log_test("Weekly Report Generation", False, f"Message doesn't indicate weekly report: {message}")
-                        return False
-                    
-                    # Now fetch the actual report to verify content
-                    report_id = report_data.get("report_id")
-                    detail_response = await client.get(f"{self.base_url}/api/reports/{report_id}", headers=self.headers)
-                    
-                    if detail_response.status_code != 200:
-                        await self.log_test("Weekly Report Generation", False, f"Could not fetch generated report: HTTP {detail_response.status_code}")
-                        return False
-                    
-                    report_detail = detail_response.json()
-                    
-                    # Verify full report structure
-                    detail_required_fields = ["report_id", "title", "content", "created_at", "report_type"]
-                    missing_detail_fields = [field for field in detail_required_fields if field not in report_detail]
-                    
-                    if missing_detail_fields:
-                        await self.log_test("Weekly Report Generation", False, f"Generated report missing fields: {missing_detail_fields}")
-                        return False
-                    
-                    # Verify report type
-                    if report_detail.get("report_type") != "weekly":
-                        await self.log_test("Weekly Report Generation", False, f"Wrong report type: {report_detail.get('report_type')}")
-                        return False
-                    
-                    # Verify content contains expected sections
-                    content = report_detail.get("content", "")
-                    expected_sections = ["Weekly Metrics", "Applications This Week", "Follow-up Reminders"]
-                    missing_sections = [section for section in expected_sections if section not in content]
-                    
-                    if missing_sections:
-                        await self.log_test("Weekly Report Generation", False, f"Missing content sections: {missing_sections}")
-                        return False
-                    
-                    await self.log_test("Weekly Report Generation", True, f"Generated report {report_id} with all required sections")
-                    return True
-                else:
-                    await self.log_test("Weekly Report Generation", False, f"HTTP {response.status_code}: {response.text}")
-                    return False
-                    
-        except Exception as e:
-            await self.log_test("Weekly Report Generation", False, f"Error: {str(e)}")
-            return False
-    
-    async def test_manual_monthly_report_generation(self) -> bool:
-        """Test manual monthly report generation endpoint"""
-        try:
-            async with httpx.AsyncClient(timeout=60.0) as client:
-                response = await client.post(f"{self.base_url}/api/reports/generate/monthly", headers=self.headers)
-                
-                if response.status_code == 200:
-                    report_data = response.json()
-                    
-                    # Verify generation response structure
-                    required_fields = ["report_id", "title", "message"]
-                    missing_fields = [field for field in required_fields if field not in report_data]
-                    
-                    if missing_fields:
-                        await self.log_test("Monthly Report Generation", False, f"Missing fields: {missing_fields}")
-                        return False
-                    
-                    # Verify message indicates monthly report
-                    message = report_data.get("message", "")
-                    if "monthly" not in message.lower():
-                        await self.log_test("Monthly Report Generation", False, f"Message doesn't indicate monthly report: {message}")
-                        return False
-                    
-                    # Now fetch the actual report to verify content
-                    report_id = report_data.get("report_id")
-                    detail_response = await client.get(f"{self.base_url}/api/reports/{report_id}", headers=self.headers)
-                    
-                    if detail_response.status_code != 200:
-                        await self.log_test("Monthly Report Generation", False, f"Could not fetch generated report: HTTP {detail_response.status_code}")
-                        return False
-                    
-                    report_detail = detail_response.json()
-                    
-                    # Verify full report structure
-                    detail_required_fields = ["report_id", "title", "content", "created_at", "report_type"]
-                    missing_detail_fields = [field for field in detail_required_fields if field not in report_detail]
-                    
-                    if missing_detail_fields:
-                        await self.log_test("Monthly Report Generation", False, f"Generated report missing fields: {missing_detail_fields}")
-                        return False
-                    
-                    # Verify report type
-                    if report_detail.get("report_type") != "monthly":
-                        await self.log_test("Monthly Report Generation", False, f"Wrong report type: {report_detail.get('report_type')}")
-                        return False
-                    
-                    # Verify content contains expected sections
-                    content = report_detail.get("content", "")
-                    expected_sections = ["Monthly Overview", "Status Breakdown", "Work Mode Distribution"]
-                    missing_sections = [section for section in expected_sections if section not in content]
-                    
-                    if missing_sections:
-                        await self.log_test("Monthly Report Generation", False, f"Missing content sections: {missing_sections}")
-                        return False
-                    
-                    await self.log_test("Monthly Report Generation", True, f"Generated report {report_id} with all required sections")
-                    return True
-                else:
-                    await self.log_test("Monthly Report Generation", False, f"HTTP {response.status_code}: {response.text}")
-                    return False
-                    
-        except Exception as e:
-            await self.log_test("Monthly Report Generation", False, f"Error: {str(e)}")
-            return False
-    
-    async def test_reports_listing(self) -> bool:
-        """Test GET /api/reports endpoint"""
-        try:
-            async with httpx.AsyncClient(timeout=30.0) as client:
-                response = await client.get(f"{self.base_url}/api/reports", headers=self.headers)
-                
-                if response.status_code == 200:
-                    reports = response.json()
-                    
-                    if not isinstance(reports, list):
-                        await self.log_test("Reports Listing", False, f"Expected list, got {type(reports)}")
-                        return False
-                    
-                    # If we have reports, verify their structure
-                    if reports:
-                        sample_report = reports[0]
-                        # Reports listing doesn't include content for performance reasons
-                        required_fields = ["report_id", "title", "created_at", "report_type"]
-                        missing_fields = [field for field in required_fields if field not in sample_report]
-                        
-                        if missing_fields:
-                            await self.log_test("Reports Listing", False, f"Report missing fields: {missing_fields}")
-                            return False
-                        
-                        # Check for both weekly and monthly reports
-                        report_types = [report.get("report_type") for report in reports]
-                        has_weekly = "weekly" in report_types
-                        has_monthly = "monthly" in report_types
-                        
-                        await self.log_test("Reports Listing", True, f"Found {len(reports)} reports (Weekly: {has_weekly}, Monthly: {has_monthly})")
-                    else:
-                        await self.log_test("Reports Listing", True, "No reports found (empty list)")
-                    
-                    return True
-                else:
-                    await self.log_test("Reports Listing", False, f"HTTP {response.status_code}: {response.text}")
-                    return False
-                    
-        except Exception as e:
-            await self.log_test("Reports Listing", False, f"Error: {str(e)}")
-            return False
-    
-    async def test_report_content_quality(self) -> bool:
-        """Test the quality and completeness of generated report content"""
-        try:
-            # Generate a fresh weekly report to test content
-            async with httpx.AsyncClient(timeout=60.0) as client:
-                response = await client.post(f"{self.base_url}/api/reports/generate/weekly", headers=self.headers)
-                
-                if response.status_code != 200:
-                    await self.log_test("Report Content Quality", False, f"Could not generate test report: HTTP {response.status_code}")
-                    return False
-                
-                report_summary = response.json()
-                report_id = report_summary.get("report_id")
-                
-                # Fetch the full report content
-                detail_response = await client.get(f"{self.base_url}/api/reports/{report_id}", headers=self.headers)
-                
-                if detail_response.status_code != 200:
-                    await self.log_test("Report Content Quality", False, f"Could not fetch report details: HTTP {detail_response.status_code}")
-                    return False
-                
-                report = detail_response.json()
-                content = report.get("content", "")
-                
-                # Check for HTML formatting
-                if not content.startswith("<div") or not content.endswith("</div>"):
-                    await self.log_test("Report Content Quality", False, "Content is not properly HTML formatted")
-                    return False
-                
-                # Check for key metrics sections
-                quality_checks = {
-                    "HTML Structure": "<div style=" in content and "</div>" in content,
-                    "Weekly Metrics": "Weekly Metrics" in content and "Applications" in content,
-                    "Applications List": "Applications This Week" in content,
-                    "Follow-up Section": "Follow-up Reminders" in content,
-                    "Proper Styling": "font-family:" in content and "color:" in content,
-                    "Date Information": any(month in content for month in ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"])
-                }
-                
-                failed_checks = [check for check, passed in quality_checks.items() if not passed]
-                
-                if failed_checks:
-                    await self.log_test("Report Content Quality", False, f"Failed quality checks: {failed_checks}")
-                    return False
-                
-                await self.log_test("Report Content Quality", True, "All content quality checks passed")
-                return True
-                
-        except Exception as e:
-            await self.log_test("Report Content Quality", False, f"Error: {str(e)}")
-            return False
-    
-    async def test_report_data_accuracy(self) -> bool:
-        """Test that report data reflects actual user data"""
-        try:
-            # First get user's job data
-            async with httpx.AsyncClient(timeout=30.0) as client:
-                jobs_response = await client.get(f"{self.base_url}/api/jobs?limit=100", headers=self.headers)
-                
-                if jobs_response.status_code != 200:
-                    await self.log_test("Report Data Accuracy", False, f"Could not fetch jobs: HTTP {jobs_response.status_code}")
-                    return False
-                
-                jobs_data = jobs_response.json()
-                total_jobs = jobs_data.get("pagination", {}).get("total_count", 0)
-                
-                # Generate a weekly report
-                report_response = await client.post(f"{self.base_url}/api/reports/generate/weekly", headers=self.headers)
-                
-                if report_response.status_code != 200:
-                    await self.log_test("Report Data Accuracy", False, f"Could not generate report: HTTP {report_response.status_code}")
-                    return False
-                
-                report_summary = report_response.json()
-                report_id = report_summary.get("report_id")
-                
-                # Fetch the full report content
-                detail_response = await client.get(f"{self.base_url}/api/reports/{report_id}", headers=self.headers)
-                
-                if detail_response.status_code != 200:
-                    await self.log_test("Report Data Accuracy", False, f"Could not fetch report details: HTTP {detail_response.status_code}")
-                    return False
-                
-                report = detail_response.json()
-                content = report.get("content", "")
-                
-                # Check if report reflects the user's data state
-                if total_jobs == 0:
-                    # If no jobs, report should reflect this with 0 applications
-                    if "0" in content and ("Applications" in content or "applications" in content):
-                        await self.log_test("Report Data Accuracy", True, "Report correctly reflects empty job state")
-                        return True
-                    else:
-                        await self.log_test("Report Data Accuracy", False, "Report does not reflect empty job state")
-                        return False
-                else:
-                    # If jobs exist, report should have meaningful data
-                    if any(word in content.lower() for word in ["application", "job", "company"]):
-                        await self.log_test("Report Data Accuracy", True, f"Report reflects job data (total jobs: {total_jobs})")
-                        return True
-                    else:
-                        await self.log_test("Report Data Accuracy", False, "Report does not reflect existing job data")
-                        return False
-                
-        except Exception as e:
-            await self.log_test("Report Data Accuracy", False, f"Error: {str(e)}")
-            return False
-    
-    async def run_all_tests(self):
-        """Run all report generation tests"""
-        print("🚀 Starting CareerFlow Report Generation System Tests")
-        print("=" * 60)
-        
-        # Test 1: Backend connectivity
-        if not await self.test_backend_connectivity():
-            print("❌ Backend connectivity failed - stopping tests")
-            return
-        
-        # Test 2: Scheduler status
-        await self.test_scheduler_status()
-        
-        # Test 3: Manual weekly report generation
-        await self.test_manual_weekly_report_generation()
-        
-        # Test 4: Manual monthly report generation
-        await self.test_manual_monthly_report_generation()
-        
-        # Test 5: Reports listing
-        await self.test_reports_listing()
-        
-        # Test 6: Report content quality
-        await self.test_report_content_quality()
-        
-        # Test 7: Report data accuracy
-        await self.test_report_data_accuracy()
-        
-        # Summary
-        print("\n" + "=" * 60)
-        print("📊 TEST SUMMARY")
-        print("=" * 60)
-        
-        passed_tests = sum(1 for result in self.test_results if "✅ PASS" in result)
-        total_tests = len(self.test_results)
-        
-        for result in self.test_results:
-            print(result)
-        
-        print(f"\n🎯 Results: {passed_tests}/{total_tests} tests passed ({round(passed_tests/total_tests*100, 1)}%)")
-        
-        if passed_tests == total_tests:
-            print("🎉 All report generation tests PASSED! System is working correctly.")
+        if response.status_code == 200:
+            data = response.json()
+            log_test("Health Endpoint", "PASS", f"Status: {data.get('status', 'healthy')}")
+            return True
         else:
-            print(f"⚠️  {total_tests - passed_tests} test(s) failed. Review issues above.")
+            log_test("Health Endpoint", "FAIL", f"HTTP {response.status_code}: {response.text}")
+            return False
+            
+    except requests.exceptions.RequestException as e:
+        log_test("Health Endpoint", "FAIL", f"Connection error: {str(e)}")
+        return False
 
-async def main():
-    """Main test execution"""
-    tester = ReportGenerationTester()
-    await tester.run_all_tests()
+def test_authentication():
+    """Test authentication with test token"""
+    try:
+        response = requests.get(f"{BACKEND_URL}/api/auth/me", headers=HEADERS, timeout=10)
+        
+        if response.status_code == 200:
+            user_data = response.json()
+            log_test("Authentication", "PASS", f"User: {user_data.get('name', 'Test User')} ({user_data.get('email', 'test@example.com')})")
+            return True
+        else:
+            log_test("Authentication", "FAIL", f"HTTP {response.status_code}: {response.text}")
+            return False
+            
+    except requests.exceptions.RequestException as e:
+        log_test("Authentication", "FAIL", f"Connection error: {str(e)}")
+        return False
+
+def test_upcoming_interviews_empty():
+    """Test 2: Test upcoming interviews endpoint (should work even if empty)"""
+    try:
+        response = requests.get(f"{BACKEND_URL}/api/dashboard/upcoming-interviews", headers=HEADERS, timeout=10)
+        
+        if response.status_code == 200:
+            interviews = response.json()
+            log_test("Upcoming Interviews (Empty)", "PASS", f"Returned {len(interviews)} interviews")
+            return True
+        else:
+            log_test("Upcoming Interviews (Empty)", "FAIL", f"HTTP {response.status_code}: {response.text}")
+            return False
+            
+    except requests.exceptions.RequestException as e:
+        log_test("Upcoming Interviews (Empty)", "FAIL", f"Connection error: {str(e)}")
+        return False
+
+def create_test_job_with_interview():
+    """Test 3: Create a test job with upcoming interview data"""
+    try:
+        # Create job with upcoming interview scheduled for next week
+        future_date = (datetime.now() + timedelta(days=7)).strftime("%m/%d/%Y")
+        
+        job_data = {
+            "company_name": "TechCorp Solutions",
+            "position": "Senior Software Engineer",
+            "location": {"city": "San Francisco", "state": "California"},
+            "salary_range": {"min": 120000, "max": 160000},
+            "work_mode": "hybrid",
+            "job_type": "Software Engineer",
+            "status": "phone_screen",
+            "upcoming_stage": "system_design",
+            "upcoming_schedule": future_date,
+            "date_applied": datetime.now().isoformat(),
+            "is_priority": True,
+            "notes": "Test job for upcoming interviews functionality"
+        }
+        
+        response = requests.post(f"{BACKEND_URL}/api/jobs", headers=HEADERS, json=job_data, timeout=10)
+        
+        if response.status_code == 200:
+            job = response.json()
+            job_id = job.get("job_id")
+            log_test("Create Job with Interview", "PASS", f"Job ID: {job_id}, Interview: {job.get('upcoming_stage')} on {job.get('upcoming_schedule')}")
+            return job_id
+        else:
+            log_test("Create Job with Interview", "FAIL", f"HTTP {response.status_code}: {response.text}")
+            return None
+            
+    except requests.exceptions.RequestException as e:
+        log_test("Create Job with Interview", "FAIL", f"Connection error: {str(e)}")
+        return None
+
+def test_upcoming_interviews_with_data():
+    """Test 4: Verify upcoming interviews endpoint returns the created interview"""
+    try:
+        response = requests.get(f"{BACKEND_URL}/api/dashboard/upcoming-interviews", headers=HEADERS, timeout=10)
+        
+        if response.status_code == 200:
+            interviews = response.json()
+            
+            if len(interviews) > 0:
+                interview = interviews[0]
+                company = interview.get("company_name")
+                stage = interview.get("stage")
+                schedule = interview.get("schedule_date")
+                days_until = interview.get("days_until")
+                
+                log_test("Upcoming Interviews (With Data)", "PASS", 
+                        f"Found interview: {company} - {stage} on {schedule} ({days_until} days away)")
+                return True
+            else:
+                log_test("Upcoming Interviews (With Data)", "FAIL", "No interviews returned despite creating one")
+                return False
+        else:
+            log_test("Upcoming Interviews (With Data)", "FAIL", f"HTTP {response.status_code}: {response.text}")
+            return False
+            
+    except requests.exceptions.RequestException as e:
+        log_test("Upcoming Interviews (With Data)", "FAIL", f"Connection error: {str(e)}")
+        return False
+
+def test_dashboard_stats():
+    """Additional test: Check if dashboard stats include upcoming interview data"""
+    try:
+        response = requests.get(f"{BACKEND_URL}/api/dashboard/stats", headers=HEADERS, timeout=10)
+        
+        if response.status_code == 200:
+            stats = response.json()
+            total_jobs = stats.get("total", 0)
+            phone_screen_count = stats.get("phone_screen", 0)
+            
+            log_test("Dashboard Stats", "PASS", f"Total jobs: {total_jobs}, Phone screen: {phone_screen_count}")
+            return True
+        else:
+            log_test("Dashboard Stats", "FAIL", f"HTTP {response.status_code}: {response.text}")
+            return False
+            
+    except requests.exceptions.RequestException as e:
+        log_test("Dashboard Stats", "FAIL", f"Connection error: {str(e)}")
+        return False
+
+def cleanup_test_jobs():
+    """Clean up test jobs created during testing"""
+    try:
+        # Get all jobs
+        response = requests.get(f"{BACKEND_URL}/api/jobs", headers=HEADERS, timeout=10)
+        
+        if response.status_code == 200:
+            jobs_data = response.json()
+            jobs = jobs_data.get("jobs", [])
+            
+            # Delete test jobs
+            deleted_count = 0
+            for job in jobs:
+                if job.get("company_name") == "TechCorp Solutions" and "Test job for upcoming interviews" in job.get("notes", ""):
+                    job_id = job.get("job_id")
+                    delete_response = requests.delete(f"{BACKEND_URL}/api/jobs/{job_id}", headers=HEADERS, timeout=10)
+                    if delete_response.status_code == 200:
+                        deleted_count += 1
+            
+            if deleted_count > 0:
+                log_test("Cleanup Test Jobs", "PASS", f"Deleted {deleted_count} test job(s)")
+            else:
+                log_test("Cleanup Test Jobs", "PASS", "No test jobs to clean up")
+            return True
+        else:
+            log_test("Cleanup Test Jobs", "FAIL", f"Could not fetch jobs: HTTP {response.status_code}")
+            return False
+            
+    except requests.exceptions.RequestException as e:
+        log_test("Cleanup Test Jobs", "FAIL", f"Connection error: {str(e)}")
+        return False
+
+def main():
+    """Run the complete upcoming interviews flow test"""
+    print("=" * 80)
+    print("CAREERFLOW BACKEND API TESTING - UPCOMING INTERVIEWS FLOW")
+    print("=" * 80)
+    print(f"Backend URL: {BACKEND_URL}")
+    print(f"Test Token: {TEST_TOKEN}")
+    print("=" * 80)
+    print()
+    
+    # Track test results
+    test_results = []
+    
+    # Test 1: Health check
+    print("🔍 Testing Backend Health...")
+    health_ok = test_health_endpoint()
+    test_results.append(("Health Endpoint", health_ok))
+    
+    if not health_ok:
+        print("❌ Backend health check failed. Stopping tests.")
+        return
+    
+    # Test authentication
+    print("🔐 Testing Authentication...")
+    auth_ok = test_authentication()
+    test_results.append(("Authentication", auth_ok))
+    
+    if not auth_ok:
+        print("❌ Authentication failed. Stopping tests.")
+        return
+    
+    # Test 2: Empty upcoming interviews
+    print("📅 Testing Upcoming Interviews (Empty State)...")
+    empty_interviews_ok = test_upcoming_interviews_empty()
+    test_results.append(("Upcoming Interviews (Empty)", empty_interviews_ok))
+    
+    # Test 3: Create job with interview
+    print("➕ Creating Test Job with Upcoming Interview...")
+    job_id = create_test_job_with_interview()
+    job_created = job_id is not None
+    test_results.append(("Create Job with Interview", job_created))
+    
+    # Test 4: Upcoming interviews with data
+    if job_created:
+        print("📋 Testing Upcoming Interviews (With Data)...")
+        interviews_with_data_ok = test_upcoming_interviews_with_data()
+        test_results.append(("Upcoming Interviews (With Data)", interviews_with_data_ok))
+    
+    # Additional test: Dashboard stats
+    print("📊 Testing Dashboard Stats...")
+    stats_ok = test_dashboard_stats()
+    test_results.append(("Dashboard Stats", stats_ok))
+    
+    # Cleanup
+    print("🧹 Cleaning up test data...")
+    cleanup_ok = cleanup_test_jobs()
+    test_results.append(("Cleanup", cleanup_ok))
+    
+    # Summary
+    print("=" * 80)
+    print("TEST SUMMARY")
+    print("=" * 80)
+    
+    passed = sum(1 for _, result in test_results if result)
+    total = len(test_results)
+    
+    for test_name, result in test_results:
+        status = "✅ PASS" if result else "❌ FAIL"
+        print(f"{status} - {test_name}")
+    
+    print()
+    print(f"OVERALL RESULT: {passed}/{total} tests passed ({round(passed/total*100, 1)}% success rate)")
+    
+    if passed == total:
+        print("🎉 All tests passed! The upcoming interviews functionality is working correctly.")
+    else:
+        print("⚠️  Some tests failed. Check the details above for issues.")
+    
+    print("=" * 80)
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    main()
