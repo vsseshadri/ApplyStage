@@ -2544,8 +2544,9 @@ export default function MyJobsScreen() {
               <View style={dynamicStyles.formSection}>
                 <Text style={dynamicStyles.label}>Position Type *</Text>
                 <TouchableOpacity 
-                  style={dynamicStyles.dropdownButton}
-                  onPress={() => setShowJobTypeDropdown(true)}
+                  style={[dynamicStyles.dropdownButton, partialEditMode && dynamicStyles.inputDisabled]}
+                  onPress={() => !partialEditMode && setShowJobTypeDropdown(true)}
+                  disabled={partialEditMode}
                 >
                   <Text style={[dynamicStyles.dropdownButtonText, !formData.job_type && dynamicStyles.dropdownPlaceholder]}>
                     {formData.job_type || 'Select Position Type'}
@@ -2557,12 +2558,13 @@ export default function MyJobsScreen() {
               {/* Work Mode - Moved after Position Type */}
               <View style={dynamicStyles.formSection}>
                 <Text style={dynamicStyles.label}>Work Mode *</Text>
-                <View style={dynamicStyles.workModeContainer}>
+                <View style={[dynamicStyles.workModeContainer, partialEditMode && { opacity: 0.5 }]}>
                   {WORK_MODES.map((mode) => (
                     <TouchableOpacity
                       key={mode}
                       style={[dynamicStyles.workModeButton, formData.work_mode === mode && dynamicStyles.workModeButtonSelected]}
-                      onPress={() => setFormData({ ...formData, work_mode: mode })}
+                      onPress={() => !partialEditMode && setFormData({ ...formData, work_mode: mode })}
+                      disabled={partialEditMode}
                     >
                       <Text style={[dynamicStyles.workModeButtonText, formData.work_mode === mode && dynamicStyles.workModeButtonTextSelected]}>
                         {formatWorkMode(mode)}
@@ -2576,11 +2578,12 @@ export default function MyJobsScreen() {
               {formData.work_mode !== 'remote' && (
                 <View style={dynamicStyles.formSection}>
                   <Text style={dynamicStyles.label}>Location {formData.work_mode !== 'remote' ? '*' : ''}</Text>
-                  <View style={dynamicStyles.locationRow}>
+                  <View style={[dynamicStyles.locationRow, partialEditMode && { opacity: 0.5 }]}>
                     {/* State Dropdown Button */}
                     <TouchableOpacity 
-                      style={dynamicStyles.dropdownButton}
-                      onPress={() => setShowStateDropdown(true)}
+                      style={[dynamicStyles.dropdownButton, partialEditMode && dynamicStyles.inputDisabled]}
+                      onPress={() => !partialEditMode && setShowStateDropdown(true)}
+                      disabled={partialEditMode}
                     >
                       <Text style={[dynamicStyles.dropdownButtonText, !selectedState && dynamicStyles.dropdownPlaceholder]}>
                         {selectedState || `Select ${stateLabel}`}
@@ -2590,9 +2593,9 @@ export default function MyJobsScreen() {
 
                     {/* City Dropdown Button - Now optional */}
                     <TouchableOpacity 
-                      style={[dynamicStyles.dropdownButton, !selectedState && dynamicStyles.dropdownDisabled]}
-                      onPress={() => selectedState && setShowCityDropdown(true)}
-                      disabled={!selectedState}
+                      style={[dynamicStyles.dropdownButton, (!selectedState || partialEditMode) && dynamicStyles.dropdownDisabled]}
+                      onPress={() => !partialEditMode && selectedState && setShowCityDropdown(true)}
+                      disabled={!selectedState || partialEditMode}
                     >
                       <Text style={[dynamicStyles.dropdownButtonText, !selectedCity && dynamicStyles.dropdownPlaceholder]}>
                         {selectedCity || 'City (Optional)'}
