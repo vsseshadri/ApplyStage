@@ -905,8 +905,7 @@ export default function DashboardScreen() {
                     </Text>
                   </View>
                   <TouchableOpacity 
-                    style={dynamicStyles.pastDueActionButton}
-                    onPress={() => router.push(`/job/${interview.job_id}`)}
+                    onPress={() => router.push(`/(tabs)/my-jobs?editJobId=${interview.job_id}&partialEdit=true`)}
                     activeOpacity={0.7}
                   >
                     <Text style={dynamicStyles.pastDueActionText}>Update</Text>
