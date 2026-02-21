@@ -2471,7 +2471,8 @@ export default function MyJobsScreen() {
                   <Text style={dynamicStyles.label}>Company Name *</Text>
                   <TouchableOpacity 
                     style={dynamicStyles.priorityBadge}
-                    onPress={() => setFormData(prev => ({...prev, is_priority: !prev.is_priority}))}
+                    onPress={() => !partialEditMode && setFormData(prev => ({...prev, is_priority: !prev.is_priority}))}
+                    disabled={partialEditMode}
                   >
                     <Ionicons 
                       name={formData.is_priority ? "star" : "star-outline"} 
@@ -2484,11 +2485,12 @@ export default function MyJobsScreen() {
                   </TouchableOpacity>
                 </View>
                 <TextInput
-                  style={dynamicStyles.input}
+                  style={[dynamicStyles.input, partialEditMode && dynamicStyles.inputDisabled]}
                   value={formData.company_name}
                   onChangeText={handleCompanyNameChange}
                   placeholder="e.g., Google, Microsoft"
                   placeholderTextColor={colors.textSecondary}
+                  editable={!partialEditMode}
                 />
               </View>
 
