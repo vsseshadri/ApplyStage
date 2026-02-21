@@ -781,93 +781,96 @@ export default function DashboardScreen() {
 
   // Render the Upcoming Interviews Section (used in both layouts)
   const renderUpcomingInterviewsSection = () => (
-    <>
-      {upcomingInterviews.length > 0 && (
-        <View style={[dynamicStyles.section, isTablet && { marginBottom: 16 }]}>
-          <Text style={dynamicStyles.sectionTitle}>
-            <Ionicons name="calendar" size={16} color="#8B5CF6" /> Upcoming Interviews
-          </Text>
-          <View style={dynamicStyles.upcomingContainer}>
-            {upcomingInterviews.map((interview, index) => {
-              // Get status color for badge
-              const statusColors: any = {
-                'applied': '#3B82F6',
-                'recruiter_screening': '#8B5CF6',
-                'phone_screen': '#6366F1',
-                'coding_round_1': '#EC4899',
-                'coding_round_2': '#EC4899',
-                'system_design': '#F59E0B',
-                'behavioural': '#10B981',
-                'hiring_manager': '#14B8A6',
-                'final_round': '#22C55E',
-                'offer': '#22C55E',
-                'rejected': '#EF4444',
-                'ghosted': '#9CA3AF'
-              };
-              const statusColor = statusColors[interview.status] || '#6B7280';
-              const formatStatus = (status: string) => status?.split('_').map((word: string) => word.charAt(0).toUpperCase() + word.slice(1)).join(' ') || 'Applied';
-              const isLastItem = index === upcomingInterviews.length - 1;
-              
-              // Calculate days until interview
-              const getDaysUntil = () => {
-                if (!interview.schedule_date) return 7;
-                try {
-                  const scheduleDate = new Date(interview.schedule_date);
-                  const today = new Date();
-                  const diffTime = scheduleDate.getTime() - today.getTime();
-                  return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-                } catch {
-                  return 7;
-                }
-              };
-              
-              const handleOpenChecklist = () => {
-                console.log('[Dashboard] Opening checklist for:', interview.company_name, interview.stage, interview.job_id);
-                setSelectedInterview({
-                  stage: interview.stage,
-                  company: interview.company_name,
-                  daysUntil: getDaysUntil(),
-                  jobId: interview.job_id || ''
-                });
-                setChecklistVisible(true);
-              };
-              
-              return (
-                <View key={interview.job_id || index} style={[dynamicStyles.upcomingCard, !isLastItem && dynamicStyles.upcomingCardWithBorder]}>
-                  <View style={dynamicStyles.upcomingDateBadge}>
-                    <Text style={dynamicStyles.upcomingDateDay}>
-                      {interview.schedule_date?.split(' ')[1]?.replace(',', '') || '--'}
-                    </Text>
-                    <Text style={dynamicStyles.upcomingDateMonth}>
-                      {interview.schedule_date?.split(' ')[0] || '--'}
-                    </Text>
-                  </View>
-                  <View style={dynamicStyles.upcomingDetails}>
-                    <Text style={dynamicStyles.upcomingCompany} numberOfLines={1}>
-                      {interview.company_name}
-                    </Text>
-                    <Text style={dynamicStyles.upcomingPosition} numberOfLines={1}>
-                      {interview.position}
-                    </Text>
-                  </View>
-                  <TouchableOpacity 
-                    style={dynamicStyles.upcomingStageBadgeRight}
-                    onPress={handleOpenChecklist}
-                    activeOpacity={0.7}
-                  >
-                    <View style={[dynamicStyles.stageDot, { backgroundColor: STATUS_COLORS[interview.stage] || '#8B5CF6' }]} />
-                    <Text style={dynamicStyles.upcomingStageTextRight}>
-                      {interview.stage?.replace(/_/g, ' ').replace(/\b\w/g, (l: string) => l.toUpperCase())}
-                    </Text>
-                    <Ionicons name="chevron-forward" size={14} color={colors.textSecondary} style={{ marginLeft: 4 }} />
-                  </TouchableOpacity>
+    <View style={[dynamicStyles.section, isTablet && { marginBottom: 16 }]}>
+      <Text style={dynamicStyles.sectionTitle}>
+        <Ionicons name="calendar" size={16} color="#8B5CF6" /> Upcoming Interviews
+      </Text>
+      {upcomingInterviews.length > 0 ? (
+        <View style={dynamicStyles.upcomingContainer}>
+          {upcomingInterviews.map((interview, index) => {
+            // Get status color for badge
+            const statusColors: any = {
+              'applied': '#3B82F6',
+              'recruiter_screening': '#8B5CF6',
+              'phone_screen': '#6366F1',
+              'coding_round_1': '#EC4899',
+              'coding_round_2': '#EC4899',
+              'system_design': '#F59E0B',
+              'behavioural': '#10B981',
+              'hiring_manager': '#14B8A6',
+              'final_round': '#22C55E',
+              'offer': '#22C55E',
+              'rejected': '#EF4444',
+              'ghosted': '#9CA3AF'
+            };
+            const statusColor = statusColors[interview.status] || '#6B7280';
+            const formatStatus = (status: string) => status?.split('_').map((word: string) => word.charAt(0).toUpperCase() + word.slice(1)).join(' ') || 'Applied';
+            const isLastItem = index === upcomingInterviews.length - 1;
+            
+            // Calculate days until interview
+            const getDaysUntil = () => {
+              if (!interview.schedule_date) return 7;
+              try {
+                const scheduleDate = new Date(interview.schedule_date);
+                const today = new Date();
+                const diffTime = scheduleDate.getTime() - today.getTime();
+                return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+              } catch {
+                return 7;
+              }
+            };
+            
+            const handleOpenChecklist = () => {
+              console.log('[Dashboard] Opening checklist for:', interview.company_name, interview.stage, interview.job_id);
+              setSelectedInterview({
+                stage: interview.stage,
+                company: interview.company_name,
+                daysUntil: getDaysUntil(),
+                jobId: interview.job_id || ''
+              });
+              setChecklistVisible(true);
+            };
+            
+            return (
+              <View key={interview.job_id || index} style={[dynamicStyles.upcomingCard, !isLastItem && dynamicStyles.upcomingCardWithBorder]}>
+                <View style={dynamicStyles.upcomingDateBadge}>
+                  <Text style={dynamicStyles.upcomingDateDay}>
+                    {interview.schedule_date?.split(' ')[1]?.replace(',', '') || '--'}
+                  </Text>
+                  <Text style={dynamicStyles.upcomingDateMonth}>
+                    {interview.schedule_date?.split(' ')[0] || '--'}
+                  </Text>
                 </View>
-              );
-            })}
-          </View>
+                <View style={dynamicStyles.upcomingDetails}>
+                  <Text style={dynamicStyles.upcomingCompany} numberOfLines={1}>
+                    {interview.company_name}
+                  </Text>
+                  <Text style={dynamicStyles.upcomingPosition} numberOfLines={1}>
+                    {interview.position}
+                  </Text>
+                </View>
+                <TouchableOpacity 
+                  style={dynamicStyles.upcomingStageBadgeRight}
+                  onPress={handleOpenChecklist}
+                  activeOpacity={0.7}
+                >
+                  <View style={[dynamicStyles.stageDot, { backgroundColor: STATUS_COLORS[interview.stage] || '#8B5CF6' }]} />
+                  <Text style={dynamicStyles.upcomingStageTextRight}>
+                    {interview.stage?.replace(/_/g, ' ').replace(/\b\w/g, (l: string) => l.toUpperCase())}
+                  </Text>
+                  <Ionicons name="chevron-forward" size={14} color={colors.textSecondary} style={{ marginLeft: 4 }} />
+                </TouchableOpacity>
+              </View>
+            );
+          })}
+        </View>
+      ) : (
+        <View style={dynamicStyles.emptyStateContainer}>
+          <Ionicons name="calendar-outline" size={32} color={colors.textSecondary} />
+          <Text style={dynamicStyles.emptyStateText}>No upcoming interviews scheduled</Text>
         </View>
       )}
-    </>
+    </View>
   );
 
   // Render the Past-Due Interviews Section (red alert for interviews that need action)
