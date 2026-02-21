@@ -471,9 +471,9 @@ export default function DashboardScreen() {
     <>
       {insights.length > 0 && (
         <View style={[dynamicStyles.section, isTablet && { marginBottom: 16 }]}>
-          <View style={dynamicStyles.sectionHeader}>
+          <View style={dynamicStyles.insightsSectionHeader}>
             <Ionicons name="sparkles" size={18} color={colors.primary} />
-            <Text style={dynamicStyles.sectionTitle}>Insights</Text>
+            <Text style={dynamicStyles.insightsSectionTitle}>Insights</Text>
           </View>
           <View style={dynamicStyles.insightsGrid}>
             {insights.slice(0, isTablet ? 6 : 4).map((insight: any, index: number) => (
