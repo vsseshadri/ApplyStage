@@ -2479,4 +2479,11 @@ const createStyles = (colors: any, isDark: boolean) => StyleSheet.create({
     color: colors.text,
     lineHeight: 18,
   },
+  // Icon wrapper for consistent alignment
+  sectionIconWrapper: {
+    width: 18,
+    height: 18,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
 });
