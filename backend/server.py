@@ -63,6 +63,15 @@ async def generate_weekly_reports_for_all_users():
                     {"_id": 0, "date_applied": 1, "status": 1, "company_name": 1, "position": 1}
                 ).to_list(1000)
                 
+                # Get all jobs for follow-up reminders (only applied status)
+                all_applied_jobs = await db.job_applications.find(
+                    {
+                        "user_id": user_id,
+                        "status": "applied"
+                    },
+                    {"_id": 0, "date_applied": 1, "status": 1, "company_name": 1, "position": 1}
+                ).to_list(1000)
+                
                 # Calculate stats
                 weekly_applications = len(weekly_jobs)
                 status_counts = {}
@@ -72,8 +81,8 @@ async def generate_weekly_reports_for_all_users():
                 
                 # Get follow-up reminders
                 follow_ups = []
-                for j in all_jobs:
-                    if j.get("status") == "applied" and j.get("date_applied"):
+                for j in all_applied_jobs:
+                    if j.get("date_applied"):
                         date_applied = j.get("date_applied")
                         if isinstance(date_applied, str):
                             try:
