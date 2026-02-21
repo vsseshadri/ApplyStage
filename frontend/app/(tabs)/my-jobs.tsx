@@ -234,6 +234,7 @@ export default function MyJobsScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
   const [editingJob, setEditingJob] = useState<any | null>(null);
+  const [partialEditMode, setPartialEditMode] = useState(false); // For "Action Required" updates
   const [customPositions, setCustomPositions] = useState<string[]>([]);
   const [showPositionInput, setShowPositionInput] = useState(false);
   const [newPosition, setNewPosition] = useState('');
