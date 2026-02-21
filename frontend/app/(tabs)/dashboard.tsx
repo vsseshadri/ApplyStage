@@ -338,12 +338,18 @@ export default function DashboardScreen() {
       
       if (pastDueRes.ok) {
         const pastDueData = await pastDueRes.json();
+        console.log('Past-due interviews response:', JSON.stringify(pastDueData, null, 2));
         setPastDueInterviews(pastDueData || []);
+      } else {
+        console.log('Past-due request failed:', pastDueRes.status);
       }
       
       if (awardsRes.ok) {
         const awardsData = await awardsRes.json();
+        console.log('Motivation awards response:', JSON.stringify(awardsData, null, 2));
         setMotivationAwards(awardsData.awards || []);
+      } else {
+        console.log('Awards request failed:', awardsRes.status);
       }
     } catch (error) {
       console.error('Error fetching data:', error);
