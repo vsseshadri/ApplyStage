@@ -1,6 +1,7 @@
 import UIKit
 import MobileCoreServices
 import UniformTypeIdentifiers
+import Vision
 
 class ShareViewController: UIViewController {
     
@@ -302,18 +303,49 @@ class ShareViewController: UIViewController {
             guard let attachments = item.attachments else { continue }
             
             for attachment in attachments {
-                if attachment.hasItemConformingToTypeIdentifier(UTType.url.identifier) {
+                // Handle Image sharing (for OCR)
+                if attachment.hasItemConformingToTypeIdentifier(UTType.image.identifier) {
+                    attachment.loadItem(forTypeIdentifier: UTType.image.identifier, options: nil) { [weak self] (data, error) in
+                        DispatchQueue.main.async {
+                            self?.showLoading(true)
+                        }
+                        
+                        var imageToProcess: UIImage?
+                        
+                        if let image = data as? UIImage {
+                            imageToProcess = image
+                        } else if let imageData = data as? Data, let image = UIImage(data: imageData) {
+                            imageToProcess = image
+                        } else if let imageUrl = data as? URL, let imageData = try? Data(contentsOf: imageUrl), let image = UIImage(data: imageData) {
+                            imageToProcess = image
+                        }
+                        
+                        if let image = imageToProcess {
+                            self?.performOCR(on: image)
+                        } else {
+                            DispatchQueue.main.async {
+                                self?.showLoading(false)
+                            }
+                        }
+                    }
+                    return
+                }
+                // Handle URL sharing
+                else if attachment.hasItemConformingToTypeIdentifier(UTType.url.identifier) {
                     attachment.loadItem(forTypeIdentifier: UTType.url.identifier, options: nil) { [weak self] (data, error) in
                         if let url = data as? URL {
                             DispatchQueue.main.async {
                                 self?.sharedUrl = url.absoluteString
                                 self?.jobUrlTextField.text = url.absoluteString
-                                self?.parseJobDetails(from: url.absoluteString)
+                                self?.showLoading(true)
                             }
+                            self?.fetchLinkedInJobData(from: url.absoluteString)
                         }
                     }
                     return
-                } else if attachment.hasItemConformingToTypeIdentifier(UTType.plainText.identifier) {
+                }
+                // Handle plain text sharing
+                else if attachment.hasItemConformingToTypeIdentifier(UTType.plainText.identifier) {
                     attachment.loadItem(forTypeIdentifier: UTType.plainText.identifier, options: nil) { [weak self] (data, error) in
                         if let text = data as? String {
                             DispatchQueue.main.async {
@@ -321,9 +353,11 @@ class ShareViewController: UIViewController {
                                 if let url = self?.extractURL(from: text) {
                                     self?.sharedUrl = url
                                     self?.jobUrlTextField.text = url
-                                    self?.parseJobDetails(from: url)
+                                    self?.showLoading(true)
+                                    self?.fetchLinkedInJobData(from: url)
+                                } else {
+                                    self?.notesTextView.text = text
                                 }
-                                self?.notesTextView.text = text
                             }
                         }
                     }
@@ -342,27 +376,509 @@ class ShareViewController: UIViewController {
         return nil
     }
     
-    private func parseJobDetails(from url: String) {
-        // Parse LinkedIn URL for job details
-        let lowercaseUrl = url.lowercased()
+    // MARK: - OCR Processing
+    private func performOCR(on image: UIImage) {
+        guard let cgImage = image.cgImage else {
+            DispatchQueue.main.async {
+                self.showLoading(false)
+            }
+            return
+        }
         
-        // Try to extract company name from URL
-        if lowercaseUrl.contains("linkedin.com") {
-            // LinkedIn job URLs often have company name in the path
-            if let companyMatch = url.range(of: "company/([^/]+)", options: .regularExpression) {
-                let company = String(url[companyMatch])
-                    .replacingOccurrences(of: "company/", with: "")
-                    .replacingOccurrences(of: "-", with: " ")
-                    .capitalized
-                companyTextField.text = company
+        let request = VNRecognizeTextRequest { [weak self] request, error in
+            guard let observations = request.results as? [VNRecognizedTextObservation] else {
+                DispatchQueue.main.async {
+                    self?.showLoading(false)
+                }
+                return
+            }
+            
+            // Extract all recognized text lines
+            var allLines: [String] = []
+            for observation in observations {
+                if let topCandidate = observation.topCandidates(1).first {
+                    let text = topCandidate.string.trimmingCharacters(in: .whitespacesAndNewlines)
+                    if !text.isEmpty {
+                        allLines.append(text)
+                    }
+                }
+            }
+            
+            DispatchQueue.main.async {
+                self?.parseLinkedInScreenshot(lines: allLines)
+                self?.showLoading(false)
             }
         }
         
-        // Set default work mode based on content
-        if lowercaseUrl.contains("remote") {
-            workModeSegment.selectedSegmentIndex = 0
-        } else if lowercaseUrl.contains("hybrid") {
-            workModeSegment.selectedSegmentIndex = 1
+        request.recognitionLevel = .accurate
+        request.usesLanguageCorrection = true
+        
+        let handler = VNImageRequestHandler(cgImage: cgImage, options: [:])
+        
+        DispatchQueue.global(qos: .userInitiated).async {
+            do {
+                try handler.perform([request])
+            } catch {
+                DispatchQueue.main.async {
+                    self.showLoading(false)
+                }
+            }
+        }
+    }
+    
+    // MARK: - LinkedIn Screenshot Parsing (OCR)
+    private func parseLinkedInScreenshot(lines: [String]) {
+        // LinkedIn UI junk text to filter out
+        let junkPatterns: Set<String> = [
+            "jobs", "home", "my network", "post", "notifications", "linkedin",
+            "search", "messaging", "me", "work", "describe the job you want",
+            "sign in", "join now", "apply", "save", "easy apply", "premium",
+            "show more", "show less", "people you can reach out to", "about the job",
+            "see who", "continue with google", "sign in with email", "company alumni",
+            "people also viewed", "am i a good fit for this job", "use ai to assess",
+            "show match details", "create cover letter"
+        ]
+        
+        // Filter out junk lines
+        var meaningfulLines: [String] = []
+        for line in lines {
+            let lowercaseLine = line.lowercased()
+            
+            // Skip timestamp patterns like "5:14"
+            if line.range(of: "^\\d{1,2}:\\d{2}$", options: .regularExpression) != nil {
+                continue
+            }
+            
+            // Skip purely numeric lines
+            if line.range(of: "^[\\d\\s]+$", options: .regularExpression) != nil {
+                continue
+            }
+            
+            // Skip junk patterns
+            var isJunk = false
+            for junk in junkPatterns {
+                if lowercaseLine == junk || lowercaseLine.hasPrefix(junk + " ") {
+                    isJunk = true
+                    break
+                }
+            }
+            if isJunk { continue }
+            
+            // Skip very short lines (likely UI elements)
+            if line.count < 3 { continue }
+            
+            // Skip lines that look like button labels or icons
+            if line == "..." || line == "CA" || line == "CIB" { continue }
+            
+            meaningfulLines.append(line)
+        }
+        
+        // Parse the meaningful lines
+        var companyName: String?
+        var position: String?
+        var location: String?
+        var salary: String?
+        var jobType: String?
+        var workMode: String?
+        
+        for (index, line) in meaningfulLines.enumerated() {
+            let lowercaseLine = line.lowercased()
+            
+            // Check for salary pattern (highest priority - unique identifier)
+            if line.contains("$") && salary == nil {
+                // Extract salary range
+                if let salaryMatch = line.range(of: "\\$[\\d,]+(?:\\.\\d+)?(?:K)?(?:/yr)?(?:\\s*-\\s*\\$[\\d,]+(?:\\.\\d+)?(?:K)?(?:/yr)?)?", options: .regularExpression) {
+                    salary = String(line[salaryMatch])
+                }
+                continue
+            }
+            
+            // Check for job type
+            if jobType == nil {
+                if lowercaseLine.contains("full-time") || lowercaseLine.contains("full time") {
+                    jobType = "Full-Time"
+                } else if lowercaseLine.contains("part-time") || lowercaseLine.contains("part time") {
+                    jobType = "Part-Time"
+                } else if lowercaseLine.contains("contract") {
+                    jobType = "Contract"
+                } else if lowercaseLine.contains("internship") {
+                    jobType = "Internship"
+                }
+            }
+            
+            // Check for work mode
+            if workMode == nil {
+                if lowercaseLine.contains("hybrid") {
+                    workMode = "Hybrid"
+                } else if lowercaseLine.contains("remote") {
+                    workMode = "Remote"
+                } else if lowercaseLine.contains("on-site") || lowercaseLine.contains("onsite") {
+                    workMode = "On-site"
+                }
+            }
+            
+            // Check for location pattern (City, ST)
+            if location == nil {
+                if let locationMatch = line.range(of: "[A-Z][a-zA-Z\\s]+,\\s*[A-Z]{2}\\b", options: .regularExpression) {
+                    let potentialLocation = String(line[locationMatch])
+                    // Verify it's not the company name we already found
+                    if companyName == nil || !potentialLocation.lowercased().contains(companyName!.lowercased()) {
+                        location = potentialLocation
+                    }
+                }
+            }
+        }
+        
+        // For Company and Position: Use the first two meaningful non-special lines
+        // (after filtering out salary, location, job type, work mode lines)
+        var candidateLines: [String] = []
+        for line in meaningfulLines {
+            let lowercaseLine = line.lowercased()
+            
+            // Skip lines we've already identified
+            if line.contains("$") { continue }
+            if lowercaseLine.contains("full-time") || lowercaseLine.contains("part-time") ||
+               lowercaseLine.contains("contract") || lowercaseLine.contains("internship") { continue }
+            if lowercaseLine.contains("hybrid") || lowercaseLine.contains("remote") ||
+               lowercaseLine.contains("on-site") || lowercaseLine.contains("onsite") { continue }
+            if line.range(of: "[A-Z][a-zA-Z\\s]+,\\s*[A-Z]{2}\\b", options: .regularExpression) != nil { continue }
+            
+            // Skip lines with "applicants", "ago", "day", "week"
+            if lowercaseLine.contains("applicant") || lowercaseLine.contains(" ago") ||
+               lowercaseLine.contains("day") || lowercaseLine.contains("week") { continue }
+            
+            candidateLines.append(line)
+        }
+        
+        // Line 1 = Company Name, Line 2 = Position (as per user's instruction)
+        if candidateLines.count >= 1 {
+            companyName = candidateLines[0]
+        }
+        if candidateLines.count >= 2 {
+            position = candidateLines[1]
+        }
+        
+        // Update the form with extracted values
+        updateFormFields(
+            companyName: companyName,
+            position: position,
+            location: location,
+            salary: salary,
+            jobType: jobType,
+            workMode: workMode
+        )
+    }
+    
+    // MARK: - LinkedIn URL Parsing
+    private func fetchLinkedInJobData(from urlString: String) {
+        // Extract job ID from LinkedIn URL
+        guard let jobId = extractLinkedInJobId(from: urlString) else {
+            DispatchQueue.main.async {
+                self.showLoading(false)
+            }
+            return
+        }
+        
+        // Try LinkedIn guest API first
+        let guestApiUrl = "https://www.linkedin.com/jobs-guest/jobs/api/jobPosting/\(jobId)"
+        
+        guard let url = URL(string: guestApiUrl) else {
+            DispatchQueue.main.async {
+                self.showLoading(false)
+            }
+            return
+        }
+        
+        var request = URLRequest(url: url)
+        request.setValue("Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148", forHTTPHeaderField: "User-Agent")
+        request.setValue("text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8", forHTTPHeaderField: "Accept")
+        request.timeoutInterval = 10
+        
+        URLSession.shared.dataTask(with: request) { [weak self] data, response, error in
+            guard let data = data, let html = String(data: data, encoding: .utf8) else {
+                // Fallback to regular page fetch
+                self?.fetchLinkedInPageHTML(from: urlString)
+                return
+            }
+            
+            // Parse the HTML response
+            let parsedData = self?.parseLinkedInHTML(html)
+            
+            DispatchQueue.main.async {
+                if let parsed = parsedData, parsed.hasData {
+                    self?.updateFormFields(
+                        companyName: parsed.company,
+                        position: parsed.position,
+                        location: parsed.location,
+                        salary: parsed.salary,
+                        jobType: parsed.jobType,
+                        workMode: parsed.workMode
+                    )
+                    self?.showLoading(false)
+                } else {
+                    // Fallback to regular page fetch
+                    self?.fetchLinkedInPageHTML(from: urlString)
+                }
+            }
+        }.resume()
+    }
+    
+    private func fetchLinkedInPageHTML(from urlString: String) {
+        guard let url = URL(string: urlString) else {
+            DispatchQueue.main.async {
+                self.showLoading(false)
+            }
+            return
+        }
+        
+        var request = URLRequest(url: url)
+        request.setValue("Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148", forHTTPHeaderField: "User-Agent")
+        request.timeoutInterval = 10
+        
+        URLSession.shared.dataTask(with: request) { [weak self] data, response, error in
+            DispatchQueue.main.async {
+                self?.showLoading(false)
+            }
+            
+            guard let data = data, let html = String(data: data, encoding: .utf8) else {
+                return
+            }
+            
+            let parsedData = self?.parseLinkedInHTML(html)
+            
+            DispatchQueue.main.async {
+                if let parsed = parsedData {
+                    self?.updateFormFields(
+                        companyName: parsed.company,
+                        position: parsed.position,
+                        location: parsed.location,
+                        salary: parsed.salary,
+                        jobType: parsed.jobType,
+                        workMode: parsed.workMode
+                    )
+                }
+            }
+        }.resume()
+    }
+    
+    private func extractLinkedInJobId(from urlString: String) -> String? {
+        // Match patterns like /jobs/view/4374078676/ or /jobs/view/4374078676
+        if let range = urlString.range(of: "/jobs/view/(\\d+)", options: .regularExpression) {
+            let match = String(urlString[range])
+            return match.replacingOccurrences(of: "/jobs/view/", with: "")
+        }
+        
+        // Match pattern like jobId=4374078676
+        if let range = urlString.range(of: "jobId=(\\d+)", options: .regularExpression) {
+            let match = String(urlString[range])
+            return match.replacingOccurrences(of: "jobId=", with: "")
+        }
+        
+        return nil
+    }
+    
+    private struct ParsedJobData {
+        var company: String?
+        var position: String?
+        var location: String?
+        var salary: String?
+        var jobType: String?
+        var workMode: String?
+        
+        var hasData: Bool {
+            return company != nil || position != nil
+        }
+    }
+    
+    private func parseLinkedInHTML(_ html: String) -> ParsedJobData {
+        var result = ParsedJobData()
+        
+        // Extract position from title tag or h1
+        // Pattern: <title>VP, Strategy &amp; Delivery Excellence | Travelers | LinkedIn</title>
+        if let titleRange = html.range(of: "<title>([^<]+)</title>", options: .regularExpression) {
+            var title = String(html[titleRange])
+            title = title.replacingOccurrences(of: "<title>", with: "")
+            title = title.replacingOccurrences(of: "</title>", with: "")
+            title = decodeHTMLEntities(title)
+            
+            // Parse: "Position | Company | LinkedIn" or "Position - Company | LinkedIn"
+            let parts = title.components(separatedBy: " | ")
+            if parts.count >= 2 {
+                result.position = parts[0].trimmingCharacters(in: .whitespacesAndNewlines)
+                let companyPart = parts[1].trimmingCharacters(in: .whitespacesAndNewlines)
+                if companyPart.lowercased() != "linkedin" {
+                    result.company = companyPart
+                }
+            } else {
+                // Try dash separator
+                let dashParts = title.components(separatedBy: " - ")
+                if dashParts.count >= 2 {
+                    result.position = dashParts[0].trimmingCharacters(in: .whitespacesAndNewlines)
+                }
+            }
+        }
+        
+        // Try to extract company from og:title meta tag
+        if result.company == nil {
+            if let ogTitleRange = html.range(of: "property=\"og:title\"\\s+content=\"([^\"]+)\"", options: .regularExpression) {
+                var ogTitle = String(html[ogTitleRange])
+                if let contentRange = ogTitle.range(of: "content=\"([^\"]+)\"", options: .regularExpression) {
+                    var content = String(ogTitle[contentRange])
+                    content = content.replacingOccurrences(of: "content=\"", with: "")
+                    content = content.replacingOccurrences(of: "\"", with: "")
+                    content = decodeHTMLEntities(content)
+                    
+                    let parts = content.components(separatedBy: " | ")
+                    if parts.count >= 2 && result.company == nil {
+                        let companyPart = parts[1].trimmingCharacters(in: .whitespacesAndNewlines)
+                        if companyPart.lowercased() != "linkedin" {
+                            result.company = companyPart
+                        }
+                    }
+                }
+            }
+        }
+        
+        // Extract location - look for City, ST pattern
+        if let locationRange = html.range(of: "([A-Z][a-zA-Z\\s]+,\\s*[A-Z]{2})", options: .regularExpression) {
+            result.location = String(html[locationRange])
+        }
+        
+        // Extract salary
+        if let salaryRange = html.range(of: "\\$[\\d,]+(?:\\.\\d+)?(?:/yr)?(?:\\s*-\\s*\\$[\\d,]+(?:\\.\\d+)?(?:/yr)?)?", options: .regularExpression) {
+            result.salary = String(html[salaryRange])
+        }
+        
+        // Extract job type
+        let htmlLower = html.lowercased()
+        if htmlLower.contains("full-time") || htmlLower.contains("full time") {
+            result.jobType = "Full-Time"
+        } else if htmlLower.contains("part-time") || htmlLower.contains("part time") {
+            result.jobType = "Part-Time"
+        } else if htmlLower.contains("\"contract\"") {
+            result.jobType = "Contract"
+        } else if htmlLower.contains("internship") {
+            result.jobType = "Internship"
+        }
+        
+        // Extract work mode
+        if htmlLower.contains("\"hybrid\"") || htmlLower.contains(">hybrid<") {
+            result.workMode = "Hybrid"
+        } else if htmlLower.contains("\"remote\"") || htmlLower.contains(">remote<") {
+            result.workMode = "Remote"
+        } else if htmlLower.contains("on-site") || htmlLower.contains("onsite") {
+            result.workMode = "On-site"
+        }
+        
+        return result
+    }
+    
+    private func decodeHTMLEntities(_ string: String) -> String {
+        var result = string
+        let entities: [String: String] = [
+            "&amp;": "&",
+            "&lt;": "<",
+            "&gt;": ">",
+            "&quot;": "\"",
+            "&#39;": "'",
+            "&apos;": "'",
+            "&ndash;": "–",
+            "&mdash;": "—",
+            "&nbsp;": " "
+        ]
+        
+        for (entity, replacement) in entities {
+            result = result.replacingOccurrences(of: entity, with: replacement)
+        }
+        
+        return result
+    }
+    
+    // MARK: - Form Update
+    private func updateFormFields(companyName: String?, position: String?, location: String?, salary: String?, jobType: String?, workMode: String?) {
+        // Update Company Name
+        if let company = companyName, !company.isEmpty {
+            companyTextField.text = company
+        }
+        
+        // Update Position
+        if let pos = position, !pos.isEmpty {
+            positionTextField.text = pos
+        }
+        
+        // Update Location
+        if let loc = location, !loc.isEmpty {
+            locationTextField.text = loc
+        }
+        
+        // Update Salary
+        if let sal = salary, !sal.isEmpty {
+            parseSalaryRange(sal)
+        }
+        
+        // Update Job Type Segment
+        if let jt = jobType {
+            let jobTypeLower = jt.lowercased()
+            if jobTypeLower.contains("full") {
+                jobTypeSegment.selectedSegmentIndex = 0
+            } else if jobTypeLower.contains("part") {
+                jobTypeSegment.selectedSegmentIndex = 1
+            } else if jobTypeLower.contains("contract") {
+                jobTypeSegment.selectedSegmentIndex = 2
+            } else if jobTypeLower.contains("intern") {
+                jobTypeSegment.selectedSegmentIndex = 3
+            }
+        }
+        
+        // Update Work Mode Segment
+        if let wm = workMode {
+            let workModeLower = wm.lowercased()
+            if workModeLower.contains("remote") {
+                workModeSegment.selectedSegmentIndex = 0
+            } else if workModeLower.contains("hybrid") {
+                workModeSegment.selectedSegmentIndex = 1
+            } else if workModeLower.contains("on-site") || workModeLower.contains("onsite") {
+                workModeSegment.selectedSegmentIndex = 2
+            }
+        }
+    }
+    
+    private func parseSalaryRange(_ salary: String) {
+        // Extract numbers from salary string
+        // Examples: "$150K/yr - $185K/yr", "$216,300.00/yr - $348,700.00/yr", "$150,000 - $185,000"
+        
+        let pattern = "\\$([\\d,]+(?:\\.\\d+)?)(K)?(?:/yr)?"
+        guard let regex = try? NSRegularExpression(pattern: pattern, options: .caseInsensitive) else { return }
+        
+        let matches = regex.matches(in: salary, options: [], range: NSRange(location: 0, length: salary.utf16.count))
+        
+        var salaryValues: [Int] = []
+        
+        for match in matches {
+            if let numberRange = Range(match.range(at: 1), in: salary) {
+                var numberStr = String(salary[numberRange])
+                numberStr = numberStr.replacingOccurrences(of: ",", with: "")
+                
+                var value = Double(numberStr) ?? 0
+                
+                // Check if "K" suffix exists
+                if match.range(at: 2).location != NSNotFound, let kRange = Range(match.range(at: 2), in: salary) {
+                    let kSuffix = String(salary[kRange])
+                    if kSuffix.lowercased() == "k" {
+                        value *= 1000
+                    }
+                }
+                
+                salaryValues.append(Int(value))
+            }
+        }
+        
+        // Set min and max salary fields
+        if salaryValues.count >= 1 {
+            minSalaryTextField.text = "\(salaryValues[0])"
+        }
+        if salaryValues.count >= 2 {
+            maxSalaryTextField.text = "\(salaryValues[1])"
         }
     }
     
