@@ -2555,22 +2555,48 @@ export default function MyJobsScreen() {
                 </TouchableOpacity>
               </View>
 
-              {/* Work Mode - Moved after Position Type */}
+              {/* Work Mode - Liquid Glass Design for iOS */}
               <View style={dynamicStyles.formSection}>
                 <Text style={dynamicStyles.label}>Work Mode *</Text>
-                <View style={[dynamicStyles.workModeContainer, partialEditMode && { opacity: 0.5 }]}>
-                  {WORK_MODES.map((mode) => (
-                    <TouchableOpacity
-                      key={mode}
-                      style={[dynamicStyles.workModeButton, formData.work_mode === mode && dynamicStyles.workModeButtonSelected]}
-                      onPress={() => !partialEditMode && setFormData({ ...formData, work_mode: mode })}
-                      disabled={partialEditMode}
-                    >
-                      <Text style={[dynamicStyles.workModeButtonText, formData.work_mode === mode && dynamicStyles.workModeButtonTextSelected]}>
-                        {formatWorkMode(mode)}
-                      </Text>
-                    </TouchableOpacity>
-                  ))}
+                <View style={[dynamicStyles.liquidGlassContainer, partialEditMode && { opacity: 0.5 }]}>
+                  {WORK_MODES.map((mode, index) => {
+                    const isSelected = formData.work_mode === mode;
+                    return (
+                      <TouchableOpacity
+                        key={mode}
+                        style={[
+                          dynamicStyles.liquidGlassButton,
+                          isSelected && dynamicStyles.liquidGlassButtonSelected,
+                          index === 0 && dynamicStyles.liquidGlassButtonFirst,
+                          index === WORK_MODES.length - 1 && dynamicStyles.liquidGlassButtonLast,
+                        ]}
+                        onPress={() => !partialEditMode && setFormData({ ...formData, work_mode: mode })}
+                        disabled={partialEditMode}
+                        activeOpacity={0.7}
+                      >
+                        <View style={[
+                          dynamicStyles.liquidGlassInner,
+                          isSelected && dynamicStyles.liquidGlassInnerSelected
+                        ]}>
+                          <Ionicons 
+                            name={mode === 'remote' ? 'home-outline' : mode === 'hybrid' ? 'git-merge-outline' : 'business-outline'} 
+                            size={18} 
+                            color={isSelected ? '#FFFFFF' : colors.textSecondary} 
+                            style={{ marginBottom: 4 }}
+                          />
+                          <Text style={[
+                            dynamicStyles.liquidGlassText,
+                            isSelected && dynamicStyles.liquidGlassTextSelected
+                          ]}>
+                            {formatWorkMode(mode)}
+                          </Text>
+                        </View>
+                        {isSelected && (
+                          <View style={dynamicStyles.liquidGlassGlow} />
+                        )}
+                      </TouchableOpacity>
+                    );
+                  })}
                 </View>
               </View>
 
