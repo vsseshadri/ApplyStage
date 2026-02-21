@@ -1167,6 +1167,180 @@ async def get_upcoming_interviews(
     
     return upcoming
 
+
+@api_router.get("/dashboard/pastdue-interviews")
+async def get_pastdue_interviews(current_user: User = Depends(get_current_user)):
+    """Get list of past-due interviews (scheduled date has passed but status not updated)."""
+    from datetime import datetime
+    
+    jobs = await db.job_applications.find(
+        {
+            "user_id": current_user.user_id,
+            "upcoming_stage": {"$exists": True, "$ne": None, "$ne": ""},
+            "upcoming_schedule": {"$exists": True, "$ne": None, "$ne": ""}
+        },
+        {"_id": 0}
+    ).to_list(100)
+    
+    pastdue = []
+    for job in jobs:
+        try:
+            schedule_str = job.get("upcoming_schedule", "")
+            if schedule_str:
+                schedule_date = datetime.strptime(schedule_str, "%m/%d/%Y")
+                days_overdue = (datetime.now() - schedule_date).days
+                
+                # Only include if the date is in the past (days_overdue > 0)
+                if days_overdue > 0:
+                    pastdue.append({
+                        "job_id": job.get("job_id"),
+                        "company_name": job.get("company_name"),
+                        "position": job.get("position"),
+                        "stage": job.get("upcoming_stage"),
+                        "status": job.get("status"),
+                        "schedule_date": schedule_date.strftime("%b %d, %Y"),
+                        "schedule_raw": schedule_str,
+                        "days_overdue": days_overdue
+                    })
+        except:
+            continue
+    
+    # Sort by days overdue (most overdue first)
+    pastdue.sort(key=lambda x: x["days_overdue"], reverse=True)
+    
+    return pastdue
+
+
+@api_router.get("/dashboard/motivation-awards")
+async def get_motivation_awards(current_user: User = Depends(get_current_user)):
+    """Get motivation awards based on target achievements."""
+    from datetime import datetime, timedelta
+    
+    # Get target goals
+    user_doc = await db.users.find_one(
+        {"user_id": current_user.user_id},
+        {"_id": 0, "target_goals": 1}
+    )
+    targets = user_doc.get("target_goals", {"weekly_target": 10, "monthly_target": 40}) if user_doc else {"weekly_target": 10, "monthly_target": 40}
+    
+    # Calculate date ranges
+    now = datetime.now(timezone.utc)
+    days_since_monday = now.weekday()
+    week_start = (now - timedelta(days=days_since_monday)).replace(hour=0, minute=0, second=0, microsecond=0)
+    month_start = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+    
+    # Count applications
+    weekly_count = await db.job_applications.count_documents({
+        "user_id": current_user.user_id,
+        "created_at": {"$gte": week_start}
+    })
+    monthly_count = await db.job_applications.count_documents({
+        "user_id": current_user.user_id,
+        "created_at": {"$gte": month_start}
+    })
+    
+    weekly_target = targets.get("weekly_target", 10)
+    monthly_target = targets.get("monthly_target", 40)
+    
+    weekly_percentage = round((weekly_count / weekly_target) * 100) if weekly_target > 0 else 0
+    monthly_percentage = round((monthly_count / monthly_target) * 100) if monthly_target > 0 else 0
+    
+    awards = []
+    
+    # Humorous messages for meeting targets
+    target_met_messages = [
+        "You crushed it! Your keyboard deserves a vacation! 🏖️",
+        "Target achieved! Time for a celebratory coffee! ☕",
+        "Boom! You did it! The job market doesn't know what hit it! 💥",
+        "Goal reached! You're basically a job application ninja now! 🥷",
+        "Mission accomplished! Your resume is doing laps around the competition! 🏃",
+        "Nailed it! Even your LinkedIn profile is impressed! 👔",
+        "Victory! Your apply button is getting a workout! 💪"
+    ]
+    
+    # Messages for exceeding targets
+    exceeded_messages = [
+        "Overachiever alert! You went {percent}% beyond your target! 🚀",
+        "Show-off! You exceeded your goal by {percent}%! The jobs are coming! 🎯",
+        "Legendary! {percent}% over target! Your keyboard needs a raise! ⌨️",
+        "Unstoppable! You're {percent}% ahead! Save some jobs for the rest of us! 🏆",
+        "Wow! {percent}% over target! At this rate, you'll be CEO by Friday! 👑"
+    ]
+    
+    import random
+    
+    # Weekly awards
+    if weekly_count >= weekly_target:
+        excess_percent = weekly_percentage - 100
+        if excess_percent > 0:
+            # Exceeded target
+            msg_template = random.choice(exceeded_messages)
+            awards.append({
+                "type": "weekly_exceeded",
+                "icon": "trophy",
+                "color": "#FFD700",  # Gold
+                "title": "Weekly Super Star!",
+                "message": msg_template.format(percent=excess_percent),
+                "current": weekly_count,
+                "target": weekly_target,
+                "percentage": weekly_percentage
+            })
+        else:
+            # Met target exactly
+            awards.append({
+                "type": "weekly_met",
+                "icon": "ribbon",
+                "color": "#22C55E",  # Green
+                "title": "Weekly Goal Achieved!",
+                "message": random.choice(target_met_messages),
+                "current": weekly_count,
+                "target": weekly_target,
+                "percentage": 100
+            })
+    
+    # Monthly awards
+    if monthly_count >= monthly_target:
+        excess_percent = monthly_percentage - 100
+        if excess_percent > 0:
+            # Exceeded target
+            msg_template = random.choice(exceeded_messages)
+            awards.append({
+                "type": "monthly_exceeded",
+                "icon": "medal",
+                "color": "#FFD700",  # Gold
+                "title": "Monthly Champion!",
+                "message": msg_template.format(percent=excess_percent),
+                "current": monthly_count,
+                "target": monthly_target,
+                "percentage": monthly_percentage
+            })
+        else:
+            # Met target exactly
+            awards.append({
+                "type": "monthly_met",
+                "icon": "star",
+                "color": "#8B5CF6",  # Purple
+                "title": "Monthly Goal Achieved!",
+                "message": random.choice(target_met_messages),
+                "current": monthly_count,
+                "target": monthly_target,
+                "percentage": 100
+            })
+    
+    return {
+        "awards": awards,
+        "weekly_progress": {
+            "current": weekly_count,
+            "target": weekly_target,
+            "percentage": min(weekly_percentage, 999)  # Cap display at 999%
+        },
+        "monthly_progress": {
+            "current": monthly_count,
+            "target": monthly_target,
+            "percentage": min(monthly_percentage, 999)
+        }
+    }
+
 # Interview prep checklist - POST endpoint for proxy compatibility
 class ChecklistRequest(BaseModel):
     stage: str
