@@ -272,6 +272,24 @@ export default function MyJobsScreen() {
     }
   }, [params?.openAddWithShare, params?.sharedUrl, loading]);
   
+  // Handle editJobId param to open edit modal for a specific job (from Action Required section)
+  useEffect(() => {
+    if (params?.editJobId && !loading && jobs.length > 0) {
+      const jobToEdit = jobs.find((j: any) => j.job_id === params.editJobId);
+      if (jobToEdit) {
+        // Set partial edit mode if requested
+        const isPartialEdit = params?.partialEdit === 'true';
+        setPartialEditMode(isPartialEdit);
+        openEditModal(jobToEdit);
+      }
+      // Clear the params after opening
+      require('expo-router').router.setParams({ 
+        editJobId: undefined, 
+        partialEdit: undefined 
+      });
+    }
+  }, [params?.editJobId, loading, jobs]);
+  
   // Date picker states
   const [showDateAppliedPicker, setShowDateAppliedPicker] = useState(false);
   const [showScheduledOnPicker, setShowScheduledOnPicker] = useState(false);
