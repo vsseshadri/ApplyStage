@@ -927,9 +927,9 @@ export default function DashboardScreen() {
     <>
       {motivationAwards.length > 0 && (
         <View style={[dynamicStyles.section, isTablet && { marginBottom: 16 }]}>
-          <View style={dynamicStyles.sectionHeader}>
+          <View style={dynamicStyles.awardsSectionHeader}>
             <Ionicons name="trophy" size={18} color="#FFD700" />
-            <Text style={dynamicStyles.sectionTitle}>Awards</Text>
+            <Text style={dynamicStyles.awardsSectionTitle}>Awards</Text>
           </View>
           <View style={dynamicStyles.awardsContainer}>
             {motivationAwards.map((award: any, index: number) => (
@@ -951,12 +951,17 @@ export default function DashboardScreen() {
                   />
                 </View>
                 <View style={dynamicStyles.awardContent}>
-                  <Text style={dynamicStyles.awardTitle}>{award.title}</Text>
+                  <View style={dynamicStyles.awardTitleRow}>
+                    <Text style={dynamicStyles.awardTitle}>{award.title}</Text>
+                    <View style={dynamicStyles.awardStatsRow}>
+                      <Ionicons name="fitness" size={14} color={colors.primary} />
+                      <Text style={dynamicStyles.awardStats}>
+                        {award.current}/{award.target} ({award.percentage}%)
+                      </Text>
+                    </View>
+                  </View>
                   <Text style={dynamicStyles.awardMessage} numberOfLines={2}>
                     {award.message}
-                  </Text>
-                  <Text style={dynamicStyles.awardStats}>
-                    {award.current}/{award.target} ({award.percentage}%)
                   </Text>
                 </View>
               </View>
