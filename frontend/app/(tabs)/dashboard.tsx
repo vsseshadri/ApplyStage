@@ -509,9 +509,9 @@ export default function DashboardScreen() {
     <>
       {followUps.length > 0 && (
         <View style={[dynamicStyles.section, isTablet && { marginBottom: 16 }]}>
-          <View style={dynamicStyles.sectionHeader}>
-            <Ionicons name="notifications" size={18} color="#F59E0B" />
-            <Text style={dynamicStyles.sectionTitle}>Follow-up Reminders</Text>
+          <View style={dynamicStyles.followUpSectionHeader}>
+            <Ionicons name="time" size={18} color="#F59E0B" />
+            <Text style={dynamicStyles.followUpSectionTitle}>Follow-up Reminders</Text>
           </View>
           <View style={dynamicStyles.followUpsContainer}>
             {followUps.map((followUp: any, index: number) => {
