@@ -2398,21 +2398,43 @@ const createStyles = (colors: any, isDark: boolean) => StyleSheet.create({
   awardContent: {
     flex: 1,
   },
+  awardTitleRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 4,
+  },
   awardTitle: {
     fontSize: 16,
     fontWeight: '700',
     color: colors.text,
-    marginBottom: 4,
+  },
+  awardStatsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
   },
   awardMessage: {
     fontSize: 13,
     color: colors.textSecondary,
     lineHeight: 18,
-    marginBottom: 4,
   },
   awardStats: {
     fontSize: 12,
     fontWeight: '600',
     color: colors.primary,
+  },
+  // Awards Section Header - centered with icon
+  awardsSectionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 12,
+    gap: 8,
+  },
+  awardsSectionTitle: {
+    fontSize: 17,
+    fontWeight: '600',
+    color: colors.text,
+    lineHeight: 18,
   },
 });
