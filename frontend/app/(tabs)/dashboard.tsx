@@ -2280,4 +2280,112 @@ const createStyles = (colors: any, isDark: boolean) => StyleSheet.create({
     textAlign: 'center',
     marginTop: 6,
   },
+  // Past-Due Interviews Styles
+  pastDueContainer: {
+    backgroundColor: isDark ? '#3F1B1B' : '#FEF2F2',
+    borderRadius: 12,
+    padding: 4,
+    borderWidth: 1,
+    borderColor: '#EF444440',
+  },
+  pastDueCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 12,
+    paddingHorizontal: 12,
+  },
+  pastDueCardWithBorder: {
+    borderBottomWidth: 1,
+    borderBottomColor: isDark ? '#5F2B2B' : '#FEE2E2',
+  },
+  pastDueDateBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#EF444420',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 6,
+    marginRight: 12,
+    gap: 4,
+  },
+  pastDueDaysText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#EF4444',
+  },
+  pastDueDetails: {
+    flex: 1,
+  },
+  pastDueCompany: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: colors.text,
+    marginBottom: 2,
+  },
+  pastDueStage: {
+    fontSize: 12,
+    color: colors.textSecondary,
+  },
+  pastDueActionButton: {
+    backgroundColor: '#EF4444',
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 8,
+    marginLeft: 10,
+  },
+  pastDueActionText: {
+    color: '#FFF',
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  // Motivation Awards Styles
+  awardsContainer: {
+    gap: 12,
+  },
+  awardCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: colors.card,
+    borderRadius: 16,
+    padding: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 3,
+    borderWidth: 2,
+    borderColor: 'transparent',
+  },
+  awardCardGold: {
+    borderColor: '#FFD700',
+    backgroundColor: isDark ? '#3D3410' : '#FFFBEB',
+  },
+  awardIconContainer: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 14,
+  },
+  awardContent: {
+    flex: 1,
+  },
+  awardTitle: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: colors.text,
+    marginBottom: 4,
+  },
+  awardMessage: {
+    fontSize: 13,
+    color: colors.textSecondary,
+    lineHeight: 18,
+    marginBottom: 4,
+  },
+  awardStats: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: colors.primary,
+  },
 });
