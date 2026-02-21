@@ -2747,8 +2747,11 @@ async def generate_report(report_type: str, current_user: User = Depends(get_cur
     
     today = datetime.now(timezone.utc)
     
-    # Get all jobs
-    all_jobs = await db.job_applications.find({"user_id": current_user.user_id}).to_list(1000)
+    # Get all jobs with optimized projection
+    all_jobs = await db.job_applications.find(
+        {"user_id": current_user.user_id},
+        {"_id": 0, "date_applied": 1, "status": 1, "company_name": 1, "position": 1}
+    ).to_list(1000)
     
     if report_type == "weekly":
         week_start = today - timedelta(days=7)
@@ -2757,19 +2760,11 @@ async def generate_report(report_type: str, current_user: User = Depends(get_cur
         title = f"Weekly Summary for the week {from_date} - {to_date}"
         date_range = f"{from_date} - {to_date}"
         
-        weekly_jobs = []
-        for j in all_jobs:
-            if j.get("date_applied"):
-                date_applied = j.get("date_applied")
-                if isinstance(date_applied, str):
-                    try:
-                        date_applied = datetime.fromisoformat(date_applied.replace("Z", "+00:00"))
-                    except:
-                        continue
-                elif isinstance(date_applied, datetime) and date_applied.tzinfo is None:
-                    date_applied = date_applied.replace(tzinfo=timezone.utc)
-                if date_applied >= week_start:
-                    weekly_jobs.append(j)
+        # Optimized weekly jobs filtering
+        weekly_jobs = [j for j in all_jobs if j.get("date_applied") and (
+            (isinstance(j.get("date_applied"), datetime) and j.get("date_applied").replace(tzinfo=timezone.utc) >= week_start) or
+            (isinstance(j.get("date_applied"), str) and datetime.fromisoformat(j.get("date_applied").replace("Z", "+00:00")) >= week_start)
+        )]
         
         status_counts = {}
         for job in weekly_jobs:
