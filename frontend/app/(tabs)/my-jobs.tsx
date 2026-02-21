@@ -3597,63 +3597,14 @@ const createStyles = (colors: any, isDark: boolean, isTablet: boolean = false) =
     flexDirection: 'row',
     backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.04)',
     borderRadius: 16,
+  // Compact Liquid Glass Slider Styles
+  liquidGlassContainer: {
+    flexDirection: 'row',
+    backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.04)',
+    borderRadius: 16,
     padding: 4,
     gap: 4,
   },
-  liquidGlassButton: {
-    flex: 1,
-    position: 'relative',
-    overflow: 'hidden',
-    borderRadius: 12,
-  },
-  liquidGlassButtonFirst: {
-    borderTopLeftRadius: 12,
-    borderBottomLeftRadius: 12,
-  },
-  liquidGlassButtonLast: {
-    borderTopRightRadius: 12,
-    borderBottomRightRadius: 12,
-  },
-  liquidGlassButtonSelected: {
-    backgroundColor: 'transparent',
-  },
-  liquidGlassInner: {
-    paddingVertical: 14,
-    paddingHorizontal: 8,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderRadius: 12,
-    backgroundColor: 'transparent',
-  },
-  liquidGlassInnerSelected: {
-    backgroundColor: colors.primary,
-    shadowColor: colors.primary,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.4,
-    shadowRadius: 8,
-    elevation: 6,
-  },
-  liquidGlassText: {
-    fontSize: 13,
-    fontWeight: '500',
-    color: colors.textSecondary,
-    textAlign: 'center',
-  },
-  liquidGlassTextSelected: {
-    color: '#FFFFFF',
-    fontWeight: '600',
-  },
-  liquidGlassGlow: {
-    position: 'absolute',
-    top: -20,
-    left: '25%',
-    right: '25%',
-    height: 40,
-    backgroundColor: 'rgba(255,255,255,0.15)',
-    borderRadius: 20,
-    transform: [{ scaleX: 1.5 }],
-  },
-  // Compact Liquid Glass Slider Styles
   liquidGlassSlider: {
     flexDirection: 'row',
     backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(120,120,128,0.12)',
