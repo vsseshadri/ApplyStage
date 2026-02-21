@@ -303,6 +303,21 @@ backend:
         agent: "testing"
         comment: "✅ PASS - All 7/7 automatic report generation tests PASSED (100% success rate). Scheduler verified running with proper job scheduling (Weekly: Sunday 1:00 AM, Monthly: Last day 9:00 AM). Manual report generation working: POST /api/reports/generate/weekly and POST /api/reports/generate/monthly create reports with proper HTML content including Weekly Metrics, Applications This Week, Follow-up Reminders sections for weekly reports and Monthly Overview, Status Breakdown, Work Mode Distribution for monthly reports. GET /api/reports returns proper listing without content (performance optimized), GET /api/reports/{report_id} returns full report with HTML content. Report content quality verified with proper HTML formatting, styling, and date information. Data accuracy confirmed - reports reflect actual user job data correctly. System is production-ready and working as specified in review request."
 
+  - task: "New dashboard endpoints (pastdue-interviews, motivation-awards, reports)"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "Implemented 3 new backend endpoints: GET /api/dashboard/pastdue-interviews (returns interviews where scheduled date has passed), GET /api/dashboard/motivation-awards (returns awards based on target achievements), GET /api/reports (returns reports with is_read field for notification badge count)"
+      - working: true
+        agent: "testing"
+        comment: "✅ PASS - All 6/6 new backend endpoint tests PASSED (100% success rate). GET /api/dashboard/pastdue-interviews returns proper list with all required fields (job_id, company_name, position, stage, status, schedule_date, schedule_raw, days_overdue). Found 3 past-due interviews with positive days_overdue values. GET /api/dashboard/motivation-awards returns proper structure with awards array and weekly/monthly progress objects (current, target, percentage). GET /api/reports returns list with is_read field for notification badge count (found 11 reports, 6 unread). All endpoints working correctly with proper data structures and validation as specified in review request. Backend API is production-ready."
+
 frontend:
   - task: "Tab navigation with 4 tabs"
     implemented: true
