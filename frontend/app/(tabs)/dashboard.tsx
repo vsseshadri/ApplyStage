@@ -1427,12 +1427,12 @@ export default function DashboardScreen() {
           
           {/* Past-Due Interviews (Action Required) */}
           {renderPastDueInterviewsSection()}
-          
-          {/* Motivation Awards */}
-          {renderMotivationAwardsSection()}
 
           {/* Upcoming Interviews */}
           {renderUpcomingInterviewsSection()}
+          
+          {/* Awards */}
+          {renderMotivationAwardsSection()}
 
           <View style={{ height: 40 }} />
         </ScrollView>
