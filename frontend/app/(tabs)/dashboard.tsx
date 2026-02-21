@@ -1899,6 +1899,19 @@ const createStyles = (colors: any, isDark: boolean) => StyleSheet.create({
   upcomingContainer: {
     gap: 10,
   },
+  emptyStateContainer: {
+    backgroundColor: colors.card,
+    borderRadius: 12,
+    padding: 24,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+  },
+  emptyStateText: {
+    fontSize: 14,
+    color: colors.textSecondary,
+    textAlign: 'center',
+  },
   upcomingCard: {
     flexDirection: 'row',
     alignItems: 'center',
