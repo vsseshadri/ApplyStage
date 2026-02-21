@@ -50,7 +50,7 @@
       "typedRoutes": true
     },
     "extra": {
-      "EXPO_PUBLIC_BACKEND_URL": "https://career-tracker-69.preview.emergentagent.com"
+      "EXPO_PUBLIC_BACKEND_URL": "https://share-to-jobs.preview.emergentagent.com"
     }
   }
 }

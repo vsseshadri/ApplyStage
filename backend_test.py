@@ -15,7 +15,7 @@ from datetime import datetime, timezone, timedelta
 from typing import Dict, Any, List
 
 # Configuration
-BACKEND_URL = "https://career-tracker-69.preview.emergentagent.com"
+BACKEND_URL = "https://share-to-jobs.preview.emergentagent.com"
 TEST_TOKEN = "test_token_abc123"
 
 class ReportGenerationTester:
