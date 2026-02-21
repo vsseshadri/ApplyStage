@@ -962,7 +962,6 @@ export default function DashboardScreen() {
                       {award.current}/{award.target} ({award.percentage}%)
                     </Text>
                   </View>
-                  </View>
                   <Text style={dynamicStyles.awardMessage} numberOfLines={2}>
                     {award.message}
                   </Text>
