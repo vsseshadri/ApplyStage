@@ -183,23 +183,14 @@ async def generate_monthly_reports_for_all_users():
                 user_id = user_doc.get("user_id")
                 user_name = user_doc.get("preferred_display_name") or user_doc.get("name") or "Job Seeker"
                 
-                # Get user's jobs
-                all_jobs = await db.job_applications.find({"user_id": user_id}).to_list(1000)
-                
-                # Filter jobs applied this month
-                monthly_jobs = []
-                for j in all_jobs:
-                    if j.get("date_applied"):
-                        date_applied = j.get("date_applied")
-                        if isinstance(date_applied, str):
-                            try:
-                                date_applied = datetime.fromisoformat(date_applied.replace("Z", "+00:00"))
-                            except:
-                                continue
-                        elif isinstance(date_applied, datetime) and date_applied.tzinfo is None:
-                            date_applied = date_applied.replace(tzinfo=timezone.utc)
-                        if date_applied >= month_start:
-                            monthly_jobs.append(j)
+                # Get user's jobs with projection and date filter for optimization
+                monthly_jobs = await db.job_applications.find(
+                    {
+                        "user_id": user_id,
+                        "date_applied": {"$gte": month_start}
+                    },
+                    {"_id": 0, "date_applied": 1, "status": 1, "company_name": 1, "position": 1, "job_type": 1, "work_mode": 1}
+                ).to_list(1000)
                 
                 # Calculate stats
                 monthly_applications = len(monthly_jobs)
