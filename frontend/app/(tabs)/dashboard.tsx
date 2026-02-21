@@ -150,6 +150,12 @@ export default function DashboardScreen() {
     message: string;
   } | null>(null);
   
+  // Past-due interviews state
+  const [pastDueInterviews, setPastDueInterviews] = useState<any[]>([]);
+  
+  // Motivation Awards state
+  const [motivationAwards, setMotivationAwards] = useState<any[]>([]);
+  
   // Interview checklist state
   const [checklistVisible, setChecklistVisible] = useState(false);
   const [selectedInterview, setSelectedInterview] = useState<{stage: string; company: string; daysUntil: number; jobId: string} | null>(null);
