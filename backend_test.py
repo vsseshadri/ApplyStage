@@ -1,10 +1,14 @@
 #!/usr/bin/env python3
 """
-Backend API Testing for CareerFlow App - Upcoming Interviews Flow
-Tests the specific flow reported by user regarding missing "Upcoming Interviews" section
+Backend API Testing for CareerFlow Dashboard
+Testing the 3 new endpoints as specified in review request:
+1. GET /api/dashboard/pastdue-interviews
+2. GET /api/dashboard/motivation-awards  
+3. GET /api/reports
 """
 
-import requests
+import asyncio
+import aiohttp
 import json
 from datetime import datetime, timedelta
 import sys
@@ -17,261 +21,270 @@ HEADERS = {
     "Content-Type": "application/json"
 }
 
-def log_test(test_name, status, details=""):
-    """Log test results with clear formatting"""
-    status_symbol = "✅" if status == "PASS" else "❌" if status == "FAIL" else "⚠️"
-    print(f"{status_symbol} {status} - {test_name}")
-    if details:
-        print(f"   Details: {details}")
-    print()
-
-def test_health_endpoint():
-    """Test 1: Check if backend is running properly via health endpoint"""
-    try:
-        response = requests.get(f"{BACKEND_URL}/api/health", timeout=10)
-        
-        if response.status_code == 200:
-            data = response.json()
-            log_test("Health Endpoint", "PASS", f"Status: {data.get('status', 'healthy')}")
-            return True
+class TestResults:
+    def __init__(self):
+        self.passed = 0
+        self.failed = 0
+        self.results = []
+    
+    def add_result(self, test_name, passed, message=""):
+        self.results.append({
+            "test": test_name,
+            "status": "✅ PASS" if passed else "❌ FAIL", 
+            "message": message
+        })
+        if passed:
+            self.passed += 1
         else:
-            log_test("Health Endpoint", "FAIL", f"HTTP {response.status_code}: {response.text}")
-            return False
-            
-    except requests.exceptions.RequestException as e:
-        log_test("Health Endpoint", "FAIL", f"Connection error: {str(e)}")
-        return False
+            self.failed += 1
+    
+    def print_summary(self):
+        print(f"\n{'='*60}")
+        print(f"TEST SUMMARY: {self.passed}/{self.passed + self.failed} tests passed")
+        print(f"{'='*60}")
+        for result in self.results:
+            print(f"{result['status']} - {result['test']}")
+            if result['message']:
+                print(f"    {result['message']}")
+        print(f"{'='*60}")
 
-def test_authentication():
-    """Test authentication with test token"""
+async def test_backend_connectivity():
+    """Test basic backend connectivity"""
     try:
-        response = requests.get(f"{BACKEND_URL}/api/auth/me", headers=HEADERS, timeout=10)
-        
-        if response.status_code == 200:
-            user_data = response.json()
-            log_test("Authentication", "PASS", f"User: {user_data.get('name', 'Test User')} ({user_data.get('email', 'test@example.com')})")
-            return True
-        else:
-            log_test("Authentication", "FAIL", f"HTTP {response.status_code}: {response.text}")
-            return False
-            
-    except requests.exceptions.RequestException as e:
-        log_test("Authentication", "FAIL", f"Connection error: {str(e)}")
-        return False
+        async with aiohttp.ClientSession() as session:
+            async with session.get(f"{BACKEND_URL}/api/auth/me", headers=HEADERS) as response:
+                if response.status == 200:
+                    data = await response.json()
+                    return True, f"Connected successfully. User: {data.get('name', 'Test User')}"
+                else:
+                    return False, f"Auth failed with status {response.status}"
+    except Exception as e:
+        return False, f"Connection error: {str(e)}"
 
-def test_upcoming_interviews_empty():
-    """Test 2: Test upcoming interviews endpoint (should work even if empty)"""
+async def test_pastdue_interviews():
+    """Test GET /api/dashboard/pastdue-interviews endpoint"""
     try:
-        response = requests.get(f"{BACKEND_URL}/api/dashboard/upcoming-interviews", headers=HEADERS, timeout=10)
-        
-        if response.status_code == 200:
-            interviews = response.json()
-            log_test("Upcoming Interviews (Empty)", "PASS", f"Returned {len(interviews)} interviews")
-            return True
-        else:
-            log_test("Upcoming Interviews (Empty)", "FAIL", f"HTTP {response.status_code}: {response.text}")
-            return False
-            
-    except requests.exceptions.RequestException as e:
-        log_test("Upcoming Interviews (Empty)", "FAIL", f"Connection error: {str(e)}")
-        return False
+        async with aiohttp.ClientSession() as session:
+            async with session.get(f"{BACKEND_URL}/api/dashboard/pastdue-interviews", headers=HEADERS) as response:
+                if response.status == 200:
+                    data = await response.json()
+                    
+                    # Validate response structure
+                    if isinstance(data, list):
+                        # Check if we have any past due interviews
+                        if len(data) == 0:
+                            return True, "Endpoint working correctly. No past-due interviews found (expected for new user)."
+                        
+                        # If we have data, validate structure
+                        required_fields = ["job_id", "company_name", "position", "stage", "status", "schedule_date", "schedule_raw", "days_overdue"]
+                        for item in data:
+                            missing_fields = [field for field in required_fields if field not in item]
+                            if missing_fields:
+                                return False, f"Missing required fields in response: {missing_fields}"
+                            
+                            # Validate days_overdue is positive (past due)
+                            if item.get("days_overdue", 0) <= 0:
+                                return False, f"Invalid days_overdue value: {item.get('days_overdue')} (should be > 0 for past due)"
+                        
+                        return True, f"Endpoint working correctly. Found {len(data)} past-due interviews with proper structure."
+                    else:
+                        return False, f"Expected list response, got {type(data)}"
+                else:
+                    return False, f"HTTP {response.status}: {await response.text()}"
+    except Exception as e:
+        return False, f"Request error: {str(e)}"
 
-def create_test_job_with_interview():
-    """Test 3: Create a test job with upcoming interview data"""
+async def test_motivation_awards():
+    """Test GET /api/dashboard/motivation-awards endpoint"""
     try:
-        # Create job with upcoming interview scheduled for next week
-        future_date = (datetime.now() + timedelta(days=7)).strftime("%m/%d/%Y")
-        
-        job_data = {
-            "company_name": "TechCorp Solutions",
-            "position": "Senior Software Engineer",
-            "location": {"city": "San Francisco", "state": "California"},
-            "salary_range": {"min": 120000, "max": 160000},
-            "work_mode": "hybrid",
-            "job_type": "Software Engineer",
-            "status": "phone_screen",
-            "upcoming_stage": "system_design",
-            "upcoming_schedule": future_date,
-            "date_applied": datetime.now().isoformat(),
-            "is_priority": True,
-            "notes": "Test job for upcoming interviews functionality"
-        }
-        
-        response = requests.post(f"{BACKEND_URL}/api/jobs", headers=HEADERS, json=job_data, timeout=10)
-        
-        if response.status_code == 200:
-            job = response.json()
-            job_id = job.get("job_id")
-            log_test("Create Job with Interview", "PASS", f"Job ID: {job_id}, Interview: {job.get('upcoming_stage')} on {job.get('upcoming_schedule')}")
-            return job_id
-        else:
-            log_test("Create Job with Interview", "FAIL", f"HTTP {response.status_code}: {response.text}")
-            return None
-            
-    except requests.exceptions.RequestException as e:
-        log_test("Create Job with Interview", "FAIL", f"Connection error: {str(e)}")
-        return None
+        async with aiohttp.ClientSession() as session:
+            async with session.get(f"{BACKEND_URL}/api/dashboard/motivation-awards", headers=HEADERS) as response:
+                if response.status == 200:
+                    data = await response.json()
+                    
+                    # Validate response structure
+                    required_top_level = ["awards", "weekly_progress", "monthly_progress"]
+                    missing_top_level = [field for field in required_top_level if field not in data]
+                    if missing_top_level:
+                        return False, f"Missing required top-level fields: {missing_top_level}"
+                    
+                    # Validate awards array
+                    awards = data.get("awards", [])
+                    if not isinstance(awards, list):
+                        return False, f"Awards should be a list, got {type(awards)}"
+                    
+                    # If awards exist, validate structure
+                    if awards:
+                        award_required_fields = ["type", "icon", "color", "title", "message", "current", "target", "percentage"]
+                        for award in awards:
+                            missing_award_fields = [field for field in award_required_fields if field not in award]
+                            if missing_award_fields:
+                                return False, f"Missing required award fields: {missing_award_fields}"
+                    
+                    # Validate weekly_progress structure
+                    weekly_progress = data.get("weekly_progress", {})
+                    progress_required_fields = ["current", "target", "percentage"]
+                    missing_weekly_fields = [field for field in progress_required_fields if field not in weekly_progress]
+                    if missing_weekly_fields:
+                        return False, f"Missing weekly_progress fields: {missing_weekly_fields}"
+                    
+                    # Validate monthly_progress structure
+                    monthly_progress = data.get("monthly_progress", {})
+                    missing_monthly_fields = [field for field in progress_required_fields if field not in monthly_progress]
+                    if missing_monthly_fields:
+                        return False, f"Missing monthly_progress fields: {missing_monthly_fields}"
+                    
+                    # Validate data types
+                    if not isinstance(weekly_progress.get("current"), int):
+                        return False, f"weekly_progress.current should be int, got {type(weekly_progress.get('current'))}"
+                    if not isinstance(weekly_progress.get("target"), int):
+                        return False, f"weekly_progress.target should be int, got {type(weekly_progress.get('target'))}"
+                    if not isinstance(weekly_progress.get("percentage"), int):
+                        return False, f"weekly_progress.percentage should be int, got {type(weekly_progress.get('percentage'))}"
+                    
+                    return True, f"Endpoint working correctly. Awards: {len(awards)}, Weekly: {weekly_progress['current']}/{weekly_progress['target']} ({weekly_progress['percentage']}%), Monthly: {monthly_progress['current']}/{monthly_progress['target']} ({monthly_progress['percentage']}%)"
+                else:
+                    return False, f"HTTP {response.status}: {await response.text()}"
+    except Exception as e:
+        return False, f"Request error: {str(e)}"
 
-def test_upcoming_interviews_with_data():
-    """Test 4: Verify upcoming interviews endpoint returns the created interview"""
+async def test_reports_endpoint():
+    """Test GET /api/reports endpoint"""
     try:
-        response = requests.get(f"{BACKEND_URL}/api/dashboard/upcoming-interviews", headers=HEADERS, timeout=10)
-        
-        if response.status_code == 200:
-            interviews = response.json()
-            
-            if len(interviews) > 0:
-                interview = interviews[0]
-                company = interview.get("company_name")
-                stage = interview.get("stage")
-                schedule = interview.get("schedule_date")
-                days_until = interview.get("days_until")
-                
-                log_test("Upcoming Interviews (With Data)", "PASS", 
-                        f"Found interview: {company} - {stage} on {schedule} ({days_until} days away)")
-                return True
-            else:
-                log_test("Upcoming Interviews (With Data)", "FAIL", "No interviews returned despite creating one")
-                return False
-        else:
-            log_test("Upcoming Interviews (With Data)", "FAIL", f"HTTP {response.status_code}: {response.text}")
-            return False
-            
-    except requests.exceptions.RequestException as e:
-        log_test("Upcoming Interviews (With Data)", "FAIL", f"Connection error: {str(e)}")
-        return False
+        async with aiohttp.ClientSession() as session:
+            async with session.get(f"{BACKEND_URL}/api/reports", headers=HEADERS) as response:
+                if response.status == 200:
+                    data = await response.json()
+                    
+                    # Validate response structure
+                    if isinstance(data, list):
+                        # Check if we have any reports
+                        if len(data) == 0:
+                            return True, "Endpoint working correctly. No reports found (expected for new user)."
+                        
+                        # If we have data, validate structure
+                        required_fields = ["report_id", "report_type", "title", "date_range", "created_at", "is_read"]
+                        for item in data:
+                            missing_fields = [field for field in required_fields if field not in item]
+                            if missing_fields:
+                                return False, f"Missing required fields in response: {missing_fields}"
+                            
+                            # Validate is_read field specifically (this is what the review request asks for)
+                            if "is_read" not in item:
+                                return False, "Missing is_read field (required for notification badge count)"
+                            
+                            if not isinstance(item.get("is_read"), bool):
+                                return False, f"is_read should be boolean, got {type(item.get('is_read'))}: {item.get('is_read')}"
+                            
+                            # Validate report_type
+                            if item.get("report_type") not in ["weekly", "monthly"]:
+                                return False, f"Invalid report_type: {item.get('report_type')} (should be 'weekly' or 'monthly')"
+                        
+                        unread_count = len([r for r in data if not r.get("is_read", True)])
+                        return True, f"Endpoint working correctly. Found {len(data)} reports, {unread_count} unread (is_read field present for badge count)."
+                    else:
+                        return False, f"Expected list response, got {type(data)}"
+                else:
+                    return False, f"HTTP {response.status}: {await response.text()}"
+    except Exception as e:
+        return False, f"Request error: {str(e)}"
 
-def test_dashboard_stats():
-    """Additional test: Check if dashboard stats include upcoming interview data"""
+async def create_test_data():
+    """Create some test data to make the endpoints more meaningful"""
     try:
-        response = requests.get(f"{BACKEND_URL}/api/dashboard/stats", headers=HEADERS, timeout=10)
-        
-        if response.status_code == 200:
-            stats = response.json()
-            total_jobs = stats.get("total", 0)
-            phone_screen_count = stats.get("phone_screen", 0)
+        async with aiohttp.ClientSession() as session:
+            # Create a job with past due interview
+            past_date = (datetime.now() - timedelta(days=3)).strftime("%m/%d/%Y")
+            job_data = {
+                "company_name": "TestCompany Past Due",
+                "position": "Software Engineer",
+                "location": {"city": "San Francisco", "state": "California"},
+                "salary_range": {"min": 120000, "max": 150000},
+                "work_mode": "remote",
+                "job_type": "full_time",
+                "status": "phone_screen",
+                "upcoming_stage": "system_design",
+                "upcoming_schedule": past_date,
+                "date_applied": (datetime.now() - timedelta(days=10)).isoformat()
+            }
             
-            log_test("Dashboard Stats", "PASS", f"Total jobs: {total_jobs}, Phone screen: {phone_screen_count}")
-            return True
-        else:
-            log_test("Dashboard Stats", "FAIL", f"HTTP {response.status_code}: {response.text}")
-            return False
-            
-    except requests.exceptions.RequestException as e:
-        log_test("Dashboard Stats", "FAIL", f"Connection error: {str(e)}")
-        return False
+            async with session.post(f"{BACKEND_URL}/api/jobs", headers=HEADERS, json=job_data) as response:
+                if response.status == 200:
+                    job_result = await response.json()
+                    return True, f"Created test job with past due interview: {job_result.get('job_id')}"
+                else:
+                    return False, f"Failed to create test job: HTTP {response.status}"
+                    
+    except Exception as e:
+        return False, f"Error creating test data: {str(e)}"
 
-def cleanup_test_jobs():
-    """Clean up test jobs created during testing"""
+async def generate_test_report():
+    """Generate a test report to test the reports endpoint"""
     try:
-        # Get all jobs
-        response = requests.get(f"{BACKEND_URL}/api/jobs", headers=HEADERS, timeout=10)
-        
-        if response.status_code == 200:
-            jobs_data = response.json()
-            jobs = jobs_data.get("jobs", [])
-            
-            # Delete test jobs
-            deleted_count = 0
-            for job in jobs:
-                if job.get("company_name") == "TechCorp Solutions" and "Test job for upcoming interviews" in job.get("notes", ""):
-                    job_id = job.get("job_id")
-                    delete_response = requests.delete(f"{BACKEND_URL}/api/jobs/{job_id}", headers=HEADERS, timeout=10)
-                    if delete_response.status_code == 200:
-                        deleted_count += 1
-            
-            if deleted_count > 0:
-                log_test("Cleanup Test Jobs", "PASS", f"Deleted {deleted_count} test job(s)")
-            else:
-                log_test("Cleanup Test Jobs", "PASS", "No test jobs to clean up")
-            return True
-        else:
-            log_test("Cleanup Test Jobs", "FAIL", f"Could not fetch jobs: HTTP {response.status_code}")
-            return False
-            
-    except requests.exceptions.RequestException as e:
-        log_test("Cleanup Test Jobs", "FAIL", f"Connection error: {str(e)}")
-        return False
+        async with aiohttp.ClientSession() as session:
+            async with session.post(f"{BACKEND_URL}/api/reports/generate/weekly", headers=HEADERS) as response:
+                if response.status == 200:
+                    report_result = await response.json()
+                    return True, f"Generated test weekly report: {report_result.get('report_id')}"
+                else:
+                    return False, f"Failed to generate test report: HTTP {response.status}"
+    except Exception as e:
+        return False, f"Error generating test report: {str(e)}"
 
-def main():
-    """Run the complete upcoming interviews flow test"""
-    print("=" * 80)
-    print("CAREERFLOW BACKEND API TESTING - UPCOMING INTERVIEWS FLOW")
-    print("=" * 80)
+async def main():
+    """Main test execution"""
+    print("🚀 Starting Backend API Testing for CareerFlow Dashboard")
     print(f"Backend URL: {BACKEND_URL}")
     print(f"Test Token: {TEST_TOKEN}")
-    print("=" * 80)
-    print()
+    print("="*60)
     
-    # Track test results
-    test_results = []
+    results = TestResults()
     
-    # Test 1: Health check
-    print("🔍 Testing Backend Health...")
-    health_ok = test_health_endpoint()
-    test_results.append(("Health Endpoint", health_ok))
+    # Test 1: Backend Connectivity
+    print("1️⃣  Testing backend connectivity...")
+    passed, message = await test_backend_connectivity()
+    results.add_result("Backend Connectivity", passed, message)
     
-    if not health_ok:
-        print("❌ Backend health check failed. Stopping tests.")
+    if not passed:
+        print("❌ Cannot connect to backend. Stopping tests.")
+        results.print_summary()
         return
     
-    # Test authentication
-    print("🔐 Testing Authentication...")
-    auth_ok = test_authentication()
-    test_results.append(("Authentication", auth_ok))
+    # Test 2: Create test data for more meaningful tests
+    print("2️⃣  Creating test data...")
+    passed, message = await create_test_data()
+    results.add_result("Test Data Creation", passed, message)
     
-    if not auth_ok:
-        print("❌ Authentication failed. Stopping tests.")
-        return
+    # Test 3: Generate test report
+    print("3️⃣  Generating test report...")
+    passed, message = await generate_test_report()
+    results.add_result("Test Report Generation", passed, message)
     
-    # Test 2: Empty upcoming interviews
-    print("📅 Testing Upcoming Interviews (Empty State)...")
-    empty_interviews_ok = test_upcoming_interviews_empty()
-    test_results.append(("Upcoming Interviews (Empty)", empty_interviews_ok))
+    # Test 4: Past Due Interviews Endpoint
+    print("4️⃣  Testing GET /api/dashboard/pastdue-interviews...")
+    passed, message = await test_pastdue_interviews()
+    results.add_result("Past Due Interviews Endpoint", passed, message)
     
-    # Test 3: Create job with interview
-    print("➕ Creating Test Job with Upcoming Interview...")
-    job_id = create_test_job_with_interview()
-    job_created = job_id is not None
-    test_results.append(("Create Job with Interview", job_created))
+    # Test 5: Motivation Awards Endpoint
+    print("5️⃣  Testing GET /api/dashboard/motivation-awards...")
+    passed, message = await test_motivation_awards()
+    results.add_result("Motivation Awards Endpoint", passed, message)
     
-    # Test 4: Upcoming interviews with data
-    if job_created:
-        print("📋 Testing Upcoming Interviews (With Data)...")
-        interviews_with_data_ok = test_upcoming_interviews_with_data()
-        test_results.append(("Upcoming Interviews (With Data)", interviews_with_data_ok))
+    # Test 6: Reports Endpoint
+    print("6️⃣  Testing GET /api/reports...")
+    passed, message = await test_reports_endpoint()
+    results.add_result("Reports Endpoint", passed, message)
     
-    # Additional test: Dashboard stats
-    print("📊 Testing Dashboard Stats...")
-    stats_ok = test_dashboard_stats()
-    test_results.append(("Dashboard Stats", stats_ok))
+    # Print final results
+    results.print_summary()
     
-    # Cleanup
-    print("🧹 Cleaning up test data...")
-    cleanup_ok = cleanup_test_jobs()
-    test_results.append(("Cleanup", cleanup_ok))
-    
-    # Summary
-    print("=" * 80)
-    print("TEST SUMMARY")
-    print("=" * 80)
-    
-    passed = sum(1 for _, result in test_results if result)
-    total = len(test_results)
-    
-    for test_name, result in test_results:
-        status = "✅ PASS" if result else "❌ FAIL"
-        print(f"{status} - {test_name}")
-    
-    print()
-    print(f"OVERALL RESULT: {passed}/{total} tests passed ({round(passed/total*100, 1)}% success rate)")
-    
-    if passed == total:
-        print("🎉 All tests passed! The upcoming interviews functionality is working correctly.")
+    # Return exit code based on results
+    if results.failed > 0:
+        print(f"\n❌ {results.failed} test(s) failed. Check the issues above.")
+        sys.exit(1)
     else:
-        print("⚠️  Some tests failed. Check the details above for issues.")
-    
-    print("=" * 80)
+        print(f"\n✅ All {results.passed} tests passed! The new backend endpoints are working correctly.")
+        sys.exit(0)
 
 if __name__ == "__main__":
-    main()
+    asyncio.run(main())
