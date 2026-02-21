@@ -3592,19 +3592,7 @@ const createStyles = (colors: any, isDark: boolean, isTablet: boolean = false) =
     color: 'white',
     fontWeight: '600',
   },
-  // Liquid Glass Design Styles for iOS
-  liquidGlassContainer: {
-    flexDirection: 'row',
-    backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.04)',
-    borderRadius: 16,
   // Compact Liquid Glass Slider Styles
-  liquidGlassContainer: {
-    flexDirection: 'row',
-    backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.04)',
-    borderRadius: 16,
-    padding: 4,
-    gap: 4,
-  },
   liquidGlassSlider: {
     flexDirection: 'row',
     backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(120,120,128,0.12)',
