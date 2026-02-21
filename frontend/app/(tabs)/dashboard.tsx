@@ -1206,8 +1206,8 @@ export default function DashboardScreen() {
           >
             {renderFollowUpsOnlySection()}
             {renderPastDueInterviewsSection()}
-            {renderMotivationAwardsSection()}
             {renderUpcomingInterviewsSection()}
+            {renderMotivationAwardsSection()}
             {renderInsightsOnlySection()}
             <View style={{ height: 40 }} />
           </ScrollView>
