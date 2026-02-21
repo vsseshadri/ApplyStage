@@ -926,7 +926,7 @@ export default function DashboardScreen() {
         <View style={[dynamicStyles.section, isTablet && { marginBottom: 16 }]}>
           <View style={dynamicStyles.sectionHeader}>
             <Ionicons name="trophy" size={18} color="#FFD700" />
-            <Text style={dynamicStyles.sectionTitle}>Motivation Awards</Text>
+            <Text style={dynamicStyles.sectionTitle}>Awards</Text>
           </View>
           <View style={dynamicStyles.awardsContainer}>
             {motivationAwards.map((award: any, index: number) => (
