@@ -2339,9 +2339,10 @@ const createStyles = (colors: any, isDark: boolean) => StyleSheet.create({
     marginLeft: 10,
   },
   pastDueActionText: {
-    color: '#FFF',
-    fontSize: 12,
+    color: '#EF4444',
+    fontSize: 13,
     fontWeight: '600',
+    marginLeft: 10,
   },
   // Motivation Awards Styles
   awardsContainer: {
