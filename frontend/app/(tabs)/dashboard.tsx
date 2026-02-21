@@ -956,13 +956,12 @@ export default function DashboardScreen() {
                 </View>
                 <View style={dynamicStyles.awardContent}>
                   <View style={dynamicStyles.awardTitleRow}>
+                    <Ionicons name="fitness" size={16} color={colors.primary} style={{ marginRight: 6 }} />
                     <Text style={dynamicStyles.awardTitle}>{award.title}</Text>
-                    <View style={dynamicStyles.awardStatsRow}>
-                      <Ionicons name="fitness" size={14} color={colors.primary} />
-                      <Text style={dynamicStyles.awardStats}>
-                        {award.current}/{award.target} ({award.percentage}%)
-                      </Text>
-                    </View>
+                    <Text style={dynamicStyles.awardStats}>
+                      {award.current}/{award.target} ({award.percentage}%)
+                    </Text>
+                  </View>
                   </View>
                   <Text style={dynamicStyles.awardMessage} numberOfLines={2}>
                     {award.message}
