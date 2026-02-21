@@ -864,6 +864,101 @@ export default function DashboardScreen() {
     </>
   );
 
+  // Render the Past-Due Interviews Section (red alert for interviews that need action)
+  const renderPastDueInterviewsSection = () => (
+    <>
+      {pastDueInterviews.length > 0 && (
+        <View style={[dynamicStyles.section, isTablet && { marginBottom: 16 }]}>
+          <View style={dynamicStyles.sectionHeader}>
+            <Ionicons name="alert-circle" size={18} color="#EF4444" />
+            <Text style={[dynamicStyles.sectionTitle, { color: '#EF4444' }]}>Action Required</Text>
+          </View>
+          <View style={dynamicStyles.pastDueContainer}>
+            {pastDueInterviews.slice(0, 5).map((interview: any, index: number) => {
+              const isLastItem = index === pastDueInterviews.length - 1 || index === 4;
+              return (
+                <View 
+                  key={interview.job_id || index} 
+                  style={[
+                    dynamicStyles.pastDueCard,
+                    !isLastItem && dynamicStyles.pastDueCardWithBorder
+                  ]}
+                >
+                  <View style={dynamicStyles.pastDueDateBadge}>
+                    <Ionicons name="calendar-outline" size={16} color="#EF4444" />
+                    <Text style={dynamicStyles.pastDueDaysText}>
+                      {interview.days_overdue}d ago
+                    </Text>
+                  </View>
+                  <View style={dynamicStyles.pastDueDetails}>
+                    <Text style={dynamicStyles.pastDueCompany} numberOfLines={1}>
+                      {interview.company_name}
+                    </Text>
+                    <Text style={dynamicStyles.pastDueStage} numberOfLines={1}>
+                      {interview.stage?.replace(/_/g, ' ').replace(/\b\w/g, (l: string) => l.toUpperCase())} scheduled {interview.schedule_date}
+                    </Text>
+                  </View>
+                  <TouchableOpacity 
+                    style={dynamicStyles.pastDueActionButton}
+                    onPress={() => router.push(`/job/${interview.job_id}`)}
+                    activeOpacity={0.7}
+                  >
+                    <Text style={dynamicStyles.pastDueActionText}>Update</Text>
+                  </TouchableOpacity>
+                </View>
+              );
+            })}
+          </View>
+        </View>
+      )}
+    </>
+  );
+
+  // Render the Motivation Awards Section
+  const renderMotivationAwardsSection = () => (
+    <>
+      {motivationAwards.length > 0 && (
+        <View style={[dynamicStyles.section, isTablet && { marginBottom: 16 }]}>
+          <View style={dynamicStyles.sectionHeader}>
+            <Ionicons name="trophy" size={18} color="#FFD700" />
+            <Text style={dynamicStyles.sectionTitle}>Motivation Awards</Text>
+          </View>
+          <View style={dynamicStyles.awardsContainer}>
+            {motivationAwards.map((award: any, index: number) => (
+              <View 
+                key={index} 
+                style={[
+                  dynamicStyles.awardCard,
+                  award.type.includes('exceeded') && dynamicStyles.awardCardGold
+                ]}
+              >
+                <View style={[
+                  dynamicStyles.awardIconContainer,
+                  { backgroundColor: `${award.color}20` }
+                ]}>
+                  <Ionicons 
+                    name={award.icon as any} 
+                    size={28} 
+                    color={award.color} 
+                  />
+                </View>
+                <View style={dynamicStyles.awardContent}>
+                  <Text style={dynamicStyles.awardTitle}>{award.title}</Text>
+                  <Text style={dynamicStyles.awardMessage} numberOfLines={2}>
+                    {award.message}
+                  </Text>
+                  <Text style={dynamicStyles.awardStats}>
+                    {award.current}/{award.target} ({award.percentage}%)
+                  </Text>
+                </View>
+              </View>
+            ))}
+          </View>
+        </View>
+      )}
+    </>
+  );
+
   return (
     <SafeAreaView style={dynamicStyles.container} edges={['top']}>
       {/* Header with Liquid Glass effect */}
