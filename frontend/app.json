@@ -94,7 +94,7 @@
     },
     "extra": {
       "appName": "CareerFlow",
-      "EXPO_PUBLIC_BACKEND_URL": "https://hiring-dashboard-10.preview.emergentagent.com"
+      "EXPO_PUBLIC_BACKEND_URL": "https://repo-preview-43.emergent.host"
     }
   }
 }
