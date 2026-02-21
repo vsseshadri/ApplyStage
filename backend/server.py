@@ -130,12 +130,21 @@ async def generate_weekly_reports_for_all_users():
                     days_ago = (today - date_applied).days
                     content += f'<div style="padding: 8px 0;"><strong>{reminder.get("company_name", "N/A")}</strong> - {reminder.get("position", "N/A")} ({days_ago} days ago)</div>'
                 
+                # Get all jobs for insights calculation
+                all_jobs_for_insights = await db.job_applications.find(
+                    {"user_id": user_id},
+                    {"_id": 0, "status": 1}
+                ).to_list(1000)
+                
+                active_count = len([j for j in all_jobs_for_insights if j.get('status') not in ['rejected', 'withdrawn']])
+                response_rate = round((len([j for j in all_jobs_for_insights if j.get('status') != 'applied']) / len(all_jobs_for_insights) * 100) if all_jobs_for_insights else 0, 1)
+                
                 content += f'''</div>
 <div style="background: #E0F2FE; border-radius: 12px; padding: 20px; margin: 20px 0;">
 <h2>💡 Key Insights</h2>
 <ul>
-<li>Total Active Applications: {len([j for j in all_jobs if j.get('status') not in ['rejected', 'withdrawn']])}</li>
-<li>Response Rate: {round((len([j for j in all_jobs if j.get('status') != 'applied']) / len(all_jobs) * 100) if all_jobs else 0, 1)}%</li>
+<li>Total Active Applications: {active_count}</li>
+<li>Response Rate: {response_rate}%</li>
 </ul>
 <p>Keep up the momentum!</p>
 </div>
