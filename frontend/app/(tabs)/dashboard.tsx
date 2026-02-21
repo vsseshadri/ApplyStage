@@ -1417,6 +1417,12 @@ export default function DashboardScreen() {
 
           {/* Insights and Follow-ups */}
           {renderInsightsSection()}
+          
+          {/* Past-Due Interviews (Action Required) */}
+          {renderPastDueInterviewsSection()}
+          
+          {/* Motivation Awards */}
+          {renderMotivationAwardsSection()}
 
           {/* Upcoming Interviews */}
           {renderUpcomingInterviewsSection()}
