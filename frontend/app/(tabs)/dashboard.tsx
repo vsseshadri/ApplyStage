@@ -878,9 +878,9 @@ export default function DashboardScreen() {
     <>
       {pastDueInterviews.length > 0 && (
         <View style={[dynamicStyles.section, isTablet && { marginBottom: 16 }]}>
-          <View style={dynamicStyles.sectionHeader}>
-            <Ionicons name="alert-circle" size={18} color="#EF4444" />
-            <Text style={[dynamicStyles.sectionTitle, { color: '#EF4444' }]}>Action Required</Text>
+          <View style={dynamicStyles.actionRequiredHeader}>
+            <Ionicons name="notifications-circle" size={18} color="#EF4444" />
+            <Text style={dynamicStyles.actionRequiredTitle}>Action Required</Text>
           </View>
           <View style={dynamicStyles.pastDueContainer}>
             {pastDueInterviews.slice(0, 5).map((interview: any, index: number) => {
