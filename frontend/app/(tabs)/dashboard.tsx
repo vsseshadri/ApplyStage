@@ -1200,6 +1200,8 @@ export default function DashboardScreen() {
             showsVerticalScrollIndicator={false}
           >
             {renderFollowUpsOnlySection()}
+            {renderPastDueInterviewsSection()}
+            {renderMotivationAwardsSection()}
             {renderUpcomingInterviewsSection()}
             {renderInsightsOnlySection()}
             <View style={{ height: 40 }} />
