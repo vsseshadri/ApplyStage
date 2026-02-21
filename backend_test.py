@@ -10,7 +10,7 @@ from datetime import datetime, timedelta
 import sys
 
 # Configuration
-BACKEND_URL = "https://share-to-jobs.preview.emergentagent.com"
+BACKEND_URL = "https://hiring-dashboard-10.preview.emergentagent.com"
 TEST_TOKEN = "test_token_abc123"
 HEADERS = {
     "Authorization": f"Bearer {TEST_TOKEN}",
