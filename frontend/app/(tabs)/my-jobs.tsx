@@ -2451,14 +2451,14 @@ export default function MyJobsScreen() {
         </View>
       </Modal>
 
-      <Modal visible={modalVisible} animationType="slide" presentationStyle="pageSheet" onRequestClose={() => setModalVisible(false)}>
+      <Modal visible={modalVisible} animationType="slide" presentationStyle="pageSheet" onRequestClose={() => { setModalVisible(false); setPartialEditMode(false); }}>
         <SafeAreaView style={[dynamicStyles.modalContainer]}>
           <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={dynamicStyles.modalKeyboard}>
             <View style={dynamicStyles.modalHeader}>
-              <TouchableOpacity onPress={() => setModalVisible(false)}>
+              <TouchableOpacity onPress={() => { setModalVisible(false); setPartialEditMode(false); }}>
                 <Ionicons name="close" size={28} color={colors.text} />
               </TouchableOpacity>
-              <Text style={dynamicStyles.modalTitle}>{editingJob ? 'Edit Job' : 'Add Job'}</Text>
+              <Text style={dynamicStyles.modalTitle}>{editingJob ? (partialEditMode ? 'Update Interview Status' : 'Edit Job') : 'Add Job'}</Text>
               <TouchableOpacity onPress={handleSubmit}>
                 <Text style={dynamicStyles.saveButton}>Save</Text>
               </TouchableOpacity>
