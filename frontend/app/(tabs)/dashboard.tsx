@@ -2461,7 +2461,7 @@ const createStyles = (colors: any, isDark: boolean) => StyleSheet.create({
     fontSize: 17,
     fontWeight: '600',
     color: colors.text,
-    marginTop: Platform.OS === 'ios' ? 2 : 0,
+    marginTop: 1,
   },
   // Insights Section Header - centered with icon
   insightsSectionHeader: {
@@ -2474,6 +2474,6 @@ const createStyles = (colors: any, isDark: boolean) => StyleSheet.create({
     fontSize: 17,
     fontWeight: '600',
     color: colors.text,
-    marginTop: Platform.OS === 'ios' ? 2 : 0,
+    marginTop: 1,
   },
 });
