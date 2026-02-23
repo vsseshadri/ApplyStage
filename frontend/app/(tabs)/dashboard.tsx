@@ -2408,13 +2408,12 @@ const createStyles = (colors: any, isDark: boolean) => StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     marginBottom: 4,
-    flexWrap: 'wrap',
   },
   awardTitle: {
     fontSize: 16,
     fontWeight: '700',
     color: colors.text,
-    flex: 1,
+    marginRight: 8,
   },
   awardStatsRow: {
     flexDirection: 'row',
