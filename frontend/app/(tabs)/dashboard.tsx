@@ -925,12 +925,12 @@ export default function DashboardScreen() {
   // Render the Motivation Awards Section
   const renderMotivationAwardsSection = () => (
     <>
-      {motivationAwards.length > 0 && (
-        <View style={[dynamicStyles.section, isTablet && { marginBottom: 16 }]}>
-          <View style={dynamicStyles.awardsSectionHeader}>
-            <Ionicons name="trophy" size={18} color="#FFD700" />
-            <Text style={dynamicStyles.awardsSectionTitle}>Awards</Text>
-          </View>
+      <View style={[dynamicStyles.section, isTablet && { marginBottom: 16 }]}>
+        <View style={dynamicStyles.awardsSectionHeader}>
+          <Ionicons name="trophy" size={18} color="#FFD700" />
+          <Text style={dynamicStyles.awardsSectionTitle}>Awards</Text>
+        </View>
+        {motivationAwards.length > 0 ? (
           <View style={dynamicStyles.awardsContainer}>
             {motivationAwards.map((award: any, index: number) => (
               <View 
@@ -965,8 +965,16 @@ export default function DashboardScreen() {
               </View>
             ))}
           </View>
-        </View>
-      )}
+        ) : (
+          <View style={dynamicStyles.awardsEmptyContainer}>
+            <Ionicons name="rocket-outline" size={40} color={colors.textSecondary} />
+            <Text style={dynamicStyles.awardsEmptyTitle}>No Awards Yet... But You're Getting There! 🚀</Text>
+            <Text style={dynamicStyles.awardsEmptyMessage}>
+              Keep applying! Your next award is just around the corner. Remember: Every rejection is just a redirect to something better!
+            </Text>
+          </View>
+        )}
+      </View>
     </>
   );
 
