@@ -968,7 +968,7 @@ export default function DashboardScreen() {
         ) : (
           <View style={dynamicStyles.awardsEmptyContainer}>
             <Ionicons name="rocket-outline" size={40} color={colors.textSecondary} />
-            <Text style={dynamicStyles.awardsEmptyTitle}>No Awards Yet... But You're Getting There! 🚀</Text>
+            <Text style={dynamicStyles.awardsEmptyTitle}>No Awards Yet... But You&apos;re Getting There! 🚀</Text>
             <Text style={dynamicStyles.awardsEmptyMessage}>
               Keep applying! Your next award is just around the corner. Remember: Every rejection is just a redirect to something better!
             </Text>
