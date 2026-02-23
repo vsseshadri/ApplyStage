@@ -2430,6 +2430,7 @@ const createStyles = (colors: any, isDark: boolean) => StyleSheet.create({
     fontWeight: '600',
     color: colors.primary,
     marginLeft: 'auto',
+    flexShrink: 0,
   },
   // Awards Empty State
   awardsEmptyContainer: {
