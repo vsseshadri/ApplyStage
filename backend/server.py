@@ -981,7 +981,8 @@ async def get_dashboard_stats(current_user: User = Depends(get_current_user)):
             "position": 1,
             "location": 1,
             "work_mode": 1,
-            "created_at": 1
+            "created_at": 1,
+            "date_applied": 1
         }
     ).to_list(1000)
     
