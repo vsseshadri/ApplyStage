@@ -630,9 +630,9 @@ export default function DashboardScreen() {
       {(insights.length > 0 || followUps.length > 0) && (
         <View style={[dynamicStyles.section, isTablet && { marginBottom: 16 }]}>
           {/* Insights - Beautiful Card Layout */}
-          <View style={dynamicStyles.sectionHeader}>
+          <View style={dynamicStyles.actionRequiredHeader}>
             <Ionicons name="sparkles" size={18} color={colors.primary} />
-            <Text style={dynamicStyles.sectionTitle}>Insights</Text>
+            <Text style={[dynamicStyles.actionRequiredTitle, { color: colors.text }]}>Insights</Text>
           </View>
           <View style={dynamicStyles.insightsGrid}>
             {insights.slice(0, isTablet ? 6 : 4).map((insight: any, index: number) => (
@@ -662,9 +662,9 @@ export default function DashboardScreen() {
           {/* Follow-up Reminders - Compact UI with Swipe to Delete */}
           {followUps.length > 0 && (
             <View style={{ marginTop: 20 }}>
-              <View style={dynamicStyles.sectionHeader}>
+              <View style={dynamicStyles.actionRequiredHeader}>
                 <Ionicons name="notifications" size={18} color="#F59E0B" />
-                <Text style={dynamicStyles.sectionTitle}>Follow-up Reminders</Text>
+                <Text style={[dynamicStyles.actionRequiredTitle, { color: colors.text }]}>Follow-up Reminders</Text>
               </View>
               <View style={dynamicStyles.followUpsContainer}>
                 {followUps.map((followUp: any, index: number) => {
