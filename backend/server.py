@@ -1053,13 +1053,14 @@ async def get_dashboard_stats(current_user: User = Depends(get_current_user)):
         if work_mode in stats["by_work_mode"]:
             stats["by_work_mode"][work_mode] += 1
         
-        created_at = job.get("created_at")
-        if created_at:
-            if isinstance(created_at, str):
-                created_at = datetime.fromisoformat(created_at.replace('Z', '+00:00'))
-            if created_at.tzinfo is None:
-                created_at = created_at.replace(tzinfo=timezone.utc)
-            if created_at >= ten_days_ago:
+        # Use date_applied for "last 10 days" count (when user applied), fallback to created_at
+        date_applied = job.get("date_applied") or job.get("created_at")
+        if date_applied:
+            if isinstance(date_applied, str):
+                date_applied = datetime.fromisoformat(date_applied.replace('Z', '+00:00'))
+            if date_applied.tzinfo is None:
+                date_applied = date_applied.replace(tzinfo=timezone.utc)
+            if date_applied >= ten_days_ago:
                 recent_count += 1
     
     stats["last_10_days"] = recent_count
