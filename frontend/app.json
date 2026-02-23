@@ -94,7 +94,7 @@
     },
     "extra": {
       "appName": "CareerFlow",
-      "EXPO_PUBLIC_BACKEND_URL": "https://career-dash-refine.emergent.host"
+      "EXPO_PUBLIC_BACKEND_URL": "https://career-dash-refine.preview.emergentagent.com"
     }
   }
 }
