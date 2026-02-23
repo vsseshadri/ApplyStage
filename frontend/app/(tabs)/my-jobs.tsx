@@ -444,6 +444,8 @@ export default function MyJobsScreen() {
       result = result.filter(job => job.status === 'final_round');
     } else if (filter === 'offers') {
       result = result.filter(job => job.status === 'offer');
+    } else if (filter === 'rejected') {
+      result = result.filter(job => job.status === 'rejected');
     } else if (filter === 'work_mode' && contextWorkModeFilter !== 'all') {
       // Apply work mode filter from context (when navigating from Dashboard chart)
       result = result.filter(job => job.work_mode?.toLowerCase() === contextWorkModeFilter.toLowerCase());
