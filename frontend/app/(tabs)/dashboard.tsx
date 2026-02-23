@@ -2432,6 +2432,27 @@ const createStyles = (colors: any, isDark: boolean) => StyleSheet.create({
     color: colors.primary,
     marginLeft: 'auto',
   },
+  // Awards Empty State
+  awardsEmptyContainer: {
+    backgroundColor: colors.card,
+    borderRadius: 16,
+    padding: 24,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 12,
+  },
+  awardsEmptyTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: colors.text,
+    textAlign: 'center',
+  },
+  awardsEmptyMessage: {
+    fontSize: 14,
+    color: colors.textSecondary,
+    textAlign: 'center',
+    lineHeight: 20,
+  },
   // Awards Section Header - centered with icon
   awardsSectionHeader: {
     flexDirection: 'row',
