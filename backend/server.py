@@ -3032,8 +3032,6 @@ async def health_check():
         }
 
 
-app.include_router(api_router)
-
 # Data migration endpoint - for importing data from preview to production
 @api_router.post("/admin/import-data")
 async def import_data(
@@ -3108,6 +3106,8 @@ async def import_data(
     
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Import failed: {str(e)}")
+
+app.include_router(api_router)
 
 app.add_middleware(
     CORSMiddleware,
