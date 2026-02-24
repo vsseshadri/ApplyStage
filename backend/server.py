@@ -308,6 +308,104 @@ async def generate_monthly_reports_for_all_users():
 app = FastAPI()
 api_router = APIRouter(prefix="/api")
 
+# Root route - serves a simple landing page for web access
+from fastapi.responses import HTMLResponse
+
+@app.get("/", response_class=HTMLResponse)
+async def root():
+    """Serve a landing page for web visitors"""
+    html_content = """
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>CareerFlow - Job Application Tracker</title>
+        <style>
+            * { margin: 0; padding: 0; box-sizing: border-box; }
+            body {
+                font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                min-height: 100vh;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                color: white;
+            }
+            .container {
+                text-align: center;
+                padding: 40px;
+                max-width: 600px;
+            }
+            .logo { font-size: 64px; margin-bottom: 20px; }
+            h1 { font-size: 48px; margin-bottom: 16px; font-weight: 700; }
+            .tagline { font-size: 20px; opacity: 0.9; margin-bottom: 40px; }
+            .app-badges { display: flex; gap: 16px; justify-content: center; flex-wrap: wrap; }
+            .badge {
+                background: rgba(255,255,255,0.2);
+                padding: 16px 32px;
+                border-radius: 12px;
+                text-decoration: none;
+                color: white;
+                font-weight: 600;
+                transition: all 0.3s;
+                backdrop-filter: blur(10px);
+            }
+            .badge:hover { background: rgba(255,255,255,0.3); transform: translateY(-2px); }
+            .features {
+                margin-top: 60px;
+                display: grid;
+                grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+                gap: 20px;
+            }
+            .feature {
+                background: rgba(255,255,255,0.1);
+                padding: 20px;
+                border-radius: 12px;
+            }
+            .feature-icon { font-size: 32px; margin-bottom: 8px; }
+            .feature-title { font-weight: 600; }
+            .api-status {
+                margin-top: 40px;
+                font-size: 14px;
+                opacity: 0.7;
+            }
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            <div class="logo">💼</div>
+            <h1>CareerFlow</h1>
+            <p class="tagline">Track your job applications with ease</p>
+            <div class="app-badges">
+                <a href="https://apps.apple.com" class="badge">📱 Download on iOS</a>
+                <a href="/api/docs" class="badge">📖 API Documentation</a>
+            </div>
+            <div class="features">
+                <div class="feature">
+                    <div class="feature-icon">📊</div>
+                    <div class="feature-title">Dashboard</div>
+                </div>
+                <div class="feature">
+                    <div class="feature-icon">🎯</div>
+                    <div class="feature-title">Track Progress</div>
+                </div>
+                <div class="feature">
+                    <div class="feature-icon">🔔</div>
+                    <div class="feature-title">Reminders</div>
+                </div>
+                <div class="feature">
+                    <div class="feature-icon">📈</div>
+                    <div class="feature-title">Insights</div>
+                </div>
+            </div>
+            <p class="api-status">✅ API Status: Online</p>
+        </div>
+    </body>
+    </html>
+    """
+    return HTMLResponse(content=html_content)
+
 # Create database indexes on startup
 @app.on_event("startup")
 async def create_indexes():
