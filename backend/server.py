@@ -3034,6 +3034,81 @@ async def health_check():
 
 app.include_router(api_router)
 
+# Data migration endpoint - for importing data from preview to production
+@api_router.post("/admin/import-data")
+async def import_data(
+    data: Dict[str, Any],
+    admin_key: str = Header(None, alias="X-Admin-Key")
+):
+    """Import data from preview environment to production"""
+    # Simple admin key check - you should use your session token
+    if not admin_key or len(admin_key) < 10:
+        raise HTTPException(status_code=401, detail="Admin key required")
+    
+    results = {"imported": {}, "errors": []}
+    
+    try:
+        # Import job_applications
+        if "job_applications" in data and data["job_applications"]:
+            jobs = data["job_applications"]
+            for job in jobs:
+                # Remove _id to let MongoDB generate new ones, but keep job_id
+                if "_id" in job:
+                    del job["_id"]
+                # Convert date strings to datetime if needed
+                for date_field in ["created_at", "updated_at", "date_applied"]:
+                    if date_field in job and isinstance(job[date_field], str):
+                        try:
+                            job[date_field] = datetime.fromisoformat(job[date_field].replace('Z', '+00:00'))
+                        except:
+                            pass
+            
+            if jobs:
+                result = await db.job_applications.insert_many(jobs)
+                results["imported"]["job_applications"] = len(result.inserted_ids)
+        
+        # Import users (upsert to avoid duplicates)
+        if "users" in data and data["users"]:
+            users = data["users"]
+            user_count = 0
+            for user in users:
+                if "_id" in user:
+                    del user["_id"]
+                for date_field in ["created_at", "trial_end_date"]:
+                    if date_field in user and isinstance(user[date_field], str):
+                        try:
+                            user[date_field] = datetime.fromisoformat(user[date_field].replace('Z', '+00:00'))
+                        except:
+                            pass
+                await db.users.update_one(
+                    {"user_id": user["user_id"]},
+                    {"$set": user},
+                    upsert=True
+                )
+                user_count += 1
+            results["imported"]["users"] = user_count
+        
+        # Import reports
+        if "reports" in data and data["reports"]:
+            reports = data["reports"]
+            for report in reports:
+                if "_id" in report:
+                    del report["_id"]
+                for date_field in ["created_at"]:
+                    if date_field in report and isinstance(report[date_field], str):
+                        try:
+                            report[date_field] = datetime.fromisoformat(report[date_field].replace('Z', '+00:00'))
+                        except:
+                            pass
+            if reports:
+                result = await db.reports.insert_many(reports)
+                results["imported"]["reports"] = len(result.inserted_ids)
+        
+        return {"status": "success", "results": results}
+    
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Import failed: {str(e)}")
+
 app.add_middleware(
     CORSMiddleware,
     allow_credentials=True,
