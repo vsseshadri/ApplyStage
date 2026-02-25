@@ -449,7 +449,6 @@ async def apple_auth(auth_data: AppleAuthRequest):
                 "payment_status": "trial",
                 "trial_end_date": trial_end,
                 "applications_count": 0,
-                "preferences": {"weekly_email": True, "monthly_email": True},
                 "created_at": datetime.now(timezone.utc),
                 "is_private_relay": is_private_relay
             }
