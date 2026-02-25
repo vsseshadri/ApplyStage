@@ -821,10 +821,11 @@ export default function DashboardScreen() {
             };
             
             const handleOpenChecklist = () => {
-              console.log('[Dashboard] Opening checklist for:', interview.company_name, interview.stage, interview.job_id);
+              console.log('[Dashboard] Opening checklist for:', interview.company_name, interview.stage, interview.position, interview.job_id);
               setSelectedInterview({
                 stage: interview.stage,
                 company: interview.company_name,
+                position: interview.position || 'Software Engineer',
                 daysUntil: getDaysUntil(),
                 jobId: interview.job_id || ''
               });
