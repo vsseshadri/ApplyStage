@@ -2234,7 +2234,7 @@ export default function MyJobsScreen() {
               style={dynamicStyles.selectButton}
               onPress={() => {
                 setEditingJob(null);
-                setJobForm({
+                setFormData({
                   company_name: '', position: '', status: 'applied', location: '', country: userCountry || 'United States',
                   state: '', city: '', notes: '', job_url: '', date_applied: new Date().toISOString().split('T')[0],
                   salary_min: '', salary_max: '', salary_currency: '', work_mode: 'remote', job_type: 'full_time',
