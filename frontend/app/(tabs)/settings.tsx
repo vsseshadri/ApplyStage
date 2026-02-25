@@ -918,37 +918,11 @@ export default function SettingsScreen() {
               <Ionicons name="chevron-down" size={20} color={colors.textSecondary} />
             </TouchableOpacity>
           </View>
-          
-          <Text style={styles.notificationPrefsLabel}>Preferences</Text>
-          
-          <View style={styles.notificationRow}>
-            <View style={{ flex: 1 }}>
-              <Text style={styles.notificationLabel}>Weekly Summary</Text>
-              <Text style={styles.notificationSubtext}>Every Sunday at 1 AM</Text>
-            </View>
-            <Switch
-              value={weeklyEmail}
-              onValueChange={handleWeeklyEmailToggle}
-              trackColor={{ false: colors.border, true: colors.primary }}
-            />
-          </View>
-          
-          <View style={styles.notificationRow}>
-            <View style={{ flex: 1 }}>
-              <Text style={styles.notificationLabel}>Monthly Summary</Text>
-              <Text style={styles.notificationSubtext}>Last day of month at 9 AM</Text>
-            </View>
-            <Switch
-              value={monthlyEmail}
-              onValueChange={handleMonthlyEmailToggle}
-              trackColor={{ false: colors.border, true: colors.primary }}
-            />
-          </View>
         </View>
 
         {/* Target Goals Section */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Application Goals</Text>
+          <Text style={styles.sectionTitle}>Application Targets</Text>
           <View style={styles.card}>
             <View style={styles.targetRow}>
               <View style={styles.targetInputContainer}>
