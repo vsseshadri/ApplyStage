@@ -402,7 +402,30 @@ export default function MyJobsScreen() {
       if (response.ok) {
         const data = await response.json();
         // Handle both old array format and new paginated format
-        setJobs(Array.isArray(data) ? data : data.jobs || []);
+        const jobsList = Array.isArray(data) ? data : data.jobs || [];
+        setJobs(jobsList);
+        
+        // Extract custom statuses from jobs that aren't in the default STATUSES list
+        const existingCustomStatuses = new Set<string>();
+        jobsList.forEach((job: any) => {
+          const status = job.status;
+          if (status && !STATUSES.includes(status)) {
+            existingCustomStatuses.add(status);
+          }
+          // Also check upcoming_stage for custom values
+          const upcomingStage = job.upcoming_stage;
+          if (upcomingStage && !STATUSES.includes(upcomingStage)) {
+            existingCustomStatuses.add(upcomingStage);
+          }
+        });
+        
+        // Merge with existing custom statuses (avoiding duplicates)
+        if (existingCustomStatuses.size > 0) {
+          setCustomStatuses(prev => {
+            const merged = new Set([...prev, ...existingCustomStatuses]);
+            return Array.from(merged);
+          });
+        }
       }
     } catch (error) {
       console.error('Error fetching jobs:', error);
