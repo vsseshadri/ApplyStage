@@ -1,28 +1,28 @@
 #!/usr/bin/env python3
 """
-CareerFlow Backend API Testing Suite
-Tests the Settings page cleanup changes to ensure core functionality still works
-and removed endpoints properly return 404.
+CareerFlow Backend API Testing - Upcoming Stage Sync and Upcoming Interviews
+Test the upcoming_stage sync and upcoming interviews functionality as specified in review request.
 """
 
 import asyncio
 import aiohttp
 import json
+from datetime import datetime, timezone
 import sys
-from datetime import datetime
 
 # Test configuration
 BASE_URL = "https://application-intel.preview.emergentagent.com/api"
 TEST_TOKEN = "test_token_abc123"
 
-class BackendTester:
+class CareerFlowAPITester:
     def __init__(self):
         self.session = None
         self.headers = {
             "Authorization": f"Bearer {TEST_TOKEN}",
             "Content-Type": "application/json"
         }
-        self.results = []
+        self.test_job_id = None
+        self.test_results = []
         
     async def __aenter__(self):
         self.session = aiohttp.ClientSession()
@@ -32,381 +32,282 @@ class BackendTester:
         if self.session:
             await self.session.close()
     
-    def log_result(self, test_name, success, details, expected_status=200, actual_status=None):
-        """Log test result with details"""
+    def log_result(self, test_name, success, details=""):
+        """Log test result"""
         status = "✅ PASS" if success else "❌ FAIL"
-        result = {
+        print(f"{status} - {test_name}")
+        if details:
+            print(f"    {details}")
+        self.test_results.append({
             "test": test_name,
-            "status": status,
             "success": success,
-            "details": details,
-            "expected_status": expected_status,
-            "actual_status": actual_status,
-            "timestamp": datetime.now().isoformat()
-        }
-        self.results.append(result)
-        print(f"{status} - {test_name}: {details}")
-        
-    async def test_authentication(self):
-        """Test GET /api/auth/me - Should work with test authentication"""
+            "details": details
+        })
+    
+    async def test_backend_connectivity(self):
+        """Test 1: Verify backend connectivity"""
         try:
             async with self.session.get(f"{BASE_URL}/auth/me", headers=self.headers) as response:
                 if response.status == 200:
                     data = await response.json()
-                    if "user_id" in data and "email" in data:
-                        self.log_result(
-                            "Authentication", 
-                            True, 
-                            f"Auth working correctly. User: {data.get('email', 'N/A')}", 
-                            200, 
-                            response.status
-                        )
-                        return True
-                    else:
-                        self.log_result(
-                            "Authentication", 
-                            False, 
-                            f"Missing required fields in response: {data}", 
-                            200, 
-                            response.status
-                        )
-                        return False
-                else:
-                    error_text = await response.text()
-                    self.log_result(
-                        "Authentication", 
-                        False, 
-                        f"HTTP {response.status}: {error_text}", 
-                        200, 
-                        response.status
-                    )
-                    return False
-        except Exception as e:
-            self.log_result("Authentication", False, f"Exception: {str(e)}")
-            return False
-    
-    async def test_health_check(self):
-        """Test GET /api/health - Should return healthy status"""
-        try:
-            async with self.session.get(f"{BASE_URL}/health") as response:
-                if response.status == 200:
-                    data = await response.json()
-                    self.log_result(
-                        "Health Check", 
-                        True, 
-                        f"Health endpoint working: {data}", 
-                        200, 
-                        response.status
-                    )
+                    self.log_result("Backend Connectivity", True, f"Connected as {data.get('name', 'Test User')}")
                     return True
-                elif response.status == 404:
-                    self.log_result(
-                        "Health Check", 
-                        False, 
-                        "Health endpoint not implemented (404)", 
-                        200, 
-                        response.status
-                    )
-                    return False
                 else:
-                    error_text = await response.text()
-                    self.log_result(
-                        "Health Check", 
-                        False, 
-                        f"HTTP {response.status}: {error_text}", 
-                        200, 
-                        response.status
-                    )
+                    self.log_result("Backend Connectivity", False, f"HTTP {response.status}")
                     return False
         except Exception as e:
-            self.log_result("Health Check", False, f"Exception: {str(e)}")
+            self.log_result("Backend Connectivity", False, f"Connection error: {str(e)}")
             return False
     
-    async def test_target_goals_update(self):
-        """Test PUT /api/user/target-goals with body {"weekly_target": 15, "monthly_target": 50}"""
+    async def test_create_job_with_upcoming_stage(self):
+        """Test 2: Create a job with upcoming_stage set"""
+        job_data = {
+            "company_name": "TestSync Corp",
+            "position": "Software Engineer",
+            "location": {"city": "San Francisco", "state": "California"},
+            "salary_range": {"min": 120000, "max": 180000},
+            "work_mode": "remote",
+            "job_type": "Software Engineer",
+            "status": "phone_screen",
+            "upcoming_stage": "phone_screen",
+            "upcoming_schedule": "03/15/2026",
+            "date_applied": "2026-02-25T00:00:00Z",
+            "is_priority": True
+        }
+        
         try:
-            payload = {"weekly_target": 15, "monthly_target": 50}
-            async with self.session.put(
-                f"{BASE_URL}/user/target-goals", 
-                headers=self.headers,
-                json=payload
-            ) as response:
+            async with self.session.post(f"{BASE_URL}/jobs", headers=self.headers, json=job_data) as response:
                 if response.status == 200:
                     data = await response.json()
-                    if data.get("weekly_target") == 15 and data.get("monthly_target") == 50:
-                        self.log_result(
-                            "Target Goals Update", 
-                            True, 
-                            f"Successfully updated targets: {data}", 
-                            200, 
-                            response.status
-                        )
-                        return True
-                    else:
-                        self.log_result(
-                            "Target Goals Update", 
-                            False, 
-                            f"Targets not saved correctly: {data}", 
-                            200, 
-                            response.status
-                        )
-                        return False
-                else:
-                    error_text = await response.text()
-                    self.log_result(
-                        "Target Goals Update", 
-                        False, 
-                        f"HTTP {response.status}: {error_text}", 
-                        200, 
-                        response.status
-                    )
-                    return False
-        except Exception as e:
-            self.log_result("Target Goals Update", False, f"Exception: {str(e)}")
-            return False
-    
-    async def test_target_goals_get(self):
-        """Test GET /api/user/target-goals - Should return saved targets"""
-        try:
-            async with self.session.get(f"{BASE_URL}/user/target-goals", headers=self.headers) as response:
-                if response.status == 200:
-                    data = await response.json()
-                    if "weekly_target" in data and "monthly_target" in data:
-                        self.log_result(
-                            "Target Goals Get", 
-                            True, 
-                            f"Retrieved targets: weekly={data.get('weekly_target')}, monthly={data.get('monthly_target')}", 
-                            200, 
-                            response.status
-                        )
-                        return True
-                    else:
-                        self.log_result(
-                            "Target Goals Get", 
-                            False, 
-                            f"Missing target fields: {data}", 
-                            200, 
-                            response.status
-                        )
-                        return False
-                else:
-                    error_text = await response.text()
-                    self.log_result(
-                        "Target Goals Get", 
-                        False, 
-                        f"HTTP {response.status}: {error_text}", 
-                        200, 
-                        response.status
-                    )
-                    return False
-        except Exception as e:
-            self.log_result("Target Goals Get", False, f"Exception: {str(e)}")
-            return False
-    
-    async def test_dashboard_stats(self):
-        """Test GET /api/dashboard/stats - Should return proper statistics without errors"""
-        try:
-            async with self.session.get(f"{BASE_URL}/dashboard/stats", headers=self.headers) as response:
-                if response.status == 200:
-                    data = await response.json()
-                    required_fields = ["total", "applied", "by_location", "by_work_mode", "target_progress"]
-                    missing_fields = [field for field in required_fields if field not in data]
+                    self.test_job_id = data.get("job_id")
                     
-                    if not missing_fields:
-                        self.log_result(
-                            "Dashboard Stats", 
-                            True, 
-                            f"Stats returned with all required fields. Total jobs: {data.get('total', 0)}", 
-                            200, 
-                            response.status
-                        )
+                    # Verify both status and upcoming_stage are set correctly
+                    if (data.get("status") == "phone_screen" and 
+                        data.get("upcoming_stage") == "phone_screen" and
+                        data.get("upcoming_schedule") == "03/15/2026"):
+                        self.log_result("Create Job with Upcoming Stage", True, 
+                                      f"Job created with ID: {self.test_job_id}, status: {data.get('status')}, upcoming_stage: {data.get('upcoming_stage')}")
                         return True
                     else:
-                        self.log_result(
-                            "Dashboard Stats", 
-                            False, 
-                            f"Missing required fields: {missing_fields}", 
-                            200, 
-                            response.status
-                        )
+                        self.log_result("Create Job with Upcoming Stage", False, 
+                                      f"Status/upcoming_stage mismatch - status: {data.get('status')}, upcoming_stage: {data.get('upcoming_stage')}")
                         return False
                 else:
                     error_text = await response.text()
-                    self.log_result(
-                        "Dashboard Stats", 
-                        False, 
-                        f"HTTP {response.status}: {error_text}", 
-                        200, 
-                        response.status
-                    )
+                    self.log_result("Create Job with Upcoming Stage", False, f"HTTP {response.status}: {error_text}")
                     return False
         except Exception as e:
-            self.log_result("Dashboard Stats", False, f"Exception: {str(e)}")
+            self.log_result("Create Job with Upcoming Stage", False, f"Error: {str(e)}")
             return False
     
-    async def test_removed_endpoint_email_weekly(self):
-        """Test GET /api/email-summary/weekly → Should return 404"""
+    async def test_upcoming_interviews_endpoint(self):
+        """Test 3: Verify the job appears in upcoming interviews"""
         try:
-            async with self.session.get(f"{BASE_URL}/email-summary/weekly", headers=self.headers) as response:
-                if response.status == 404:
-                    self.log_result(
-                        "Removed Endpoint - Email Weekly", 
-                        True, 
-                        "Correctly returns 404 (endpoint removed)", 
-                        404, 
-                        response.status
-                    )
+            async with self.session.get(f"{BASE_URL}/dashboard/upcoming-interviews", headers=self.headers) as response:
+                if response.status == 200:
+                    data = await response.json()
+                    
+                    # Look for our TestSync Corp job
+                    testsync_job = None
+                    for interview in data:
+                        if interview.get("company_name") == "TestSync Corp":
+                            testsync_job = interview
+                            break
+                    
+                    if testsync_job:
+                        if (testsync_job.get("stage") == "phone_screen" and
+                            "Mar 15, 2026" in testsync_job.get("schedule_date", "")):
+                            self.log_result("Upcoming Interviews Endpoint", True, 
+                                          f"TestSync Corp job found with stage: {testsync_job.get('stage')}, date: {testsync_job.get('schedule_date')}")
+                            return True
+                        else:
+                            self.log_result("Upcoming Interviews Endpoint", False, 
+                                          f"TestSync Corp job found but incorrect data - stage: {testsync_job.get('stage')}, date: {testsync_job.get('schedule_date')}")
+                            return False
+                    else:
+                        self.log_result("Upcoming Interviews Endpoint", False, 
+                                      f"TestSync Corp job not found in upcoming interviews. Found {len(data)} interviews total")
+                        return False
+                else:
+                    error_text = await response.text()
+                    self.log_result("Upcoming Interviews Endpoint", False, f"HTTP {response.status}: {error_text}")
+                    return False
+        except Exception as e:
+            self.log_result("Upcoming Interviews Endpoint", False, f"Error: {str(e)}")
+            return False
+    
+    async def test_update_job_upcoming_stage(self):
+        """Test 4: Update the job with a new upcoming_stage"""
+        if not self.test_job_id:
+            self.log_result("Update Job Upcoming Stage", False, "No test job ID available")
+            return False
+        
+        update_data = {
+            "status": "system_design",
+            "upcoming_stage": "system_design",
+            "upcoming_schedule": "03/20/2026"
+        }
+        
+        try:
+            async with self.session.put(f"{BASE_URL}/jobs/{self.test_job_id}", headers=self.headers, json=update_data) as response:
+                if response.status == 200:
+                    data = await response.json()
+                    
+                    if (data.get("status") == "system_design" and 
+                        data.get("upcoming_stage") == "system_design" and
+                        data.get("upcoming_schedule") == "03/20/2026"):
+                        self.log_result("Update Job Upcoming Stage", True, 
+                                      f"Job updated - status: {data.get('status')}, upcoming_stage: {data.get('upcoming_stage')}, schedule: {data.get('upcoming_schedule')}")
+                        return True
+                    else:
+                        self.log_result("Update Job Upcoming Stage", False, 
+                                      f"Update failed - status: {data.get('status')}, upcoming_stage: {data.get('upcoming_stage')}")
+                        return False
+                else:
+                    error_text = await response.text()
+                    self.log_result("Update Job Upcoming Stage", False, f"HTTP {response.status}: {error_text}")
+                    return False
+        except Exception as e:
+            self.log_result("Update Job Upcoming Stage", False, f"Error: {str(e)}")
+            return False
+    
+    async def test_updated_upcoming_interviews(self):
+        """Test 5: Verify updated upcoming interviews"""
+        try:
+            async with self.session.get(f"{BASE_URL}/dashboard/upcoming-interviews", headers=self.headers) as response:
+                if response.status == 200:
+                    data = await response.json()
+                    
+                    # Look for our updated TestSync Corp job
+                    testsync_job = None
+                    for interview in data:
+                        if interview.get("company_name") == "TestSync Corp":
+                            testsync_job = interview
+                            break
+                    
+                    if testsync_job:
+                        if (testsync_job.get("stage") == "system_design" and
+                            "Mar 20, 2026" in testsync_job.get("schedule_date", "")):
+                            self.log_result("Updated Upcoming Interviews", True, 
+                                          f"TestSync Corp job updated correctly - stage: {testsync_job.get('stage')}, date: {testsync_job.get('schedule_date')}")
+                            return True
+                        else:
+                            self.log_result("Updated Upcoming Interviews", False, 
+                                          f"TestSync Corp job not updated correctly - stage: {testsync_job.get('stage')}, date: {testsync_job.get('schedule_date')}")
+                            return False
+                    else:
+                        self.log_result("Updated Upcoming Interviews", False, 
+                                      "TestSync Corp job not found in updated upcoming interviews")
+                        return False
+                else:
+                    error_text = await response.text()
+                    self.log_result("Updated Upcoming Interviews", False, f"HTTP {response.status}: {error_text}")
+                    return False
+        except Exception as e:
+            self.log_result("Updated Upcoming Interviews", False, f"Error: {str(e)}")
+            return False
+    
+    async def test_custom_status_support(self):
+        """Test 6: Test custom status support"""
+        if not self.test_job_id:
+            self.log_result("Custom Status Support", False, "No test job ID available")
+            return False
+        
+        update_data = {
+            "status": "custom_interview_stage",
+            "upcoming_stage": "custom_interview_stage",
+            "upcoming_schedule": "03/25/2026"
+        }
+        
+        try:
+            async with self.session.put(f"{BASE_URL}/jobs/{self.test_job_id}", headers=self.headers, json=update_data) as response:
+                if response.status == 200:
+                    data = await response.json()
+                    
+                    if (data.get("status") == "custom_interview_stage" and 
+                        data.get("upcoming_stage") == "custom_interview_stage" and
+                        data.get("upcoming_schedule") == "03/25/2026"):
+                        self.log_result("Custom Status Support", True, 
+                                      f"Custom status saved correctly - status: {data.get('status')}, upcoming_stage: {data.get('upcoming_stage')}")
+                        return True
+                    else:
+                        self.log_result("Custom Status Support", False, 
+                                      f"Custom status not saved correctly - status: {data.get('status')}, upcoming_stage: {data.get('upcoming_stage')}")
+                        return False
+                else:
+                    error_text = await response.text()
+                    self.log_result("Custom Status Support", False, f"HTTP {response.status}: {error_text}")
+                    return False
+        except Exception as e:
+            self.log_result("Custom Status Support", False, f"Error: {str(e)}")
+            return False
+    
+    async def test_cleanup(self):
+        """Test 7: Cleanup - Delete the test job"""
+        if not self.test_job_id:
+            self.log_result("Cleanup", True, "No test job to cleanup")
+            return True
+        
+        try:
+            async with self.session.delete(f"{BASE_URL}/jobs/{self.test_job_id}", headers=self.headers) as response:
+                if response.status == 200:
+                    self.log_result("Cleanup", True, f"Test job {self.test_job_id} deleted successfully")
                     return True
                 else:
                     error_text = await response.text()
-                    self.log_result(
-                        "Removed Endpoint - Email Weekly", 
-                        False, 
-                        f"Expected 404 but got {response.status}: {error_text}", 
-                        404, 
-                        response.status
-                    )
+                    self.log_result("Cleanup", False, f"HTTP {response.status}: {error_text}")
                     return False
         except Exception as e:
-            self.log_result("Removed Endpoint - Email Weekly", False, f"Exception: {str(e)}")
-            return False
-    
-    async def test_removed_endpoint_email_monthly(self):
-        """Test GET /api/email-summary/monthly → Should return 404"""
-        try:
-            async with self.session.get(f"{BASE_URL}/email-summary/monthly", headers=self.headers) as response:
-                if response.status == 404:
-                    self.log_result(
-                        "Removed Endpoint - Email Monthly", 
-                        True, 
-                        "Correctly returns 404 (endpoint removed)", 
-                        404, 
-                        response.status
-                    )
-                    return True
-                else:
-                    error_text = await response.text()
-                    self.log_result(
-                        "Removed Endpoint - Email Monthly", 
-                        False, 
-                        f"Expected 404 but got {response.status}: {error_text}", 
-                        404, 
-                        response.status
-                    )
-                    return False
-        except Exception as e:
-            self.log_result("Removed Endpoint - Email Monthly", False, f"Exception: {str(e)}")
-            return False
-    
-    async def test_removed_endpoint_reports_get(self):
-        """Test GET /api/reports → Should return 404"""
-        try:
-            async with self.session.get(f"{BASE_URL}/reports", headers=self.headers) as response:
-                if response.status == 404:
-                    self.log_result(
-                        "Removed Endpoint - Reports Get", 
-                        True, 
-                        "Correctly returns 404 (endpoint removed)", 
-                        404, 
-                        response.status
-                    )
-                    return True
-                else:
-                    error_text = await response.text()
-                    self.log_result(
-                        "Removed Endpoint - Reports Get", 
-                        False, 
-                        f"Expected 404 but got {response.status}: {error_text}", 
-                        404, 
-                        response.status
-                    )
-                    return False
-        except Exception as e:
-            self.log_result("Removed Endpoint - Reports Get", False, f"Exception: {str(e)}")
-            return False
-    
-    async def test_removed_endpoint_reports_generate(self):
-        """Test POST /api/reports/generate/weekly → Should return 404"""
-        try:
-            async with self.session.post(f"{BASE_URL}/reports/generate/weekly", headers=self.headers) as response:
-                if response.status == 404:
-                    self.log_result(
-                        "Removed Endpoint - Reports Generate", 
-                        True, 
-                        "Correctly returns 404 (endpoint removed)", 
-                        404, 
-                        response.status
-                    )
-                    return True
-                else:
-                    error_text = await response.text()
-                    self.log_result(
-                        "Removed Endpoint - Reports Generate", 
-                        False, 
-                        f"Expected 404 but got {response.status}: {error_text}", 
-                        404, 
-                        response.status
-                    )
-                    return False
-        except Exception as e:
-            self.log_result("Removed Endpoint - Reports Generate", False, f"Exception: {str(e)}")
+            self.log_result("Cleanup", False, f"Error: {str(e)}")
             return False
     
     async def run_all_tests(self):
-        """Run all backend tests"""
-        print(f"🚀 Starting CareerFlow Backend API Tests")
-        print(f"📍 Testing URL: {BASE_URL}")
-        print(f"🔑 Using test token: {TEST_TOKEN}")
-        print("=" * 60)
+        """Run all tests in sequence"""
+        print("🚀 Starting CareerFlow Backend API Testing - Upcoming Stage Sync and Upcoming Interviews")
+        print(f"📡 Testing against: {BASE_URL}")
+        print("=" * 80)
         
-        # Core functionality tests
-        print("\n📋 CORE FUNCTIONALITY TESTS:")
-        await self.test_authentication()
-        await self.test_health_check()
-        await self.test_target_goals_update()
-        await self.test_target_goals_get()
-        await self.test_dashboard_stats()
+        # Test sequence as specified in review request
+        tests = [
+            self.test_backend_connectivity,
+            self.test_create_job_with_upcoming_stage,
+            self.test_upcoming_interviews_endpoint,
+            self.test_update_job_upcoming_stage,
+            self.test_updated_upcoming_interviews,
+            self.test_custom_status_support,
+            self.test_cleanup
+        ]
         
-        # Removed endpoints verification
-        print("\n🗑️ REMOVED ENDPOINTS VERIFICATION:")
-        await self.test_removed_endpoint_email_weekly()
-        await self.test_removed_endpoint_email_monthly()
-        await self.test_removed_endpoint_reports_get()
-        await self.test_removed_endpoint_reports_generate()
+        passed = 0
+        total = len(tests)
+        
+        for test in tests:
+            try:
+                result = await test()
+                if result:
+                    passed += 1
+                print()  # Add spacing between tests
+            except Exception as e:
+                self.log_result(test.__name__, False, f"Unexpected error: {str(e)}")
+                print()
         
         # Summary
-        print("\n" + "=" * 60)
-        print("📊 TEST SUMMARY:")
+        print("=" * 80)
+        print(f"📊 TEST SUMMARY: {passed}/{total} tests passed ({(passed/total)*100:.1f}% success rate)")
         
-        total_tests = len(self.results)
-        passed_tests = sum(1 for r in self.results if r["success"])
-        failed_tests = total_tests - passed_tests
-        
-        print(f"Total Tests: {total_tests}")
-        print(f"✅ Passed: {passed_tests}")
-        print(f"❌ Failed: {failed_tests}")
-        print(f"Success Rate: {(passed_tests/total_tests)*100:.1f}%")
-        
-        if failed_tests > 0:
-            print(f"\n❌ FAILED TESTS:")
-            for result in self.results:
-                if not result["success"]:
-                    print(f"  - {result['test']}: {result['details']}")
-        
-        return passed_tests, failed_tests, self.results
+        if passed == total:
+            print("🎉 ALL TESTS PASSED - Upcoming stage sync and upcoming interviews functionality working correctly!")
+        else:
+            print("⚠️  SOME TESTS FAILED - See details above")
+            
+        return passed == total
 
 async def main():
     """Main test runner"""
-    async with BackendTester() as tester:
-        passed, failed, results = await tester.run_all_tests()
-        
-        # Exit with appropriate code
-        if failed > 0:
-            print(f"\n⚠️  {failed} test(s) failed. Check the details above.")
-            sys.exit(1)
-        else:
-            print(f"\n🎉 All {passed} tests passed! Backend API is working correctly.")
-            sys.exit(0)
+    async with CareerFlowAPITester() as tester:
+        success = await tester.run_all_tests()
+        return 0 if success else 1
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    exit_code = asyncio.run(main())
+    sys.exit(exit_code)
