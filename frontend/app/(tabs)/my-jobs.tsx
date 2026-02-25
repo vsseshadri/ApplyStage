@@ -434,6 +434,9 @@ export default function MyJobsScreen() {
     
     let result = [...jobs];
     
+    // Define inactive/terminal statuses
+    const terminalStatuses = ['rejected', 'ghosted', 'offer', 'withdrawn'];
+    
     // Apply global filter from context (from Dashboard navigation)
     if (filter === 'last_10_days') {
       result = result.filter(job => {
@@ -446,6 +449,9 @@ export default function MyJobsScreen() {
       result = result.filter(job => job.status === 'offer');
     } else if (filter === 'rejected') {
       result = result.filter(job => job.status === 'rejected');
+    } else if (filter === 'active') {
+      // Active = not rejected, not ghosted, not offer, not withdrawn
+      result = result.filter(job => !terminalStatuses.includes(job.status));
     } else if (filter === 'work_mode' && contextWorkModeFilter !== 'all') {
       // Apply work mode filter from context (when navigating from Dashboard chart)
       result = result.filter(job => job.work_mode?.toLowerCase() === contextWorkModeFilter.toLowerCase());
