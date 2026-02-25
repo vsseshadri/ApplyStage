@@ -2233,7 +2233,7 @@ export default function MyJobsScreen() {
             <TouchableOpacity 
               style={dynamicStyles.selectButton}
               onPress={() => {
-                setSelectedJob(null);
+                setEditingJob(null);
                 setJobForm({
                   company_name: '', position: '', status: 'applied', location: '', country: userCountry || 'United States',
                   state: '', city: '', notes: '', job_url: '', date_applied: new Date().toISOString().split('T')[0],
