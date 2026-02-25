@@ -341,7 +341,7 @@ export default function AnalyticsScreen() {
   };
 
   // Insight Card Component
-  const InsightCard = ({ insight }: { insight: Insight }) => {
+  const InsightCard = ({ insight, onAddPress }: { insight: Insight; onAddPress: () => void }) => {
     const maturityBadgeColors: Record<string, string> = {
       activity: '#3B82F6',
       diagnostic: '#8B5CF6',
@@ -351,10 +351,12 @@ export default function AnalyticsScreen() {
     
     return (
       <View style={[styles.insightCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
+        {/* Top row: Icon + Title + Maturity Badge */}
         <View style={styles.insightHeader}>
           <View style={[styles.insightIconContainer, { backgroundColor: `${insight.color}20` }]}>
-            <Ionicons name={insight.icon as any} size={24} color={insight.color} />
+            <Ionicons name={insight.icon as any} size={20} color={insight.color} />
           </View>
+          <Text style={[styles.insightTitle, { color: colors.text, flex: 1, marginLeft: 10 }]}>{insight.title}</Text>
           <View style={[
             styles.maturityBadge, 
             { backgroundColor: `${maturityBadgeColors[insight.maturity_label]}20` }
@@ -367,10 +369,13 @@ export default function AnalyticsScreen() {
             </Text>
           </View>
         </View>
-        <Text style={[styles.insightTitle, { color: colors.text }]}>{insight.title}</Text>
+        
+        {/* Message */}
         <Text style={[styles.insightMessage, { color: colors.textSecondary }]}>
           {insight.message}
         </Text>
+        
+        {/* Footer with confidence and action */}
         <View style={styles.insightFooter}>
           <View style={styles.confidenceContainer}>
             <Ionicons name="shield-checkmark" size={14} color={colors.textSecondary} />
@@ -379,11 +384,10 @@ export default function AnalyticsScreen() {
             </Text>
           </View>
           {insight.action && (
-            <TouchableOpacity style={[styles.insightAction, { backgroundColor: `${insight.color}15` }]}>
-              <Text style={[styles.insightActionText, { color: insight.color }]}>
+            <TouchableOpacity onPress={onAddPress}>
+              <Text style={[styles.insightActionText, { color: colors.primary }]}>
                 {insight.action}
               </Text>
-              <Ionicons name="arrow-forward" size={14} color={insight.color} />
             </TouchableOpacity>
           )}
         </View>
