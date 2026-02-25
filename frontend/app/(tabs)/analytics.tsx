@@ -477,23 +477,23 @@ export default function AnalyticsScreen() {
                 label={analytics.hero_kpi.health_label}
               />
               <View style={styles.heroStats}>
-                <View style={styles.heroStat}>
-                  <Text style={[styles.heroStatValue, { color: colors.text }]}>
+                <TouchableOpacity style={styles.heroStat} onPress={() => navigateToMyJobs('all')}>
+                  <Text style={[styles.heroStatValue, { color: colors.primary }]}>
                     {analytics.hero_kpi.total_applications}
                   </Text>
                   <Text style={[styles.heroStatLabel, { color: colors.textSecondary }]}>
                     Total Apps
                   </Text>
-                </View>
+                </TouchableOpacity>
                 <View style={[styles.heroStatDivider, { backgroundColor: colors.border }]} />
-                <View style={styles.heroStat}>
-                  <Text style={[styles.heroStatValue, { color: colors.text }]}>
+                <TouchableOpacity style={styles.heroStat} onPress={() => navigateToMyJobs('active')}>
+                  <Text style={[styles.heroStatValue, { color: colors.primary }]}>
                     {analytics.hero_kpi.active_in_pipeline}
                   </Text>
                   <Text style={[styles.heroStatLabel, { color: colors.textSecondary }]}>
                     Active
                   </Text>
-                </View>
+                </TouchableOpacity>
               </View>
             </View>
 
