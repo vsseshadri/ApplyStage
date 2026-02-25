@@ -789,6 +789,21 @@ export default function SettingsScreen() {
       fontSize: 16,
       color: colors.textSecondary,
     },
+    feedbackRow: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      paddingVertical: 12,
+    },
+    feedbackLeft: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 12,
+    },
+    feedbackText: {
+      fontSize: 16,
+      color: colors.text,
+    },
   });
 
   return (
