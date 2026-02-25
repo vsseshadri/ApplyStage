@@ -135,29 +135,6 @@ export default function TabsLayout() {
           }}
         />
         <Tabs.Screen
-          name="add-placeholder"
-          options={{
-            title: '',
-            tabBarIcon: () => null,
-            tabBarButton: (props) => (
-              <TouchableOpacity
-                style={styles.addButtonContainer}
-                onPress={handleAddJob}
-              >
-                <View style={[styles.addButton, { backgroundColor: colors.primary }]}>
-                  <Ionicons name="add" size={26} color="white" />
-                </View>
-              </TouchableOpacity>
-            ),
-          }}
-          listeners={{
-            tabPress: (e) => {
-              e.preventDefault();
-              handleAddJob();
-            },
-          }}
-        />
-        <Tabs.Screen
           name="notifications"
           options={{
             title: 'Notifications',
