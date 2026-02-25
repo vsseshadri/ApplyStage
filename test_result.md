@@ -106,22 +106,16 @@ user_problem_statement: "Build a comprehensive mobile job tracking app with Dash
 
 backend:
   - task: "Email summary API endpoints"
-    implemented: true
-    working: true
+    implemented: false
+    working: "NA"
     file: "/app/backend/server.py"
     stuck_count: 0
-    priority: "high"
+    priority: "removed"
     needs_retesting: false
     status_history:
       - working: "NA"
         agent: "main"
-        comment: "Implemented email summary endpoints: PUT /api/user/communication-email, GET /api/email-summary/weekly, GET /api/email-summary/monthly"
-      - working: true
-        agent: "testing"
-        comment: "✅ PASS - All 4 email summary API tests PASSED (100% success rate). PUT /api/user/communication-email validates email format correctly (accepts valid emails, rejects invalid with 400 error). GET /api/email-summary/weekly returns proper weekly summary with subject, body, to_email, and stats structure. GET /api/email-summary/monthly returns comprehensive monthly summary with all required fields and statistics. Fixed datetime handling issues during testing for proper date comparisons."
-      - working: true
-        agent: "testing"
-        comment: "✅ RE-TESTED AS REQUESTED - All 4 email summary API tests PASSED (100% success rate). Weekly endpoint returns proper 7-day date range (Feb-09-2026 to Feb-16-2026) with correct subject, body, to_email, from_date, to_date, and stats structure. Monthly endpoint returns proper monthly summary with subject, body, to_email, month_year (Feb-2026), and comprehensive stats including total_applications, status_counts, work_mode_counts, avg_salary_range, and response_rate. Email validation working correctly (rejects invalid emails with 400 error). All endpoints functioning as specified in review request."
+        comment: "REMOVED - Weekly/monthly email summary functionality removed per user request. All related endpoints (/api/email-summary/weekly, /api/email-summary/monthly) have been deleted from server.py."
 
   - task: "Auth endpoints (Google OAuth integration)"
     implemented: true
