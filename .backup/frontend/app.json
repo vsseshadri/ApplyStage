@@ -50,7 +50,7 @@
       "typedRoutes": true
     },
     "extra": {
-      "EXPO_PUBLIC_BACKEND_URL": "https://career-dash-refine.preview.emergentagent.com"
+      "EXPO_PUBLIC_BACKEND_URL": "https://application-intel.preview.emergentagent.com"
     }
   }
 }

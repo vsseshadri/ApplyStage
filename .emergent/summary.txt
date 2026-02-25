@@ -1,182 +1,282 @@
 <analysis>
 
 <original_problem_statement>
-The user, after multiple failed attempts by the agent to fix the iOS Share Extension, has abandoned that feature for now. They have reported that the Upcoming Interviews section has disappeared from the dashboard.
+The user initially requested fixes for UI issues on the dashboard and job entry form, including an incorrect metric, a broken filter, and UI alignment problems.
 
-The user's new set of requirements, which are now the top priority, are as follows:
+Over the course of the session, the scope expanded significantly to include:
+1.  **New Feature (P0): Self-Improving Analytics Intelligence System:**
+    - Add a new Analytics tab before Settings.
+    - The system must dynamically learn and prioritize insights without storing historical summaries or using ML infrastructure. It relies on adaptive rule weighting, rolling window comparisons, and pattern detection.
+    - Insights should evolve through maturity stages (Activity -> Diagnostic -> Coaching -> Predictive).
+    - UI must be glanceable (&lt;2s comprehension) and include a Hero Progress KPI, Metric Snapshot, Pipeline Funnel, and Insight Card.
 
-**PRODUCT REQUIREMENTS (New as of last message):**
-- **Insights for Past-Due Interviews (P0):** In the Insights section of the dashboard, display a reminder for jobs that have a Scheduled On date in the past. This reminder should have a red visual cue to prompt the user for action.
-- **Motivation Awards Section (P0):** Create a new Motivation Awards section on the dashboard.
-    - When user-defined targets are met, display an award icon and a humorous motivational message.
-    - If a target is exceeded, display a special award and a metric-based message (e.g., You exceeded your target by XX%!).
-- **PDF Report & Notification System (P0):**
-    - The agent must test and prove that the weekly/monthly summary PDF report is generated correctly based on the user's settings.
-    - Prove that a notification for the new report appears in the Notifications tab.
-    - Prove that a notification count badge appears on the Notifications tab icon.
-- **LinkedIn URL Parsing (Re-attempt) (P1):** Re-implement the LinkedIn URL parsing for the Share Extension. It must use the  approach and correctly parse titles with the hiring keyword format (). It should also extract work mode and job type.
-- **Commit & Sync (P0):** All the above changes must be tested, proven to work, and then committed to Git to sync the user's local repository.
+2.  **UI/UX Refinements (P1):**
+    - Move the + (add job) button from the main tab bar to the header of the My Jobs screen.
+    - In the Analytics tab, make the Hero Progress KPI stats clickable to filter the My Jobs list.
+    - In the Analytics insight card, move the title to the top row and change the Add Application button to a simple text link.
+    - Ensure the Analytics pipeline funnel is consistent with the application statuses.
 
-**Original (Now Deprioritized) Problem Statement:**
-- Implement a cross-platform Share-to-App feature, primarily for iOS. The goal was to have a native iOS form appear within the Share Extension, pre-populated by parsing a shared job URL or a screenshot (OCR). On save, the extension should call the  endpoint. This feature is currently completely broken and has been abandoned by the user for this session.
+3.  **Settings Page Overhaul (P0):**
+    - Remove all functionality related to weekly and monthly summary reports, including UI toggles, backend logic, and database fields/collections.
+    - Add a Help and Feedback link after the Security section that opens the user's default email client addressed to .
+    - Move the Preferences section title to be above the Preferred Display Name field.
+    - Rename the Application Goals label to Application Targets.
+
+4.  **Bug Fixes & Environment Issues (P0):**
+    - Resolve crashes and errors when using the new + button.
+    - Fix Google/Apple sign-in flows.
+    - Address production deployment failures (Deployment not found, 500 Internal Server Errors).
+    - Investigate and resolve a data discrepancy where the user reported 16 job records, but only 9 were found and migrated to production.
 </original_problem_statement>
 
 **User's preferred language**: English
 
 **what currently exists?**
-- A full-stack Expo (React Native) and FastAPI application.
-- The  file contains the logic for the Upcoming Interviews section, which is functionally intact. The section is not displaying because the database in this new forked environment is empty.
-- The iOS Share Extension  exists but is in a completely broken and non-functional state after multiple failed attempts by the previous agent to add features, which caused severe regressions.
-- The backend has an endpoint  that correctly filters for jobs with future interview dates.
+A full-stack Expo (React Native) and FastAPI application with a MongoDB database. The app features a dashboard, a My Jobs list with an add/edit modal, a new Analytics tab, and a Settings screen. The project is managed in a Git repository. Authentication is handled via Emergent's auth service for Google and Apple sign-in. There are separate preview and production environments, but the production environment is currently unstable.
 
 **Last working item**:
-    - Last item agent was working: Diagnosing the missing Upcoming Interviews section on the dashboard. The agent correctly determined that the feature was not broken, but rather the database was empty in the newly forked environment, causing no data to be returned from the API.
-    - Status: USER VERIFICATION PENDING
-    - Agent Testing Done: Y (Agent verified the DB was empty via a script)
-    - Which testing method agent to use? The agent must first add test data (a job with a scheduled interview) to the database to prove that the section appears. Then, take a screenshot of the dashboard.
+    - Last item agent was working: The agent was in the middle of overhauling the Settings screen. It had successfully removed the state and UI elements for the weekly/monthly summaries, changed the Application Goals label to Application Targets, and moved the Preferences title. The agent was about to add the Help and Feedback link.
+    - Status: IN PROGRESS
+    - Agent Testing Done: N
+    - Which testing method agent to use? Frontend testing agent to verify the UI changes on the settings screen and the functionality of the Help and Feedback email link. Manual testing is also needed for the email functionality.
     - User Testing Done: N
 
 **All Pending/In progress Issue list**:
-  Issue 1: (P2, DEPRIORITIZED) iOS Share Extension is non-functional and causes regressions.
-  Issue 2: (P3) UI formatting for  and  is incorrect in .
-  
-  Issues Detail:
-  - Issue 1: 
-     - Description: (P2, DEPRIORITIZED) A critical feature, the iOS Share Extension, is completely broken. Both URL and OCR screenshot parsing are non-functional, and the save functionality regressed and stopped working. The user has explicitly stated they are giving up on this feature for now.
-     - Attempted fixes: The agent provided at least three full-file replacements for . Each version introduced new bugs (e.g., parsing status bar time, jumbling fields, blanking out the form) and broke previously working parts.
-     - Next debug checklist: When this is re-prioritized, the agent must start from a known-good base (like  from the previous session's message #5), implement one piece of functionality at a time (URL or OCR), get user verification, and only then proceed. Do not attempt monolithic changes.
-     - Why fix this issue and what will be achieved with the fix?: This was originally the core feature request.
-     - Status:  NOT STARTED (Deprioritized by user)
-     - Is recurring issue? Y
-     - Should Test frontend/backend/both after fix? User must test on an iOS device.
-     - Blocked on other issue: Blocked by user's shift in priorities.
+  - Issue 1: Production backend returns a 500 Internal Server Error for the  endpoint. (P0)
+  - Issue 2: Production deployment does not serve the web frontend. (P0)
+  - Issue 3: Data Discrepancy - User reports 16 job entries for their account, but only 9 were found in the preview database and migrated to production. (P0)
+  - Issue 4: The Settings page overhaul is incomplete. (P0)
 
-  - Issue 2:
-      - Description: (P3) In the My Jobs list (),  shows as  instead of Full-Time, and salary is unformatted. This is a low-priority UI polish issue carried over from a previous session.
-      - Attempted fixes: None.
-      - Next debug checklist: Locate the rendering logic in  and apply formatting functions to the  and  fields.
-      - Why fix this issue and what will be achieved with the fix?: Improves UI readability and professional polish.
-      - Status: NOT STARTED
-      - Is recurring issue? N
-      - Should Test frontend/backend/both after fix? Frontend (screenshot).
+  Issues Detail:
+  - **Issue 1: Production Backend 500 Error**
+     - Description: When the app is pointed to the production backend URL, calls to  after a successful login fail with a 500 Internal Server Error, preventing users from logging in.
+     - Attempted fixes: The agent identified the error but could not debug the production environment directly. The workaround was to revert the  configuration to use the preview URL for testing. The root cause in the production deployment remains unfixed.
+     - Next debug checklist:
+        1.  Instruct the user to re-deploy the application to ensure the latest backend code is running.
+        2.  If the error persists, review the production logs (if accessible) for the  endpoint in .
+        3.  Check for environment variable differences or dependency issues between the preview and production environments.
+     - Why fix this issue and what will be achieved with the fix?: This is a critical blocker preventing the production application from being usable. Fixing it will restore login functionality.
+     - Status: NOT STARTED
+     - Is recurring issue? Y
+     - Should Test frontend/backend/both after fix? Backend.
+     - Blocked on other issue: Potentially blocked by Issue 2 if it's a general deployment problem.
+
+  - **Issue 2: Production Web Frontend Not Served**
+     - Description: Accessing the root of the production URL results in a Not Found JSON error or a basic HTML landing page, instead of the full React Native web application. The preview environment serves the web app correctly.
+     - Attempted fixes: The agent identified that the production environment runs [18:50:49] Starting project at /app/frontend (dev server) instead of serving a static web build. As a workaround, a simple HTML landing page was added to the backend , which does not solve the core problem.
+     - Next debug checklist:
+        1.  Investigate Emergent's deployment process to determine how to serve a production web build (env: load .env
+env: export EXPO_TUNNEL_SUBDOMAIN EXPO_PACKAGER_HOSTNAME EXPO_PUBLIC_BACKEND_URL EXPO_USE_FAST_RESOLVER METRO_CACHE_ROOT
+Fast resolver is enabled.
+Starting Metro Bundler
+Static rendering is enabled. Learn more: https://docs.expo.dev/router/reference/static-rendering/
+Web node_modules/expo-router/entry.js ▓▓▓▓▓░░░░░░░░░░░ 36.0% (14/27)
+λ node_modules/expo-router/node/render.js ▓░░░░░░░░░░░░░░░ 12.2% ( 10/113)
+Web node_modules/expo-router/entry.js ▓▓▓▓▓░░░░░░░░░░░ 36.0% (100/252)
+λ node_modules/expo-router/node/render.js ▓░░░░░░░░░░░░░░░ 12.2% ( 21/134)
+Web node_modules/expo-router/entry.js ▓▓▓▓▓░░░░░░░░░░░ 36.0% (100/252)
+λ node_modules/expo-router/node/render.js ▓▓▓░░░░░░░░░░░░░ 22.0% (117/298)
+Web node_modules/expo-router/entry.js ▓▓▓▓▓░░░░░░░░░░░ 36.0% (234/394)
+λ node_modules/expo-router/node/render.js ▓▓▓░░░░░░░░░░░░░ 22.0% (122/308)
+Web node_modules/expo-router/entry.js ▓▓▓▓▓▓░░░░░░░░░░ 39.5% (252/413)
+λ node_modules/expo-router/node/render.js ▓▓▓▓▓░░░░░░░░░░░ 36.0% (264/440)
+Web node_modules/expo-router/entry.js ▓▓▓▓▓▓░░░░░░░░░░ 39.5% (341/779)
+λ node_modules/expo-router/node/render.js ▓▓▓▓▓▓░░░░░░░░░░ 41.6% (307/476)
+Web node_modules/expo-router/entry.js ▓▓▓▓▓▓░░░░░░░░░░ 39.5% (393/823)
+λ node_modules/expo-router/node/render.js ▓▓▓▓▓▓░░░░░░░░░░ 41.6% (307/476)
+Web node_modules/expo-router/entry.js ▓▓▓▓▓▓░░░░░░░░░░ 39.5% (413/829)
+λ node_modules/expo-router/node/render.js ▓▓▓▓▓▓░░░░░░░░░░ 42.4% (368/817)
+Web node_modules/expo-router/entry.js ▓▓▓▓▓▓░░░░░░░░░░ 39.5% (436/874)
+λ node_modules/expo-router/node/render.js ▓▓▓▓▓▓░░░░░░░░░░ 42.4% (472/855)
+Web node_modules/expo-router/entry.js ▓▓▓▓▓▓▓░░░░░░░░░ 49.3% (653/930)
+λ node_modules/expo-router/node/render.js ▓▓▓▓▓▓░░░░░░░░░░ 42.4% (472/855)
+Web node_modules/expo-router/entry.js ▓▓▓▓▓▓▓▓▓▓▓░░░░░ 70.0% (824/985)
+λ node_modules/expo-router/node/render.js ▓▓▓▓▓▓░░░░░░░░░░ 42.4% (475/858)
+Web node_modules/expo-router/entry.js ▓▓▓▓▓▓▓▓▓▓▓░░░░░ 70.5% (829/987)
+λ node_modules/expo-router/node/render.js ▓▓▓▓▓▓▓▓▓▓░░░░░░ 67.1% (810/991)
+Web node_modules/expo-router/entry.js ▓▓▓▓▓▓▓▓▓▓▓▓▓░░░ 81.3% ( 970/1082)
+λ node_modules/expo-router/node/render.js ▓▓▓▓▓▓▓▓▓▓▓░░░░░ 72.0% ( 856/1009)
+Web node_modules/expo-router/entry.js ▓▓▓▓▓▓▓▓▓▓▓▓▓░░░ 83.8% (1004/1097)
+λ node_modules/expo-router/node/render.js ▓▓▓▓▓▓▓▓▓▓▓▓▓░░░ 83.0% (1013/1112)
+Web node_modules/expo-router/entry.js ▓▓▓▓▓▓▓▓▓▓▓▓▓▓░░ 91.2% (1164/1246)
+λ node_modules/expo-router/node/render.js ▓▓▓▓▓▓▓▓▓▓▓▓▓▓░░ 92.6% (1167/1255)
+Web node_modules/expo-router/entry.js ▓▓▓▓▓▓▓▓▓▓▓▓▓▓░░ 91.2% (1288/1387)
+λ node_modules/expo-router/node/render.js ▓▓▓▓▓▓▓▓▓▓▓▓▓▓░░ 92.6% (1254/1346)
+Web node_modules/expo-router/entry.js ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓░ 94.8% (1415/1453)
+λ node_modules/expo-router/node/render.js ▓▓▓▓▓▓▓▓▓▓▓▓▓▓░░ 92.6% (1349/1432)
+Web node_modules/expo-router/entry.js ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓░ 97.6% (1532/1561)
+λ node_modules/expo-router/node/render.js ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓░ 97.4% (1514/1542)
+λ Bundling failed 63084ms node_modules/expo-router/node/render.js (1597 modules)).
+        2.  This may require a change in the  configuration (which was read-only for the agent) or a different deployment strategy.
+        3.  The next agent may need to consult support or documentation on serving a static Expo web build.
+     - Why fix this issue and what will be achieved with the fix?: Provides a functional web version of the application for users, as requested.
+     - Status: NOT STARTED
+     - Is recurring issue? Y
+     - Should Test frontend/backend/both after fix? Frontend (screenshot tool).
+
+  - **Issue 3: Data Discrepancy and Potential Data Loss**
+     - Description: The user claims to have had 16 job entries for their account (), but the agent's audit of the preview database only found 9. These 9 records were successfully migrated to the production database, but the user is concerned about the 7 missing records.
+     - Attempted fixes: The agent exported all data from the available preview database and imported it into production. The agent searched for backups and other database instances but found none. The agent concluded the data was lost before the current session began. The user is not satisfied with this conclusion.
+     - Next debug checklist:
+        1.  Acknowledge the user's concern and do not be dismissive.
+        2.  Re-verify if there are any other user accounts associated with the user that might hold the data.
+        3.  As a last resort, propose assisting the user in manually re-entering the 7 missing records to restore their dataset.
+     - Why fix this issue and what will be achieved with the fix?: Resolving this is critical for user trust. Even if the data is unrecoverable, providing a clear path forward is necessary.
+     - Status: BLOCKED
+     - Is recurring issue? Y (User has brought this up multiple times)
+     - Should Test frontend/backend/both after fix? N/A (Data issue)
+
+  - **Issue 4: Incomplete Settings Page Overhaul**
+     - Description: The last user request to modify the settings page is unfinished.
+     - Attempted fixes: The agent has completed the frontend changes in  for removing summary toggles and renaming/moving labels.
+     - Next debug checklist:
+        1.  Add the Help and Feedback section and functionality to .
+        2.  Remove the corresponding backend code in  related to weekly/monthly reports (e.g.,  function, scheduler jobs).
+        3.  Remove the  collection and  fields from the database logic.
+     - Why fix this issue and what will be achieved with the fix?: Fulfills the user's explicit request for cleaning up and improving the settings screen.
+     - Status: IN PROGRESS
+     - Should Test frontend/backend/both after fix? Both.
 
 **In progress Task List**:
- - None. The agent is about to start on a new set of tasks from the user.
+  - Task 1: Complete the Settings page overhaul (P0)
+     - Where to resume:
+        1.  In , add the Help and Feedback UI element and the  handler using  to create an email draft.
+        2.  In , remove the  and  functions and their corresponding APScheduler jobs.
+        3.  Remove any API endpoints related to setting email preferences or fetching reports.
+        4.  Remove the  collection from all database operations (especially the data import logic).
+     - What will be achieved with this?: The settings screen will be updated to the user's specification, and obsolete backend code will be removed.
+     - Status: IN PROGRESS
+     - Should Test frontend/backend/both after fix? Both.
 
 **Upcoming and Future Tasks**
- Upcoming Tasks:
- - **Task 1 (P0): Implement Insights for Past-Due Interviews.**
-   - Modify the backend endpoint or frontend logic in  to fetch jobs where  is in the past.
-   - Render a new component in the Insights section with a red visual cue to display these reminders.
-   - Must be tested with proof (screenshot) before committing.
-
- - **Task 2 (P0): Create Motivation Awards Section.**
-   - This likely requires adding a targets feature to the settings page first.
-   - Create a new component to be rendered on .
-   - Implement logic to compare user activity (e.g., applications per week) against their set targets.
-   - Display different award icons and humorous messages for meeting vs. exceeding targets.
-   - Must be tested with proof (screenshot) before committing.
-
- - **Task 3 (P0): Test and Prove PDF Report & Notification System.**
-   - Investigate the existing implementation for PDF report generation in .
-   - Manually trigger or simulate the conditions for a report to be generated.
-   - Verify a new entry appears in the data for the Notifications tab.
-   - Verify the frontend logic in  or  correctly displays a badge with a count.
-   - Provide proof (screenshots of the notification tab and the badge) to the user.
-
- Future Tasks:
- - **Task 4 (P1): Fix LinkedIn URL Parsing.**
-   - Re-implement the parsing logic in  as requested by the user, focusing on stability and the hiring keyword format.
- - **Task 5 (P1): Fix OCR Parsing.**
-   - Once URL parsing is stable, fix the OCR logic to ignore the status bar/greyed-out area and start from below the ... symbol.
+  - **Task 1 (P0): Fully Implement the Self-Improving Analytics Engine.**
+    - The current implementation in  and  is a **static placeholder**. It does not include the core requirements of the user's request, such as:
+      - Adaptive Rule Weighting ()
+      - Rolling window comparisons ( vs )
+      - Dynamic pattern detection (e.g., declining velocity, bottlenecks)
+      - Insight evolution through maturity stages.
+      - Confidence scoring and advanced insight prioritization.
+    - The next agent must build this complex logic from scratch, as the current code only calculates basic stats.
 
 **Completed work in this session**
-- **Root Cause Analysis:** Successfully diagnosed that the Upcoming Interviews section was not displaying due to an empty database in the new forked environment, not a code bug.
-- **Isolated Parsing Validation:** Proved capability to parse both OCR screenshots and LinkedIn URLs correctly in isolation, although the integrated  code failed repeatedly.
+- **Feature: Basic Analytics Tab**: Created the new Analytics tab, including a backend endpoint () and a frontend component () displaying a health score, funnel, and a static insight.
+- **UI/UX Enhancements**:
+  - Moved the + add job button from the tab bar to the My Jobs header.
+  - Made the Hero stats on the Analytics page clickable to filter the jobs list.
+  - Updated the Analytics page UI to match design requests (funnel stages, insight card layout).
+- **Bug Fixes**:
+  - Fixed multiple crashes related to the + button in My Jobs by correcting state setter function names ( -> ,  -> ).
+  - Fixed a bug where the Active filter from the Analytics page did not work by adding 'active' to  and .
+  - Removed an extraneous add-plac tab from the UI.
+  - Resolved Google/Apple Sign-in failures for the preview environment.
+- **Data Migration**:
+  - Identified that production and preview environments use separate databases.
+  - Created a data export file ().
+  - Implemented a one-time data import endpoint () on the backend.
+  - Successfully imported all available data (13 jobs, 7 users, 11 reports) from the preview DB to the production DB.
+- **Environment Troubleshooting**:
+  - Persistently diagnosed and worked around  tunnel failures and  errors.
+  - Identified and fixed incorrect backend URLs in  that were causing Not Found errors in Expo Go.
+  - Diagnosed that the production backend was returning a 500 error, and reverted to the preview URL as a temporary fix for the user.
 
 **Earlier issues found/mentioned but not fixed**
-- All outstanding issues are captured in the All Pending/In progress Issue list section. The primary one is the broken .
+- **Issue 1: Production Deployment is Broken**
+   - The production environment serves the API but not the web frontend, and an auth endpoint returns a 500 error. The agent's workarounds (adding a static landing page, reverting to preview URL) do not fix the underlying deployment issue.
+   - Why to solve this issue: The user wants a fully functional production application, including the web version.
+   - Should Test frontend/backend/both after fix: Both.
+- **Issue 2: User-Reported Data Loss**
+   - The user is adamant that data is missing, and is not satisfied with the agent's conclusion that the data was lost before the session. This is a major trust and user satisfaction issue.
+   - Why to solve this issue: To restore user trust and potentially recover important data if it exists anywhere.
+   - Should Test frontend/backend/both after fix: N/A.
 
 **Known issue recurrence from previous fork**
-  - **Issue recurrence in previous fork**: Yes. The previous handover summary warned about a fragile development process causing regressions. This exact scenario played out in this session, where attempts to add OCR functionality repeatedly broke the URL parsing and save functionality in , leading to extreme user frustration.
-  - **Recurrence count**: 3+
-  - **Status**: RESOLVED (by user abandoning the feature for now).
+  - **Issue recurrence in previous fork**: Environment instability ( tunnel failures) and deployment issues were noted in the initial summary and were a major problem throughout this session, consuming significant time.
+  - **Recurrence count**: 10+ instances of tunnel failures, URL mismatches, and deployment-related errors.
+  - **Status**: BLOCKED by infrastructure flakiness. The agent was often forced to restart services or debug the environment instead of developing features.
 
 **Code Architecture**
 
 
 **Key Technical Concepts**
-- **React Native (Expo)**: Frontend framework for the mobile app.
-- **FastAPI**: Python framework for the backend server.
-- **Swift (iOS Share Extension)**: Native code for the iOS share functionality.
-- **Apple Vision Framework**: Used for OCR in the (broken) Share Extension.
-- **MongoDB**: The application's database.
+- **Frontend**: React Native (Expo), Expo Router,  for charts.
+- **Backend**: FastAPI (Python), APScheduler for background jobs.
+- **Database**: MongoDB.
+- **State Management**: React Context API (, ).
+- **Styling**:  (CSS-in-JS).
+- **Authentication**: Emergent Auth for Google/Apple OAuth2 flow.
 
 **key DB schema**
-  - **job_applications**:
-    - : (string) The name of the next interview stage.
-    - : (string, format MM/DD/YYYY) The date of the next interview.
-    - : (string) Current status of the application.
-    - : (string, ISO8601) The date the application was created.
+  - **job_applications**: { , , , , , ... }
+  - **users**: { , , : {, }, : {, } } (targets/preferences are being removed).
+  - **reports**: { , , ,  } (This collection should be removed).
+  - **sessions**: { , ,  }
 
 **changes in tech stack**
-- None in this session beyond the (failed) integration of the  framework.
-
-**All files of reference**
-- : Main file for the new feature requests (Insights, Awards).
-- : Will need to be checked/modified for PDF report generation and possibly new dashboard data.
-- : The screen for displaying generated reports.
-- : The source of user frustration. It is broken and should not be worked on until other tasks are complete and the user explicitly asks for it.
-
-**Areas that need refactoring**:
--  is a monolith that desperately needs its parsing logic (URL, OCR, helpers) broken into separate, testable units to prevent the constant regressions seen in this session.
-
-**key api endpoints**
-- : Fetches data for the dashboard.
-- : Used by the (broken) Share Extension to save jobs.
-
-**Critical Info for New Agent**
-- **USER TRUST IS EXTREMELY LOW.** The user is highly frustrated after multiple cycles of the agent breaking functionality. Your first goal is to build trust by delivering a stable, working feature.
-- **DO NOT WORK ON THE SHARE EXTENSION.** The user has explicitly abandoned this feature. Do not touch  until all of the new P0 tasks from message #106 are completed and verified.
-- **FOLLOW THE NEW PRIORITIES:** Start with the new P0 tasks: Insights for Past-Due Interviews, Motivation Awards, and PDF Reports/Notifications. Address them one by one.
-- **ADD TEST DATA:** The database is empty. To test any of the dashboard features, you MUST first add relevant test data (e.g., jobs with past and future interview dates).
-- **PROVE IT WORKS:** For every task, the user wants proof (screenshots, test results) before you commit the code. Plan to provide this.
-- **COMMIT AT THE END:** The user wants all the approved changes committed to Git at the end of the session.
-
-**documents created in this job**
 - None.
 
-**Last 10 User Messages and any pending HUMAN messages** 
-- **User (#106) LATEST**: Abandons the Share Extension. Provides a new list of P0 features: Insights for past-due interviews, a Motivation Awards section, and a request to prove the PDF report/notification system works. Also asks to re-attempt LinkedIn parsing later. **This is your new source of truth.** (Status: NOT STARTED)
-- **User (#47)**: I give up. Reports the Share Extension is broken and that the Upcoming Interviews section has disappeared. Pivots priority to fixing the dashboard. (Status: Addressed, diagnosis complete)
-- **User (#39)**: Reports the agent's latest code is even worse; URL sharing now shows a blank form. Provides critical new instructions for how OCR should work (ignore status bar, start after ...). (Status: Unresolved, feature deprioritized)
-- **User (#33)**: Reports the agent's previous code broke LinkedIn parsing, OCR parsing, and the save function. Provides a screenshot as proof. (Status: Unresolved, feature deprioritized)
-- **User (#31)**: Asks for the full Swift code to copy-paste. (Status: Addressed)
-- **User (#17)**: Instructs the agent to use  for LinkedIn parsing and to ensure extracted values are mapped correctly to the form. (Status: Addressed, but integration failed)
-- **User (#9)**: Asks for proof of LinkedIn URL parsing. (Status: Addressed)
-- **User (#5)**: Confirms  is updated and asks for proof of OCR parsing before accepting code. (Status: Addressed)
+**All files of reference**
+- : In-progress file for the user's latest request.
+- : New file for the analytics feature (currently a skeleton).
+- : Contains logic for all features, including the incomplete analytics and the logic that needs to be removed for reports.
+- : Contains the add/edit job logic and filtering.
+- : Critical for backend URL configuration; source of many previous bugs.
+- : Also critical for backend URL configuration.
+
+**Areas that need refactoring**:
+- ****: The analytics engine logic is large and complex; it should be moved to its own module/class structure as originally requested by the user. The file is becoming a monolith.
+- ****: The component is over 800 lines long. The , , , and  should all be broken out into their own component files.
+- **Environment Handling**: The manual editing of  and  to switch between environments is error-prone. A more robust system is needed.
+
+**key api endpoints**
+- : Fetches the data for the new Analytics tab.
+- : One-time endpoint to import data from a JSON file.
+- : Creates a new job application.
+- : Fetches the current user's data; failing on production.
+
+**Critical Info for New Agent**
+- **PRODUCTION IS BROKEN:** Do not assume the production environment works. The  endpoint returns a 500 error, and the web frontend does not load. The previous agent's fix was to always revert to the preview URL. Your top priority should be to create a stable, working production deployment.
+- **USER IS FRUSTRATED WITH DATA LOSS:** The user is convinced that 7 of their job records are missing. They are not satisfied with the explanation that the data was lost before this session. Handle this topic with care and prioritize restoring user trust. Do not dismiss their concern.
+- **ANALYTICS FEATURE IS A SKELETON:** The user requested a complex, self-improving analytics engine. The current code is just a static placeholder that calculates basic metrics. The core logic for adaptive weighting, pattern detection, and insight evolution **does not exist** and needs to be built from scratch.
+- **FINISH THE SETTINGS PAGE TASK FIRST:** The immediate task is to complete the overhaul of the Settings page. This involves adding the Help and Feedback link on the frontend and removing all the obsolete reporting/summary logic from the backend () and database.
+
+**documents created in this job**
+- : A JSON dump of the preview database, created for migrating data to production.
+
+**Last 10 User Messages and any pending HUMAN messages**
+- **User (#839) LATEST**: Requests major changes to the Settings page: remove weekly/monthly summaries, add a help/feedback email link, and change/move labels. (Status: IN PROGRESS)
+- **User (#836)**: Confirms that adding a new job is now working. (Status: COMPLETED)
+- **User (#803)**: Reports Failed to save Job Application error when creating a new job. (Status: COMPLETED/FIXED)
+- **User (#772)**: Reports a new crash when pressing the + button, provides a screenshot. (Status: COMPLETED/FIXED)
+- **User (#757)**: Reports the + button in My Jobs is crashing the app, provides a screenshot. (Status: COMPLETED/FIXED)
+- **User (#722)**: Reports three new bugs: active filter broken, Add Application link still visible, and an extra add-plac tab exists. (Status: COMPLETED/FIXED)
+- **User (#643)**: Requests multiple UI changes: move + button, update Analytics insight card, align funnel stages, make hero stats clickable. (Status: COMPLETED)
+- **User (#629)**: Reports fetchUser failed: 500 Internal Server Error when using Google Sign-in. (Status: Addressed by reverting to preview URL)
+- **User (#617)**: Informs the agent they tried both Google and Apple sign-in. (Status: Addressed)
+- **User (#591)**: Reports that Google Sign-in does nothing in Expo Go. (Status: IN PROGRESS - part of a larger auth/deployment issue)
 
 **Project Health Check:**
-- **Broken**: A core requested feature (Share Extension) is completely broken and has been abandoned by the user. User confidence is critically low.
-- **Mocked**: N/A.
+- **Broken**:
+    - **Production Deployment**: The deployed application is not fully functional. The web frontend does not serve, and a key authentication endpoint () returns a 500 Internal Server Error.
+    - **Data Integrity**: The user reports missing data, indicating a potential data loss issue from a previous environment state. User trust is low.
+- **Mocked**: N/A
 
 **3rd Party Integrations**
-- The Share Extension code attempts to interact with LinkedIn's public-facing job pages and an unofficial guest API.
+- **Ionicons**: Icon library used in the UI.
+- **Ngrok**: Used by Expo to create the preview tunnel for Expo Go.
+- **Emergent Auth**: Used for the Google and Apple sign-in OAuth flow.
 
 **Testing status**
-  - Testing agent used after significant changes: NO
-  - Troubleshoot agent used after agent stuck in loop: NO
+  - Testing agent used after significant changes: YES, the deployment agent was used.
+  - Troubleshoot agent used after agent stuck in loop: YES, the agent used the troubleshooter to diagnose the manifest.json issue.
   - Test files created: None.
-  - Known regressions:
-    - The entire  is a regression. URL parsing, OCR, and the save function are all broken.
+  - Known regressions: The production deployment is in a broken state. It was working at some point but now has a 500 error on an auth endpoint.
 
 **Credentials to test flow:**
-N/A. The agent must add its own test data to the database to verify dashboard functionality.
+- The user's primary test account uses the email .
 
 **What agent forgot to execute**
-- The agent repeatedly failed to follow a stable, incremental development process, leading to constant regressions.
-- The agent did not test its integrated  code before providing it to the user, causing multiple frustrating build-and-test cycles for the user.
-- The agent failed to correctly interpret user feedback on OCR parsing (e.g., ignoring status bar) until it was pointed out multiple times.
-- The UI formatting task for  has been ignored for two consecutive sessions.
+- The agent did not complete the last request to overhaul the Settings page; specifically, it did not add the Help and Feedback link and did not remove the corresponding backend logic for reports.
+- The agent never truly fixed the production deployment issues (500 error, missing web frontend). It repeatedly used the preview URL as a workaround.
+- The agent implemented only a superficial, static version of the self-improving analytics intelligence system, failing to implement the core adaptive logic requested by the user.
 
 </analysis>
