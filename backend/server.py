@@ -1945,31 +1945,29 @@ async def create_reminder(reminder_data: ReminderCreate, current_user: User = De
 
 @api_router.put("/preferences")
 async def update_preferences(
-    preferences: UserPreferences, 
     current_user: User = Depends(get_current_user),
     weekly_target: Optional[int] = None,
     monthly_target: Optional[int] = None
 ):
-    # Update basic preferences
-    update_dict = {"preferences": preferences.model_dump()}
+    """Update target goals via query params (legacy endpoint)"""
+    update_dict = {}
     
-    # Also update target goals if provided via query params
+    # Update target goals if provided via query params
     if weekly_target is not None:
         update_dict["target_goals.weekly_target"] = weekly_target
     if monthly_target is not None:
         update_dict["target_goals.monthly_target"] = monthly_target
     
-    await db.users.update_one(
-        {"user_id": current_user.user_id},
-        {"$set": update_dict}
-    )
+    if update_dict:
+        await db.users.update_one(
+            {"user_id": current_user.user_id},
+            {"$set": update_dict}
+        )
     
     return {"message": "Preferences updated"}
 
-# Extended preferences endpoint to handle target goals (uses existing route for proxy compatibility)
+# Extended preferences endpoint to handle target goals
 class PreferencesWithTargets(BaseModel):
-    weekly_email: Optional[bool] = None
-    monthly_email: Optional[bool] = None
     weekly_target: Optional[int] = None
     monthly_target: Optional[int] = None
 
@@ -1977,10 +1975,6 @@ class PreferencesWithTargets(BaseModel):
 async def update_preferences_extended(data: PreferencesWithTargets, current_user: User = Depends(get_current_user)):
     update_dict = {}
     
-    if data.weekly_email is not None:
-        update_dict["preferences.weekly_email"] = data.weekly_email
-    if data.monthly_email is not None:
-        update_dict["preferences.monthly_email"] = data.monthly_email
     if data.weekly_target is not None:
         update_dict["target_goals.weekly_target"] = data.weekly_target
     if data.monthly_target is not None:
@@ -1995,12 +1989,11 @@ async def update_preferences_extended(data: PreferencesWithTargets, current_user
     # Return updated data
     user_doc = await db.users.find_one(
         {"user_id": current_user.user_id},
-        {"_id": 0, "preferences": 1, "target_goals": 1}
+        {"_id": 0, "target_goals": 1}
     )
     
     return {
         "message": "Preferences updated",
-        "preferences": user_doc.get("preferences", {}),
         "target_goals": user_doc.get("target_goals", {"weekly_target": 10, "monthly_target": 40})
     }
 
