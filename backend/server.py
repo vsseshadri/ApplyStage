@@ -157,7 +157,6 @@ class User(BaseModel):
     payment_status: str = "trial"
     trial_end_date: Optional[datetime] = None
     applications_count: int = 0
-    preferences: Dict[str, Any] = {"weekly_email": True, "monthly_email": True}
     created_at: datetime
     is_private_relay: bool = False
     preferred_display_name: Optional[str] = None
