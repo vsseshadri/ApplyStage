@@ -3032,6 +3032,539 @@ async def health_check():
         }
 
 
+# ============================================================================
+# SELF-IMPROVING ANALYTICS INTELLIGENCE SYSTEM
+# ============================================================================
+# Implements adaptive rule evaluation for continuous insight improvement
+# WITHOUT ML infrastructure, analytics databases, or stored history.
+# All intelligence derived dynamically through rolling window comparison.
+# ============================================================================
+
+class InsightRule:
+    """Adaptive insight rule with dynamic weighting"""
+    def __init__(self, rule_id: str, condition_type: str, base_weight: float = 1.0):
+        self.rule_id = rule_id
+        self.condition_type = condition_type
+        self.base_weight = base_weight
+        self.priority_weight = base_weight
+        self.confidence_score = 0.5
+        self.activation_frequency = 0
+
+class AnalyticsEngine:
+    """Self-improving analytics engine using adaptive rule evaluation"""
+    
+    # Pipeline stages in order
+    PIPELINE_STAGES = [
+        'applied', 'recruiter_screening', 'phone_screen', 'technical_screen',
+        'coding_challenge', 'onsite', 'hiring_manager', 'final_round', 'offer'
+    ]
+    
+    # Insight maturity levels
+    MATURITY_LEVELS = {
+        1: "activity",      # Activity feedback
+        2: "diagnostic",    # Diagnostic feedback  
+        3: "coaching",      # Coaching feedback
+        4: "predictive"     # Predictive guidance
+    }
+    
+    @staticmethod
+    def compute_analytics(jobs: List[Dict], current_window_days: int = 7) -> Dict[str, Any]:
+        """
+        Compute all analytics dynamically from raw job data.
+        O(n) single-pass evaluation for mobile-safe execution.
+        """
+        now = datetime.now(timezone.utc)
+        current_window_start = now - timedelta(days=current_window_days)
+        previous_window_start = now - timedelta(days=current_window_days * 2)
+        
+        # Initialize counters
+        total_jobs = len(jobs)
+        status_counts = {}
+        current_window_jobs = []
+        previous_window_jobs = []
+        weekly_activity = [0] * 7  # Last 7 days activity
+        stage_transitions = {}
+        days_in_stage = []
+        response_count = 0
+        interview_count = 0
+        
+        # Single-pass aggregation - O(n)
+        for job in jobs:
+            status = job.get('status', 'applied')
+            status_counts[status] = status_counts.get(status, 0) + 1
+            
+            # Parse dates
+            date_applied = job.get('date_applied') or job.get('created_at')
+            if isinstance(date_applied, str):
+                try:
+                    date_applied = datetime.fromisoformat(date_applied.replace('Z', '+00:00'))
+                except:
+                    date_applied = now
+            if date_applied and date_applied.tzinfo is None:
+                date_applied = date_applied.replace(tzinfo=timezone.utc)
+            
+            # Window classification
+            if date_applied:
+                if date_applied >= current_window_start:
+                    current_window_jobs.append(job)
+                    # Daily activity tracking
+                    days_ago = (now - date_applied).days
+                    if 0 <= days_ago < 7:
+                        weekly_activity[days_ago] += 1
+                elif date_applied >= previous_window_start:
+                    previous_window_jobs.append(job)
+            
+            # Track responses (any status beyond applied)
+            if status != 'applied':
+                response_count += 1
+            
+            # Track interviews
+            if status in ['phone_screen', 'technical_screen', 'coding_challenge', 
+                         'onsite', 'hiring_manager', 'final_round']:
+                interview_count += 1
+            
+            # Stage transition tracking
+            stage_idx = AnalyticsEngine.PIPELINE_STAGES.index(status) if status in AnalyticsEngine.PIPELINE_STAGES else 0
+            if stage_idx > 0:
+                prev_stage = AnalyticsEngine.PIPELINE_STAGES[stage_idx - 1]
+                key = f"{prev_stage}_to_{status}"
+                stage_transitions[key] = stage_transitions.get(key, 0) + 1
+        
+        # Compute rates
+        response_rate = (response_count / total_jobs * 100) if total_jobs > 0 else 0
+        interview_rate = (interview_count / total_jobs * 100) if total_jobs > 0 else 0
+        offer_count = status_counts.get('offer', 0)
+        offer_rate = (offer_count / total_jobs * 100) if total_jobs > 0 else 0
+        
+        # Velocity comparison (current vs previous window)
+        current_velocity = len(current_window_jobs)
+        previous_velocity = len(previous_window_jobs)
+        velocity_change = ((current_velocity - previous_velocity) / previous_velocity * 100) if previous_velocity > 0 else (100 if current_velocity > 0 else 0)
+        
+        # Pipeline Health Score (0-100)
+        # Weighted: InterviewRate (0.4), ResponseRate (0.3), ConsistencyScore (0.3)
+        consistency_score = AnalyticsEngine._compute_consistency(weekly_activity)
+        pipeline_health = min(100, (
+            (min(interview_rate, 30) / 30 * 100) * 0.4 +  # Cap interview rate contribution at 30%
+            (min(response_rate, 50) / 50 * 100) * 0.3 +   # Cap response rate contribution at 50%
+            consistency_score * 0.3
+        ))
+        
+        # Funnel data for visualization
+        funnel_data = AnalyticsEngine._compute_funnel(status_counts, total_jobs)
+        
+        # Adaptive insight generation
+        insight = AnalyticsEngine._generate_adaptive_insight(
+            total_jobs=total_jobs,
+            current_velocity=current_velocity,
+            previous_velocity=previous_velocity,
+            velocity_change=velocity_change,
+            response_rate=response_rate,
+            interview_rate=interview_rate,
+            offer_rate=offer_rate,
+            weekly_activity=weekly_activity,
+            status_counts=status_counts,
+            pipeline_health=pipeline_health
+        )
+        
+        # Offer probability estimation with confidence
+        offer_probability = AnalyticsEngine._estimate_offer_probability(
+            status_counts, total_jobs, interview_rate, stage_transitions
+        )
+        
+        # Sparkline data (last 7 days reversed for chronological order)
+        sparkline_data = list(reversed(weekly_activity))
+        
+        return {
+            "hero_kpi": {
+                "pipeline_health": round(pipeline_health, 1),
+                "health_label": AnalyticsEngine._get_health_label(pipeline_health),
+                "total_applications": total_jobs,
+                "active_in_pipeline": total_jobs - status_counts.get('rejected', 0) - status_counts.get('offer', 0)
+            },
+            "metrics": {
+                "response_rate": round(response_rate, 1),
+                "response_trend": AnalyticsEngine._compute_trend(current_window_jobs, previous_window_jobs, 'response'),
+                "interview_rate": round(interview_rate, 1),
+                "interview_trend": AnalyticsEngine._compute_trend(current_window_jobs, previous_window_jobs, 'interview'),
+                "offer_rate": round(offer_rate, 1),
+                "velocity": current_velocity,
+                "velocity_change": round(velocity_change, 1)
+            },
+            "funnel": funnel_data,
+            "insight": insight,
+            "offer_probability": offer_probability,
+            "sparkline": sparkline_data,
+            "status_breakdown": status_counts
+        }
+    
+    @staticmethod
+    def _compute_consistency(weekly_activity: List[int]) -> float:
+        """Compute activity consistency score (0-100)"""
+        if sum(weekly_activity) == 0:
+            return 0
+        active_days = sum(1 for x in weekly_activity if x > 0)
+        avg_activity = sum(weekly_activity) / 7
+        variance = sum((x - avg_activity) ** 2 for x in weekly_activity) / 7
+        std_dev = variance ** 0.5
+        # Higher consistency = more active days, lower variance
+        consistency = (active_days / 7 * 50) + (max(0, 50 - std_dev * 10))
+        return min(100, max(0, consistency))
+    
+    @staticmethod
+    def _compute_funnel(status_counts: Dict, total: int) -> List[Dict]:
+        """Compute pipeline funnel data"""
+        stages = [
+            ('applied', 'Applied', '#3B82F6'),
+            ('recruiter_screening', 'Screening', '#8B5CF6'),
+            ('phone_screen', 'Phone', '#06B6D4'),
+            ('technical_screen', 'Technical', '#10B981'),
+            ('coding_challenge', 'Challenge', '#F59E0B'),
+            ('onsite', 'Onsite', '#EF4444'),
+            ('hiring_manager', 'HM Round', '#EC4899'),
+            ('final_round', 'Final', '#6366F1'),
+            ('offer', 'Offer', '#22C55E')
+        ]
+        
+        funnel = []
+        cumulative = total
+        for stage_key, label, color in stages:
+            count = status_counts.get(stage_key, 0)
+            percentage = (count / total * 100) if total > 0 else 0
+            funnel.append({
+                "stage": stage_key,
+                "label": label,
+                "count": count,
+                "percentage": round(percentage, 1),
+                "color": color
+            })
+        return funnel
+    
+    @staticmethod
+    def _compute_trend(current_jobs: List, previous_jobs: List, metric_type: str) -> float:
+        """Compute trend percentage between windows"""
+        def count_metric(jobs, mtype):
+            if mtype == 'response':
+                return sum(1 for j in jobs if j.get('status', 'applied') != 'applied')
+            elif mtype == 'interview':
+                interview_statuses = ['phone_screen', 'technical_screen', 'coding_challenge', 
+                                     'onsite', 'hiring_manager', 'final_round']
+                return sum(1 for j in jobs if j.get('status') in interview_statuses)
+            return len(jobs)
+        
+        current = count_metric(current_jobs, metric_type)
+        previous = count_metric(previous_jobs, metric_type)
+        
+        if previous == 0:
+            return 100 if current > 0 else 0
+        return round((current - previous) / previous * 100, 1)
+    
+    @staticmethod
+    def _get_health_label(score: float) -> str:
+        """Get health label based on score"""
+        if score >= 80:
+            return "Excellent"
+        elif score >= 60:
+            return "Good"
+        elif score >= 40:
+            return "Fair"
+        elif score >= 20:
+            return "Needs Work"
+        return "Critical"
+    
+    @staticmethod
+    def _generate_adaptive_insight(
+        total_jobs: int,
+        current_velocity: int,
+        previous_velocity: int,
+        velocity_change: float,
+        response_rate: float,
+        interview_rate: float,
+        offer_rate: float,
+        weekly_activity: List[int],
+        status_counts: Dict,
+        pipeline_health: float
+    ) -> Dict[str, Any]:
+        """
+        Generate single highest-priority insight using adaptive rule evaluation.
+        Implements insight evolution through maturity stages.
+        """
+        
+        # Define adaptive rules with dynamic weighting
+        rules = []
+        
+        # Calculate behavioral indicators
+        days_since_activity = 0
+        for i, count in enumerate(weekly_activity):
+            if count > 0:
+                days_since_activity = i
+                break
+        else:
+            days_since_activity = 7
+        
+        rejected_count = status_counts.get('rejected', 0)
+        rejection_rate = (rejected_count / total_jobs * 100) if total_jobs > 0 else 0
+        
+        # Rule 1: Inactivity Alert (High urgency)
+        if days_since_activity >= 3:
+            urgency = min(2.0, 1.0 + (days_since_activity - 3) * 0.2)
+            recurrence = days_since_activity / 7
+            rules.append({
+                "id": "inactivity",
+                "maturity": 3,  # Coaching
+                "title": "Resume Your Momentum",
+                "message": f"It's been {days_since_activity} days since your last application. Consistent activity improves your pipeline health by 40%.",
+                "icon": "trending-up",
+                "color": "#F59E0B",
+                "priority_weight": 1.5 + recurrence,
+                "confidence": 0.9,
+                "urgency": urgency,
+                "action": "Add application"
+            })
+        
+        # Rule 2: Declining Velocity (Diagnostic)
+        if velocity_change < -30 and previous_velocity > 0:
+            rules.append({
+                "id": "declining_velocity",
+                "maturity": 2,  # Diagnostic
+                "title": "Velocity Declining",
+                "message": f"Your application rate dropped {abs(velocity_change):.0f}% this week. Consider setting a daily target to maintain momentum.",
+                "icon": "trending-down",
+                "color": "#EF4444",
+                "priority_weight": 1.3,
+                "confidence": 0.85,
+                "urgency": 1.5,
+                "action": "Set goal"
+            })
+        
+        # Rule 3: Low Response Rate (Coaching)
+        if total_jobs >= 5 and response_rate < 20:
+            rules.append({
+                "id": "low_response",
+                "maturity": 3,  # Coaching
+                "title": "Improve Your Response Rate",
+                "message": f"Only {response_rate:.0f}% of applications got responses. Consider tailoring your resume to each role.",
+                "icon": "document-text",
+                "color": "#8B5CF6",
+                "priority_weight": 1.2,
+                "confidence": 0.8,
+                "urgency": 1.2,
+                "action": "Review applications"
+            })
+        
+        # Rule 4: Interview Bottleneck (Diagnostic)
+        if response_rate > 30 and interview_rate < 10:
+            rules.append({
+                "id": "interview_bottleneck",
+                "maturity": 2,  # Diagnostic
+                "title": "Screening Bottleneck Detected",
+                "message": "You're getting responses but few interviews. Focus on strengthening your initial conversations.",
+                "icon": "chatbubbles",
+                "color": "#06B6D4",
+                "priority_weight": 1.4,
+                "confidence": 0.85,
+                "urgency": 1.3,
+                "action": "Prepare talking points"
+            })
+        
+        # Rule 5: High Rejection Rate (Coaching)
+        if rejection_rate > 40:
+            rules.append({
+                "id": "high_rejection",
+                "maturity": 3,  # Coaching
+                "title": "Refine Your Targeting",
+                "message": f"{rejection_rate:.0f}% rejection rate suggests role mismatch. Focus on positions matching your experience level.",
+                "icon": "filter",
+                "color": "#EC4899",
+                "priority_weight": 1.3,
+                "confidence": 0.75,
+                "urgency": 1.2,
+                "action": "Review targets"
+            })
+        
+        # Rule 6: Positive Momentum (Activity)
+        if velocity_change > 30 and current_velocity > 3:
+            rules.append({
+                "id": "positive_momentum",
+                "maturity": 1,  # Activity
+                "title": "Great Momentum!",
+                "message": f"Your activity is up {velocity_change:.0f}% this week. Keep this pace to maximize opportunities.",
+                "icon": "rocket",
+                "color": "#22C55E",
+                "priority_weight": 0.8,
+                "confidence": 0.9,
+                "urgency": 0.8,
+                "action": None
+            })
+        
+        # Rule 7: Interview Success (Predictive)
+        if interview_rate > 20:
+            offer_likelihood = min(95, interview_rate * 2 + pipeline_health * 0.3)
+            rules.append({
+                "id": "interview_success",
+                "maturity": 4,  # Predictive
+                "title": "Strong Interview Pipeline",
+                "message": f"Your {interview_rate:.0f}% interview rate is above average. Current trend suggests {offer_likelihood:.0f}% chance of offer within 30 days.",
+                "icon": "trophy",
+                "color": "#22C55E",
+                "priority_weight": 1.1,
+                "confidence": min(0.9, interview_rate / 30),
+                "urgency": 1.0,
+                "action": "Prepare for offers"
+            })
+        
+        # Rule 8: First Application (Activity)
+        if total_jobs == 0:
+            rules.append({
+                "id": "first_application",
+                "maturity": 1,  # Activity
+                "title": "Start Your Journey",
+                "message": "Add your first job application to begin tracking your progress and unlock insights.",
+                "icon": "add-circle",
+                "color": "#3B82F6",
+                "priority_weight": 2.0,
+                "confidence": 1.0,
+                "urgency": 2.0,
+                "action": "Add application"
+            })
+        
+        # Rule 9: Pipeline Health Warning (Diagnostic)
+        if pipeline_health < 30 and total_jobs > 5:
+            rules.append({
+                "id": "health_warning",
+                "maturity": 2,  # Diagnostic
+                "title": "Pipeline Needs Attention",
+                "message": f"Your pipeline health is {pipeline_health:.0f}/100. Increase activity consistency and follow up on pending applications.",
+                "icon": "warning",
+                "color": "#EF4444",
+                "priority_weight": 1.6,
+                "confidence": 0.85,
+                "urgency": 1.7,
+                "action": "Review pipeline"
+            })
+        
+        # Rule 10: Default insight (Activity)
+        if not rules:
+            rules.append({
+                "id": "keep_going",
+                "maturity": 1,  # Activity
+                "title": "Keep Building",
+                "message": f"You have {total_jobs} applications tracked. Continue adding applications to improve your analytics insights.",
+                "icon": "analytics",
+                "color": "#3B82F6",
+                "priority_weight": 0.5,
+                "confidence": 1.0,
+                "urgency": 0.5,
+                "action": "Add application"
+            })
+        
+        # Select highest priority insight using: FinalScore = priorityWeight * confidenceScore * urgencyFactor
+        best_insight = max(rules, key=lambda r: r['priority_weight'] * r['confidence'] * r['urgency'])
+        
+        return {
+            "id": best_insight['id'],
+            "maturity_level": best_insight['maturity'],
+            "maturity_label": AnalyticsEngine.MATURITY_LEVELS[best_insight['maturity']],
+            "title": best_insight['title'],
+            "message": best_insight['message'],
+            "icon": best_insight['icon'],
+            "color": best_insight['color'],
+            "confidence": round(best_insight['confidence'] * 100),
+            "action": best_insight['action']
+        }
+    
+    @staticmethod
+    def _estimate_offer_probability(
+        status_counts: Dict,
+        total: int,
+        interview_rate: float,
+        transitions: Dict
+    ) -> Dict[str, Any]:
+        """
+        Estimate offer probability with confidence scoring.
+        Confidence affects insight ranking only, NOT probability formula.
+        """
+        if total == 0:
+            return {"probability": 0, "confidence": 0, "label": "No data"}
+        
+        # Base probability from current funnel position
+        weights = {
+            'applied': 5,
+            'recruiter_screening': 15,
+            'phone_screen': 25,
+            'technical_screen': 35,
+            'coding_challenge': 45,
+            'onsite': 60,
+            'hiring_manager': 70,
+            'final_round': 85,
+            'offer': 100
+        }
+        
+        # Calculate weighted probability based on furthest stage reached
+        max_prob = 0
+        active_count = 0
+        for status, count in status_counts.items():
+            if status not in ['rejected', 'withdrawn'] and count > 0:
+                prob = weights.get(status, 5)
+                if prob > max_prob:
+                    max_prob = prob
+                active_count += count
+        
+        # Adjust for interview rate
+        interview_bonus = min(20, interview_rate * 0.5)
+        probability = min(95, max_prob + interview_bonus)
+        
+        # Confidence based on data volume and transition stability
+        data_confidence = min(1.0, total / 10)  # Full confidence at 10+ applications
+        transition_count = sum(transitions.values())
+        stability_confidence = min(1.0, transition_count / 5) if transition_count > 0 else 0.3
+        confidence = (data_confidence * 0.6 + stability_confidence * 0.4) * 100
+        
+        # Label
+        if probability >= 70:
+            label = "High"
+        elif probability >= 40:
+            label = "Moderate"
+        elif probability >= 20:
+            label = "Building"
+        else:
+            label = "Early Stage"
+        
+        return {
+            "probability": round(probability),
+            "confidence": round(confidence),
+            "label": label
+        }
+
+
+@api_router.get("/analytics/summary")
+async def get_analytics_summary(current_user: User = Depends(get_current_user)):
+    """
+    Get comprehensive analytics summary with self-improving insights.
+    All computation is dynamic - no stored intelligence.
+    """
+    try:
+        # Fetch all jobs for user - single query
+        jobs = await db.job_applications.find(
+            {"user_id": current_user.user_id}
+        ).to_list(1000)
+        
+        # Convert ObjectId and compute analytics
+        jobs_list = []
+        for job in jobs:
+            job['_id'] = str(job['_id'])
+            jobs_list.append(job)
+        
+        # Compute analytics using the self-improving engine
+        analytics = AnalyticsEngine.compute_analytics(jobs_list)
+        
+        return analytics
+        
+    except Exception as e:
+        logging.error(f"Analytics computation error: {e}")
+        raise HTTPException(status_code=500, detail=f"Analytics error: {str(e)}")
+
+
 # Data migration endpoint - for importing data from preview to production
 @api_router.post("/admin/import-data")
 async def import_data(
