@@ -261,10 +261,6 @@ class ReminderCreate(BaseModel):
     reminder_date: datetime
     message: str
 
-class UserPreferences(BaseModel):
-    weekly_email: bool
-    monthly_email: bool
-
 class TargetGoals(BaseModel):
     weekly_target: int = 10
     monthly_target: int = 40
