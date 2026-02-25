@@ -2107,6 +2107,7 @@ async def export_csv(current_user: User = Depends(get_current_user)):
         media_type="text/csv",
         headers={"Content-Disposition": "attachment; filename=job_applications.csv"}
     )
+
 # Health check endpoint for production monitoring
 @api_router.get("/health")
 async def health_check():
