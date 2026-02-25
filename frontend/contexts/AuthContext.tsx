@@ -360,15 +360,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const handleAuthRedirect = async (url: string) => {
     try {
+      console.log('handleAuthRedirect called with URL:', url);
       const sessionId = extractSessionId(url);
-      if (!sessionId) return;
+      console.log('Extracted session ID:', sessionId);
+      if (!sessionId) {
+        console.log('No session ID found in URL');
+        return;
+      }
 
+      console.log('Exchanging session at:', `${BACKEND_URL}/api/auth/exchange-session?session_id=${sessionId}`);
       const response = await fetch(`${BACKEND_URL}/api/auth/exchange-session?session_id=${sessionId}`, {
         method: 'POST'
       });
 
+      console.log('Exchange response status:', response.status);
+      
       if (response.ok) {
         const data = await response.json();
+        console.log('Exchange response data:', data);
         const token = data.session_token;
         
         await AsyncStorage.setItem('session_token', token);
@@ -378,6 +387,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         
         // Prompt for biometric after successful login
         await promptBiometricSetup();
+      } else {
+        const errorText = await response.text();
+        console.error('Exchange failed:', response.status, errorText);
       }
     } catch (error) {
       console.error('Auth redirect error:', error);
