@@ -348,7 +348,7 @@ export default function AnalyticsScreen() {
   };
 
   // Insight Card Component
-  const InsightCard = ({ insight, onAddPress }: { insight: Insight; onAddPress: () => void }) => {
+  const InsightCard = ({ insight }: { insight: Insight }) => {
     const maturityBadgeColors: Record<string, string> = {
       activity: '#3B82F6',
       diagnostic: '#8B5CF6',
@@ -382,7 +382,7 @@ export default function AnalyticsScreen() {
           {insight.message}
         </Text>
         
-        {/* Footer with confidence and action */}
+        {/* Footer with confidence only */}
         <View style={styles.insightFooter}>
           <View style={styles.confidenceContainer}>
             <Ionicons name="shield-checkmark" size={14} color={colors.textSecondary} />
@@ -390,13 +390,6 @@ export default function AnalyticsScreen() {
               {insight.confidence}% confidence
             </Text>
           </View>
-          {insight.action && (
-            <TouchableOpacity onPress={onAddPress}>
-              <Text style={[styles.insightActionText, { color: colors.primary }]}>
-                {insight.action}
-              </Text>
-            </TouchableOpacity>
-          )}
         </View>
       </View>
     );
