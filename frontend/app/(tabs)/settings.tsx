@@ -132,21 +132,6 @@ export default function SettingsScreen() {
     country.toLowerCase().includes(countrySearch.toLowerCase())
   );
 
-  // Email validation function
-  const validateEmail = (email: string): boolean => {
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    return emailRegex.test(email);
-  };
-
-  const handleEmailChange = (text: string) => {
-    setCommunicationEmail(text);
-    if (text && !validateEmail(text)) {
-      setEmailError('Please enter a valid email address');
-    } else {
-      setEmailError('');
-    }
-  };
-
   // Handle domicile country selection
   const handleDomicileCountrySelect = async (country: string) => {
     setDomicileCountry(country);
@@ -171,40 +156,6 @@ export default function SettingsScreen() {
     } catch (error) {
       console.error('Error updating domicile country:', error);
       Alert.alert('Error', 'Failed to update domicile country.');
-    }
-  };
-
-  const handleEmailSave = async () => {
-    if (!communicationEmail.trim()) {
-      setEmailError('Email is required');
-      return;
-    }
-    if (!validateEmail(communicationEmail)) {
-      setEmailError('Please enter a valid email address');
-      return;
-    }
-    
-    try {
-      const response = await fetch(`${BACKEND_URL}/api/user/communication-email`, {
-        method: 'PUT',
-        headers: {
-          'Authorization': `Bearer ${sessionToken}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ communication_email: communicationEmail.trim() }),
-      });
-      
-      if (response.ok) {
-        await refreshUser();
-        setIsEditingEmail(false);
-        setEmailError('');
-        Alert.alert('Success', 'Communication email updated successfully');
-      } else {
-        Alert.alert('Error', 'Failed to update communication email.');
-      }
-    } catch (error) {
-      console.error('Error updating communication email:', error);
-      Alert.alert('Error', 'Failed to update communication email.');
     }
   };
 
