@@ -754,9 +754,9 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   insightIconContainer: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -770,13 +770,13 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   insightTitle: {
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: '700',
-    marginBottom: 8,
   },
   insightMessage: {
     fontSize: 14,
     lineHeight: 20,
+    marginTop: 12,
     marginBottom: 12,
   },
   insightFooter: {
