@@ -1489,11 +1489,13 @@ export default function MyJobsScreen() {
           Alert.alert('Success', editingJob ? 'Job updated successfully' : 'Job added successfully');
         }
       } else {
-        Alert.alert('Error', 'Failed to save job application');
+        const errorText = await response.text();
+        console.error('API Error Response:', response.status, errorText);
+        Alert.alert('Error', `Failed to save job application: ${response.status}`);
       }
     } catch (error) {
       console.error('Error saving job:', error);
-      Alert.alert('Error', 'Failed to save job application');
+      Alert.alert('Error', 'Failed to save job application: Network error');
     }
   };
 
