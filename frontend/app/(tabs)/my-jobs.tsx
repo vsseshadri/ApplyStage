@@ -2235,13 +2235,20 @@ export default function MyJobsScreen() {
               onPress={() => {
                 setEditingJob(null);
                 setFormData({
-                  company_name: '', position: '', status: 'applied', location: '', country: userCountry || 'United States',
-                  state: '', city: '', notes: '', job_url: '', date_applied: new Date().toISOString().split('T')[0],
-                  salary_min: '', salary_max: '', salary_currency: '', work_mode: 'remote', job_type: 'full_time',
-                  contact_person: '', contact_email: '', next_steps: '', skills_required: '', upcoming_schedule: '',
-                  upcoming_schedule_time: '', interview_type: '', time_zone: '', years_of_experience: '',
-                  resume_used: '', cover_letter: '', priority_level: 'medium', application_method: '',
-                  job_description: '', benefits: '',
+                  company_name: '',
+                  position: '',
+                  min_salary: '',
+                  max_salary: '',
+                  work_mode: 'remote',
+                  job_url: '',
+                  recruiter_email: '',
+                  status: 'applied',
+                  job_type: '',
+                  upcoming_stage: '',
+                  upcoming_schedule: '',
+                  notes: '',
+                  follow_up_days: '',
+                  is_priority: false,
                 });
                 setModalVisible(true);
               }}
