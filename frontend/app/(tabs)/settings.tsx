@@ -877,6 +877,9 @@ export default function SettingsScreen() {
             </View>
           </TouchableOpacity>
           
+          {/* Preferences Label */}
+          <Text style={styles.notificationPrefsLabel}>Preferences</Text>
+          
           {/* Preferred Display Name */}
           <View style={styles.displayNameContainer}>
             <Text style={styles.displayNameLabel}>Preferred Display Name</Text>
