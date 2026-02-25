@@ -3053,10 +3053,11 @@ class InsightRule:
 class AnalyticsEngine:
     """Self-improving analytics engine using adaptive rule evaluation"""
     
-    # Pipeline stages in order
+    # Pipeline stages in order - matching Application Status stages from my-jobs
     PIPELINE_STAGES = [
-        'applied', 'recruiter_screening', 'phone_screen', 'technical_screen',
-        'coding_challenge', 'onsite', 'hiring_manager', 'final_round', 'offer'
+        'applied', 'recruiter_screening', 'phone_screen', 'coding_round_1', 
+        'coding_round_2', 'system_design', 'behavioural', 'hiring_manager', 
+        'final_round', 'offer', 'rejected', 'ghosted'
     ]
     
     # Insight maturity levels
