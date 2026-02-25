@@ -12,10 +12,6 @@ import uuid
 from datetime import datetime, timezone, timedelta
 import httpx
 import asyncio
-from apscheduler.schedulers.asyncio import AsyncIOScheduler
-from apscheduler.triggers.cron import CronTrigger
-# from sendgrid import SendGridAPIClient
-# from sendgrid.helpers.mail import Mail
 import csv
 import io
 
@@ -25,9 +21,6 @@ load_dotenv(ROOT_DIR / '.env')
 mongo_url = os.environ['MONGO_URL']
 client = AsyncIOMotorClient(mongo_url)
 db = client[os.environ['DB_NAME']]
-
-# Initialize the scheduler
-scheduler = AsyncIOScheduler()
 
 # Scheduled report generation functions
 async def generate_weekly_reports_for_all_users():
