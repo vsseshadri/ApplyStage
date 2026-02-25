@@ -1463,6 +1463,7 @@ export default function DashboardScreen() {
           }}
           stage={selectedInterview.stage}
           company={selectedInterview.company}
+          position={selectedInterview.position}
           jobId={selectedInterview.jobId}
           daysUntil={selectedInterview.daysUntil}
           colors={colors}
