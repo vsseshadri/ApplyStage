@@ -983,6 +983,20 @@ export default function SettingsScreen() {
           </View>
         </View>
 
+        {/* Help and Feedback Section */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Support</Text>
+          <View style={styles.card}>
+            <TouchableOpacity style={styles.feedbackRow} onPress={handleHelpAndFeedback}>
+              <View style={styles.feedbackLeft}>
+                <Ionicons name="mail-outline" size={22} color={colors.primary} />
+                <Text style={styles.feedbackText}>Help and Feedback</Text>
+              </View>
+              <Ionicons name="chevron-forward" size={20} color={colors.textSecondary} />
+            </TouchableOpacity>
+          </View>
+        </View>
+
         {/* Logout Button */}
         <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
           <Text style={styles.logoutButtonText}>Logout</Text>
