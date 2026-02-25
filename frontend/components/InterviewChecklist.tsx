@@ -1,13 +1,16 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { View, Text, TouchableOpacity, Modal, StyleSheet, ScrollView, ActivityIndicator, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import Constants from 'expo-constants';
 
-interface ChecklistItem {
+// ============================================================================
+// TYPES & INTERFACES
+// ============================================================================
+
+interface FocusArea {
   id: string;
   text: string;
   category: string;
-  company_specific?: boolean;
 }
 
 interface InterviewChecklistProps {
@@ -15,6 +18,7 @@ interface InterviewChecklistProps {
   onClose: () => void;
   stage: string;
   company: string;
+  position: string;
   jobId: string;
   daysUntil: number;
   colors: {
@@ -28,158 +32,534 @@ interface InterviewChecklistProps {
   sessionToken: string;
 }
 
-const getBackendUrl = (): string => {
-  const configUrl = Constants.expoConfig?.extra?.EXPO_PUBLIC_BACKEND_URL;
-  const envUrl = process.env.EXPO_PUBLIC_BACKEND_URL;
-  return configUrl || envUrl || '';
+// ============================================================================
+// CONSTANTS & CONFIGURATION
+// ============================================================================
+
+const EMERGENT_LLM_KEY = 'sk-emergent-66a2f7f8f020eDaA7B';
+const LLM_API_URL = 'https://api.openai.com/v1/chat/completions';
+const LLM_TIMEOUT_MS = 8000; // 8 second timeout
+const CACHE_TTL_MS = 5 * 60 * 1000; // 5 minute cache
+
+// Stage display names mapping
+const STAGE_DISPLAY_NAMES: { [key: string]: string } = {
+  recruiter_screening: 'Recruiter Screening',
+  phone_screen: 'Phone Screen',
+  technical_screen: 'Technical Screen',
+  coding_round_1: 'Coding Round 1',
+  coding_round_2: 'Coding Round 2',
+  system_design: 'System Design',
+  behavioural: 'Behavioral',
+  hiring_manager: 'Hiring Manager',
+  final_round: 'Final Round',
+  onsite: 'Onsite',
+  offer: 'Offer Negotiation',
+  clinical: 'Clinical Interview',
+  case_study: 'Case Study',
 };
+
+// Role seniority detection
+const SENIORITY_KEYWORDS = {
+  principal: ['principal', 'staff', 'distinguished', 'fellow', 'architect'],
+  senior: ['senior', 'sr.', 'sr ', 'lead', 'manager', 'director', 'vp', 'head'],
+  mid: ['mid', 'intermediate', 'level ii', 'ii'],
+  junior: ['junior', 'jr.', 'jr ', 'associate', 'entry', 'intern', 'graduate'],
+};
+
+// Role family detection
+const ROLE_FAMILIES = {
+  engineering: ['engineer', 'developer', 'programmer', 'architect', 'devops', 'sre', 'platform'],
+  data: ['data scientist', 'data analyst', 'ml engineer', 'machine learning', 'ai ', 'analytics'],
+  product: ['product manager', 'product owner', 'pm ', 'program manager'],
+  design: ['designer', 'ux', 'ui', 'user experience', 'user interface'],
+  healthcare: ['nurse', 'physician', 'doctor', 'clinician', 'medical', 'healthcare', 'rn ', 'np '],
+  finance: ['analyst', 'accountant', 'finance', 'investment', 'banking', 'trader'],
+  sales: ['sales', 'account executive', 'business development', 'bd ', 'ae '],
+  marketing: ['marketing', 'growth', 'brand', 'content', 'seo', 'sem'],
+  legal: ['lawyer', 'attorney', 'legal', 'counsel', 'paralegal'],
+  hr: ['recruiter', 'hr ', 'human resources', 'talent', 'people ops'],
+};
+
+// ============================================================================
+// IN-MEMORY CACHE (Session Scope)
+// ============================================================================
+
+interface CacheEntry {
+  topics: FocusArea[];
+  timestamp: number;
+}
+
+const topicCache: Map<string, CacheEntry> = new Map();
+
+const getCacheKey = (stage: string, position: string): string => {
+  return `${stage.toLowerCase()}_${position.toLowerCase().replace(/\s+/g, '_')}`;
+};
+
+const getCachedTopics = (stage: string, position: string): FocusArea[] | null => {
+  const key = getCacheKey(stage, position);
+  const entry = topicCache.get(key);
+  
+  if (entry && Date.now() - entry.timestamp < CACHE_TTL_MS) {
+    return entry.topics;
+  }
+  
+  return null;
+};
+
+const setCachedTopics = (stage: string, position: string, topics: FocusArea[]): void => {
+  const key = getCacheKey(stage, position);
+  topicCache.set(key, {
+    topics,
+    timestamp: Date.now(),
+  });
+};
+
+// ============================================================================
+// ROLE & SENIORITY DETECTION
+// ============================================================================
+
+const detectSeniority = (position: string): string => {
+  const lower = position.toLowerCase();
+  
+  for (const [level, keywords] of Object.entries(SENIORITY_KEYWORDS)) {
+    if (keywords.some(kw => lower.includes(kw))) {
+      return level;
+    }
+  }
+  
+  return 'mid'; // Default to mid-level
+};
+
+const detectRoleFamily = (position: string): string => {
+  const lower = position.toLowerCase();
+  
+  for (const [family, keywords] of Object.entries(ROLE_FAMILIES)) {
+    if (keywords.some(kw => lower.includes(kw))) {
+      return family;
+    }
+  }
+  
+  return 'engineering'; // Default to engineering
+};
+
+// ============================================================================
+// DETERMINISTIC FALLBACK HEURISTIC GENERATOR
+// ============================================================================
+
+const generateFallbackTopics = (stage: string, position: string, company: string): FocusArea[] => {
+  const seniority = detectSeniority(position);
+  const roleFamily = detectRoleFamily(position);
+  const stageLower = stage.toLowerCase();
+  
+  // Base topics by stage
+  const stageTopics: { [key: string]: string[] } = {
+    recruiter_screening: [
+      'Prepare concise career summary (60 seconds)',
+      'Research company mission and recent news',
+      'Clarify salary expectations with market data',
+      'Prepare questions about role and team structure',
+      'Review job description for key requirements',
+      'Practice explaining your motivation for this role',
+    ],
+    phone_screen: [
+      'Review your resume and be ready to discuss any point',
+      'Prepare "Why this company?" answer',
+      'Research interviewer on LinkedIn',
+      'Have 3-4 STAR stories ready',
+      'Test your phone/video setup in a quiet space',
+      'Prepare thoughtful questions about the role',
+    ],
+    technical_screen: [
+      'Review core data structures and algorithms',
+      'Practice 2-3 medium problems with time limit',
+      'Be ready to explain your thought process aloud',
+      'Review Big O complexity analysis',
+      'Test your coding environment setup',
+      'Prepare to ask clarifying questions first',
+    ],
+    coding_round_1: [
+      'Practice problem solving with time constraints',
+      'Review common patterns: two pointers, sliding window',
+      'Practice debugging and edge case handling',
+      'Communicate your approach before coding',
+      'Test with multiple inputs including edge cases',
+      'Review language-specific syntax and APIs',
+    ],
+    coding_round_2: [
+      'Focus on optimization and efficiency',
+      'Review advanced data structures: heaps, tries, graphs',
+      'Practice follow-up questions on solutions',
+      'Prepare for system design elements in coding',
+      'Review recursion and dynamic programming',
+      'Practice clean, readable code style',
+    ],
+    system_design: [
+      'Review distributed systems fundamentals',
+      'Practice capacity estimation calculations',
+      'Know trade-offs: SQL vs NoSQL, caching strategies',
+      'Prepare to discuss scalability patterns',
+      'Review load balancing and database sharding',
+      'Practice drawing clear system diagrams',
+    ],
+    behavioural: [
+      'Prepare 5+ STAR stories covering different themes',
+      'Include stories about conflict resolution',
+      'Have examples of leadership and initiative',
+      'Prepare a story about learning from failure',
+      'Align stories with company values',
+      'Practice timing (2-3 minutes per story)',
+    ],
+    hiring_manager: [
+      'Research the hiring manager background',
+      'Prepare questions about team goals and challenges',
+      'Have a 30-60-90 day plan outline',
+      'Be ready to discuss management style',
+      'Prepare examples of cross-team collaboration',
+      'Show understanding of business context',
+    ],
+    final_round: [
+      'Review all previous round feedback if available',
+      'Research executive team and company strategy',
+      'Prepare high-level vision for your contribution',
+      'Have strategic questions ready',
+      'Be ready to discuss compensation expectations',
+      'Show long-term commitment and growth mindset',
+    ],
+    offer: [
+      'Research market rates (Levels.fyi, Glassdoor)',
+      'Understand total compensation components',
+      'Clarify equity details and vesting schedule',
+      'Ask about benefits and PTO policies',
+      'Prepare negotiation points with justification',
+      'Know your walk-away number',
+    ],
+    clinical: [
+      'Review patient care protocols and standards',
+      'Prepare clinical scenario responses',
+      'Know relevant compliance and safety guidelines',
+      'Review pharmacology and treatment protocols',
+      'Prepare examples of patient outcomes',
+      'Be ready to discuss ethical decision-making',
+    ],
+    case_study: [
+      'Review framework for case analysis',
+      'Practice market sizing and estimation',
+      'Prepare structured problem-solving approach',
+      'Be ready to make recommendations with data',
+      'Practice presenting findings clearly',
+      'Prepare follow-up questions on your analysis',
+    ],
+  };
+  
+  // Get base topics for the stage
+  let topics = stageTopics[stageLower] || stageTopics.phone_screen;
+  
+  // Modify based on seniority for relevant stages
+  if (seniority === 'principal' || seniority === 'senior') {
+    if (stageLower === 'system_design') {
+      topics = [
+        'Focus on architecture trade-offs at scale',
+        'Prepare examples of system design decisions you\'ve made',
+        'Review cross-functional system dependencies',
+        'Be ready to discuss organizational impact of design',
+        'Prepare to lead the design discussion',
+        'Show depth in specific technical domains',
+      ];
+    } else if (stageLower === 'behavioural') {
+      topics = [
+        'Prepare stories demonstrating technical leadership',
+        'Include examples of mentoring and team growth',
+        'Have a story about driving organizational change',
+        'Prepare examples of strategic decision-making',
+        'Show cross-team influence and collaboration',
+        'Demonstrate business impact of your work',
+      ];
+    }
+  }
+  
+  // Modify based on role family
+  if (roleFamily === 'healthcare' && stageLower !== 'clinical') {
+    topics = topics.map((t, i) => {
+      if (i === 0) return 'Review patient care scenarios relevant to the role';
+      if (i === 1) return 'Prepare examples of clinical decision-making';
+      return t;
+    });
+  } else if (roleFamily === 'data' && stageLower === 'technical_screen') {
+    topics = [
+      'Review SQL and data manipulation techniques',
+      'Prepare to discuss ML models and evaluation metrics',
+      'Review statistics fundamentals and A/B testing',
+      'Practice data analysis case studies',
+      'Be ready to discuss your data pipeline experience',
+      'Prepare visualization and storytelling examples',
+    ];
+  } else if (roleFamily === 'product' && stageLower === 'behavioural') {
+    topics = [
+      'Prepare product launches and impact stories',
+      'Have examples of stakeholder management',
+      'Show data-driven decision making examples',
+      'Prepare stories about prioritization trade-offs',
+      'Include cross-functional collaboration examples',
+      'Demonstrate customer empathy in your stories',
+    ];
+  }
+  
+  // Add company-specific research as first item if company provided
+  if (company && company.trim()) {
+    topics = [
+      `Research ${company}'s products, culture, and recent news`,
+      ...topics.slice(0, 5),
+    ];
+  }
+  
+  // Convert to FocusArea format with IDs
+  return topics.map((text, index) => ({
+    id: `focus_${index + 1}`,
+    text,
+    category: getCategoryForTopic(text),
+  }));
+};
+
+const getCategoryForTopic = (text: string): string => {
+  const lower = text.toLowerCase();
+  
+  if (lower.includes('research') || lower.includes('review')) return 'research';
+  if (lower.includes('practice') || lower.includes('prepare')) return 'practice';
+  if (lower.includes('story') || lower.includes('example')) return 'stories';
+  if (lower.includes('question')) return 'questions';
+  if (lower.includes('technical') || lower.includes('data') || lower.includes('system')) return 'technical';
+  if (lower.includes('communication') || lower.includes('explain')) return 'communication';
+  
+  return 'preparation';
+};
+
+// ============================================================================
+// LLM API INTEGRATION
+// ============================================================================
+
+const generateDynamicTopics = async (
+  stage: string,
+  position: string,
+  company: string
+): Promise<FocusArea[] | null> => {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), LLM_TIMEOUT_MS);
+  
+  const stageDisplay = STAGE_DISPLAY_NAMES[stage.toLowerCase()] || stage.replace(/_/g, ' ');
+  
+  const prompt = `Generate exactly 6 concise interview preparation topics for a ${position} interview at the ${stageDisplay} stage${company ? ` at ${company}` : ''}.
+
+Requirements:
+- Topics must be practical, role-specific, and actionable
+- Each topic should be one clear sentence (max 60 characters)
+- Focus on what will make the candidate successful
+- Consider the seniority level implied by the job title
+- No explanations, just the topics
+
+Return ONLY a JSON array of 6 strings, nothing else.`;
+
+  try {
+    const response = await fetch(LLM_API_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${EMERGENT_LLM_KEY}`,
+      },
+      body: JSON.stringify({
+        model: 'gpt-4o-mini',
+        messages: [
+          {
+            role: 'system',
+            content: 'You are an expert career coach. Return ONLY valid JSON arrays of strings.',
+          },
+          {
+            role: 'user',
+            content: prompt,
+          },
+        ],
+        max_tokens: 300,
+        temperature: 0.7,
+      }),
+      signal: controller.signal,
+    });
+    
+    clearTimeout(timeoutId);
+    
+    if (!response.ok) {
+      console.log('[PrepChecklist] LLM API error:', response.status);
+      return null;
+    }
+    
+    const data = await response.json();
+    const content = data.choices?.[0]?.message?.content?.trim();
+    
+    if (!content) {
+      return null;
+    }
+    
+    // Parse JSON response
+    let topics: string[];
+    try {
+      // Handle both raw array and markdown-wrapped responses
+      const jsonMatch = content.match(/\[[\s\S]*\]/);
+      if (jsonMatch) {
+        topics = JSON.parse(jsonMatch[0]);
+      } else {
+        return null;
+      }
+    } catch (parseError) {
+      console.log('[PrepChecklist] JSON parse error:', parseError);
+      return null;
+    }
+    
+    // Validate and convert to FocusArea format
+    if (!Array.isArray(topics) || topics.length < 4) {
+      return null;
+    }
+    
+    return topics.slice(0, 6).map((text, index) => ({
+      id: `ai_${index + 1}`,
+      text: typeof text === 'string' ? text : String(text),
+      category: getCategoryForTopic(typeof text === 'string' ? text : ''),
+    }));
+    
+  } catch (error: any) {
+    clearTimeout(timeoutId);
+    
+    if (error.name === 'AbortError') {
+      console.log('[PrepChecklist] LLM request timed out');
+    } else {
+      console.log('[PrepChecklist] LLM error:', error.message);
+    }
+    
+    return null;
+  }
+};
+
+// ============================================================================
+// MAIN COMPONENT
+// ============================================================================
 
 const InterviewChecklist: React.FC<InterviewChecklistProps> = ({
   visible,
   onClose,
   stage,
   company,
+  position,
   jobId,
   daysUntil,
   colors,
   sessionToken,
 }) => {
-  const [items, setItems] = useState<ChecklistItem[]>([]);
+  const [focusAreas, setFocusAreas] = useState<FocusArea[]>([]);
   const [loading, setLoading] = useState(true);
-
-  const BACKEND_URL = getBackendUrl();
-
+  const [isAiGenerated, setIsAiGenerated] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
+  const mountedRef = useRef(true);
+  
+  // Track component mount status
+  useEffect(() => {
+    mountedRef.current = true;
+    return () => {
+      mountedRef.current = false;
+    };
+  }, []);
+  
+  // Fetch topics when modal opens
   useEffect(() => {
     if (visible && stage) {
-      fetchChecklist();
+      loadTopics(false);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [visible, stage, company]);
-
-  const fetchChecklist = async () => {
-    // Immediately show local checklist for instant response (no loading state)
-    // This provides near-zero latency user experience
-    const localChecklist = getStageSpecificChecklist(stage, company);
-    setItems(localChecklist);
-    setLoading(false);
-    
-    // Note: The local checklist is comprehensive and stage-specific
-    // No need for additional API call as the static checklists are high quality
-  };
-
-  // Comprehensive stage-specific checklist items
-  const getStageSpecificChecklist = (stg: string, comp: string): ChecklistItem[] => {
-    const stageChecklists: { [key: string]: ChecklistItem[] } = {
-      // Recruiter Screening
-      recruiter_screening: [
-        { id: "rs1", text: "Prepare 60-second elevator pitch about yourself", category: "pitch" },
-        { id: "rs2", text: "Review job description and match your skills", category: "preparation" },
-        { id: "rs3", text: "Research company mission, values, and culture", category: "research" },
-        { id: "rs4", text: "Prepare salary expectations (check Glassdoor/Levels.fyi)", category: "compensation" },
-        { id: "rs5", text: "Have 3 questions ready about role and team", category: "questions" }
-      ],
-      // Phone Screen
-      phone_screen: [
-        { id: "ps1", text: "Review your resume - be ready to discuss any point", category: "preparation" },
-        { id: "ps2", text: "Prepare 'Why this company?' and 'Why this role?' answers", category: "pitch" },
-        { id: "ps3", text: "Research recent company news and announcements", category: "research" },
-        { id: "ps4", text: "Have 3-4 STAR stories ready (Situation, Task, Action, Result)", category: "stories" },
-        { id: "ps5", text: "Test your phone/video setup in a quiet space", category: "preparation" }
-      ],
-      // Technical Screen
-      technical_screen: [
-        { id: "ts1", text: "Review data structures: arrays, trees, graphs, hash maps", category: "technical" },
-        { id: "ts2", text: "Practice 2-3 LeetCode medium problems with time limit", category: "practice" },
-        { id: "ts3", text: "Be ready to explain your thought process out loud", category: "communication" },
-        { id: "ts4", text: "Review Big O notation and complexity analysis", category: "technical" },
-        { id: "ts5", text: "Test screen sharing and coding environment", category: "preparation" }
-      ],
-      // System Design
-      system_design: [
-        { id: "sd1", text: "Review system design fundamentals (CAP theorem, scaling)", category: "architecture" },
-        { id: "sd2", text: "Practice designing: URL shortener, Twitter feed, Chat app", category: "practice" },
-        { id: "sd3", text: "Know trade-offs: SQL vs NoSQL, caching strategies", category: "technical" },
-        { id: "sd4", text: "Be ready for capacity estimation and back-of-envelope math", category: "optimization" },
-        { id: "sd5", text: "Prepare to discuss load balancing and database sharding", category: "architecture" }
-      ],
-      // Behavioral
-      behavioral: [
-        { id: "bh1", text: "Prepare 5 STAR stories: leadership, conflict, failure, success", category: "stories" },
-        { id: "bh2", text: "Have examples of cross-team collaboration", category: "stories" },
-        { id: "bh3", text: "Prepare a story about receiving difficult feedback", category: "stories" },
-        { id: "bh4", text: "Research company values - align your stories", category: "research" },
-        { id: "bh5", text: "Practice out loud - time yourself (2-3 min per story)", category: "practice" }
-      ],
-      // Hiring Manager
-      hiring_manager: [
-        { id: "hm1", text: "Research the hiring manager on LinkedIn", category: "research" },
-        { id: "hm2", text: "Prepare questions about team structure and goals", category: "questions" },
-        { id: "hm3", text: "Have a 30-60-90 day plan outline ready", category: "preparation" },
-        { id: "hm4", text: "Be ready to discuss your management/leadership style", category: "stories" },
-        { id: "hm5", text: "Prepare examples of mentoring or team building", category: "stories" }
-      ],
-      // Onsite
-      onsite: [
-        { id: "os1", text: "Get 8 hours of sleep the night before", category: "wellness" },
-        { id: "os2", text: "Review all interviewers on LinkedIn", category: "research" },
-        { id: "os3", text: "Prepare different questions for each interviewer", category: "questions" },
-        { id: "os4", text: "Plan your outfit and travel/login logistics", category: "preparation" },
-        { id: "os5", text: "Bring water, snacks, and copies of your resume", category: "preparation" }
-      ],
-      // Final Round
-      final_round: [
-        { id: "fr1", text: "Review feedback from previous rounds (if available)", category: "preparation" },
-        { id: "fr2", text: "Research executive team and company strategy", category: "research" },
-        { id: "fr3", text: "Prepare high-level vision for your contribution", category: "pitch" },
-        { id: "fr4", text: "Have thoughtful strategic questions ready", category: "questions" },
-        { id: "fr5", text: "Be prepared to discuss compensation expectations", category: "compensation" }
-      ],
-      // Offer Stage
-      offer: [
-        { id: "of1", text: "Research market rates on Levels.fyi, Glassdoor, Blind", category: "compensation" },
-        { id: "of2", text: "Ask about health insurance, dental, vision coverage", category: "compensation" },
-        { id: "of3", text: "Clarify 401k match percentage and vesting schedule", category: "compensation" },
-        { id: "of4", text: "Understand equity/RSU details: vesting, refresh grants", category: "compensation" },
-        { id: "of5", text: "Ask about PTO, remote work policy, signing bonus", category: "compensation" }
-      ]
-    };
-
-    // Get stage-specific items or default to phone_screen
-    let items = stageChecklists[stg] || stageChecklists.phone_screen;
-    
-    // Add company-specific research item if company is provided
-    if (comp) {
-      const companyItem: ChecklistItem = { 
-        id: "ctx1", 
-        text: `Research ${comp}'s recent news, products, and culture`, 
-        category: "research", 
-        company_specific: true 
-      };
-      items = [companyItem, ...items.slice(0, 4)];
+  }, [visible, stage, position]);
+  
+  const loadTopics = async (forceRefresh: boolean) => {
+    if (!forceRefresh) {
+      // Check cache first
+      const cached = getCachedTopics(stage, position);
+      if (cached) {
+        setFocusAreas(cached);
+        setIsAiGenerated(true);
+        setLoading(false);
+        return;
+      }
     }
     
-    return items;
+    setLoading(true);
+    
+    // Immediately show fallback for instant perceived response
+    const fallbackTopics = generateFallbackTopics(stage, position, company);
+    setFocusAreas(fallbackTopics);
+    setIsAiGenerated(false);
+    setLoading(false);
+    
+    // Try to get AI-generated topics in background
+    const aiTopics = await generateDynamicTopics(stage, position, company);
+    
+    if (mountedRef.current && aiTopics && aiTopics.length >= 4) {
+      setFocusAreas(aiTopics);
+      setIsAiGenerated(true);
+      setCachedTopics(stage, position, aiTopics);
+    }
   };
-
+  
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    
+    // Clear cache for this combination
+    const key = getCacheKey(stage, position);
+    topicCache.delete(key);
+    
+    // Try AI generation first
+    const aiTopics = await generateDynamicTopics(stage, position, company);
+    
+    if (mountedRef.current) {
+      if (aiTopics && aiTopics.length >= 4) {
+        setFocusAreas(aiTopics);
+        setIsAiGenerated(true);
+        setCachedTopics(stage, position, aiTopics);
+      } else {
+        // Regenerate fallback with slight randomization
+        const fallbackTopics = generateFallbackTopics(stage, position, company);
+        setFocusAreas(fallbackTopics);
+        setIsAiGenerated(false);
+      }
+      setRefreshing(false);
+    }
+  };
+  
   const formatStageName = (s: string): string => {
-    return s.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+    return STAGE_DISPLAY_NAMES[s.toLowerCase()] || s.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
   };
-
-  // Fixed: Handle NaN and invalid daysUntil values - return null to hide badge entirely
+  
   const getUrgencyLabel = () => {
     const days = typeof daysUntil === 'number' && !isNaN(daysUntil) ? daysUntil : null;
     
-    if (days === null) return null; // Don't show badge if no valid date
+    if (days === null) return null;
     if (days === 0) return { text: 'TODAY', color: '#EF4444' };
     if (days === 1) return { text: 'TOMORROW', color: '#F59E0B' };
-    if (days < 0) return null; // Don't show badge for past dates
+    if (days < 0) return null;
     return { text: `In ${days} days`, color: colors.primary };
   };
-
+  
   const urgency = getUrgencyLabel();
-
+  
+  // Category icons mapping
+  const getCategoryIcon = (category: string): string => {
+    const icons: { [key: string]: string } = {
+      research: 'search',
+      practice: 'fitness',
+      stories: 'book',
+      questions: 'help-circle',
+      technical: 'code-slash',
+      communication: 'chatbubbles',
+      preparation: 'clipboard',
+    };
+    return icons[category] || 'checkmark-circle';
+  };
+  
   if (!visible) return null;
-
+  
   return (
     <Modal
       visible={visible}
@@ -190,53 +570,126 @@ const InterviewChecklist: React.FC<InterviewChecklistProps> = ({
       <View style={styles.overlay}>
         <TouchableOpacity style={styles.backdrop} activeOpacity={1} onPress={onClose} />
         
-        {/* Simple Card Overlay */}
+        {/* Main Card */}
         <View style={[styles.card, { backgroundColor: colors.card }]}>
           {/* Header */}
           <View style={styles.header}>
             <View style={styles.headerLeft}>
-              <Text style={[styles.companyName, { color: colors.text }]}>{company}</Text>
-              <Text style={[styles.stageName, { color: colors.textSecondary }]}>
-                {formatStageName(stage)} Interview
+              <Text style={[styles.title, { color: colors.text }]}>
+                Focus Areas for This Stage
               </Text>
+              <View style={styles.headerMeta}>
+                <Text style={[styles.stageName, { color: colors.primary }]}>
+                  {formatStageName(stage)}
+                </Text>
+                {position && (
+                  <Text style={[styles.positionName, { color: colors.textSecondary }]}>
+                    • {position}
+                  </Text>
+                )}
+              </View>
+            </View>
+            <TouchableOpacity 
+              onPress={onClose}
+              style={styles.closeButton}
+              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+            >
+              <Ionicons name="close" size={24} color={colors.textSecondary} />
+            </TouchableOpacity>
+          </View>
+          
+          {/* Company & Urgency Bar */}
+          {(company || urgency) && (
+            <View style={[styles.metaBar, { borderBottomColor: colors.border }]}>
+              {company && (
+                <View style={styles.companyTag}>
+                  <Ionicons name="business-outline" size={14} color={colors.textSecondary} />
+                  <Text style={[styles.companyText, { color: colors.textSecondary }]}>
+                    {company}
+                  </Text>
+                </View>
+              )}
               {urgency && (
                 <View style={[styles.urgencyBadge, { backgroundColor: urgency.color + '20' }]}>
-                  <Text style={[styles.urgencyText, { color: urgency.color }]}>{urgency.text}</Text>
+                  <Text style={[styles.urgencyText, { color: urgency.color }]}>
+                    {urgency.text}
+                  </Text>
                 </View>
               )}
             </View>
-            <TouchableOpacity onPress={onClose} style={styles.closeBtn}>
-              <Ionicons name="close-circle" size={28} color={colors.textSecondary} />
-            </TouchableOpacity>
-          </View>
-
-          {/* Divider - reduced spacing */}
-          <View style={[styles.divider, { backgroundColor: colors.border }]} />
-
-          {/* Title - left aligned, no icon */}
-          <Text style={[styles.title, { color: colors.text }]}>Suggested Prep Checklist</Text>
-
-          {/* Content */}
-          {loading ? (
-            <View style={styles.loadingContainer}>
-              <ActivityIndicator size="large" color={colors.primary} />
-              <Text style={[styles.loadingText, { color: colors.textSecondary }]}>
-                Loading checklist...
-              </Text>
-            </View>
-          ) : (
-            <ScrollView style={styles.listContainer} showsVerticalScrollIndicator={false}>
-              {items.map((item, index) => (
-                <View key={item.id} style={styles.listItem}>
-                  <Text style={[styles.listItemNumber, { color: colors.primary }]}>
-                    {index + 1}.
-                  </Text>
-                  <Text style={[styles.listItemText, { color: colors.text }]}>
-                    {item.text}
+          )}
+          
+          {/* Topics List */}
+          <ScrollView style={styles.topicsList} showsVerticalScrollIndicator={false}>
+            {loading ? (
+              <View style={styles.loadingContainer}>
+                <ActivityIndicator size="large" color={colors.primary} />
+                <Text style={[styles.loadingText, { color: colors.textSecondary }]}>
+                  Generating focus areas...
+                </Text>
+              </View>
+            ) : (
+              focusAreas.map((area, index) => (
+                <View 
+                  key={area.id} 
+                  style={[
+                    styles.topicCard,
+                    { backgroundColor: colors.background },
+                    index === focusAreas.length - 1 && styles.lastTopicCard
+                  ]}
+                >
+                  <View style={[styles.topicNumber, { backgroundColor: colors.primary + '20' }]}>
+                    <Text style={[styles.topicNumberText, { color: colors.primary }]}>
+                      {index + 1}
+                    </Text>
+                  </View>
+                  <Text style={[styles.topicText, { color: colors.text }]}>
+                    {area.text}
                   </Text>
                 </View>
-              ))}
-            </ScrollView>
+              ))
+            )}
+          </ScrollView>
+          
+          {/* Footer Actions */}
+          <View style={[styles.footer, { borderTopColor: colors.border }]}>
+            <TouchableOpacity 
+              style={[styles.refreshButton, { borderColor: colors.border }]}
+              onPress={handleRefresh}
+              disabled={refreshing}
+            >
+              {refreshing ? (
+                <ActivityIndicator size="small" color={colors.primary} />
+              ) : (
+                <>
+                  <Ionicons name="refresh" size={18} color={colors.primary} />
+                  <Text style={[styles.refreshText, { color: colors.primary }]}>
+                    Refresh
+                  </Text>
+                </>
+              )}
+            </TouchableOpacity>
+            
+            <TouchableOpacity 
+              style={[styles.closeActionButton, { backgroundColor: colors.primary }]}
+              onPress={onClose}
+            >
+              <Text style={styles.closeActionText}>Done</Text>
+            </TouchableOpacity>
+          </View>
+          
+          {/* AI indicator */}
+          {!loading && (
+            <View style={styles.aiIndicator}>
+              <Ionicons 
+                name={isAiGenerated ? 'sparkles' : 'cube-outline'} 
+                size={12} 
+                color={colors.textSecondary} 
+              />
+              <Text style={[styles.aiIndicatorText, { color: colors.textSecondary }]}>
+                {isAiGenerated ? 'AI-personalized' : 'Standard tips'}
+              </Text>
+            </View>
           )}
         </View>
       </View>
@@ -244,32 +697,39 @@ const InterviewChecklist: React.FC<InterviewChecklistProps> = ({
   );
 };
 
+// ============================================================================
+// STYLES
+// ============================================================================
+
 const styles = StyleSheet.create({
   overlay: {
     flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
     justifyContent: 'center',
     alignItems: 'center',
-    padding: 20,
   },
   backdrop: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(0, 0, 0, 0.6)',
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
   },
   card: {
-    width: '100%',
-    maxWidth: 380,
+    width: '90%',
+    maxWidth: 400,
     maxHeight: '80%',
     borderRadius: 16,
-    padding: 20,
+    overflow: 'hidden',
     ...Platform.select({
       ios: {
         shadowColor: '#000',
         shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.3,
+        shadowOpacity: 0.15,
         shadowRadius: 12,
       },
       android: {
-        elevation: 10,
+        elevation: 8,
       },
     }),
   },
@@ -277,22 +737,52 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'flex-start',
+    padding: 16,
+    paddingBottom: 12,
   },
   headerLeft: {
     flex: 1,
+    marginRight: 12,
   },
-  companyName: {
+  title: {
     fontSize: 18,
     fontWeight: '700',
-    marginBottom: 2,
+    marginBottom: 4,
+  },
+  headerMeta: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flexWrap: 'wrap',
   },
   stageName: {
     fontSize: 14,
-    fontWeight: '500',
-    marginBottom: 8,
+    fontWeight: '600',
+  },
+  positionName: {
+    fontSize: 13,
+    marginLeft: 4,
+  },
+  closeButton: {
+    padding: 4,
+  },
+  metaBar: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderBottomWidth: 1,
+  },
+  companyTag: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+  },
+  companyText: {
+    fontSize: 13,
+    marginLeft: 6,
   },
   urgencyBadge: {
-    alignSelf: 'flex-start',
     paddingHorizontal: 10,
     paddingVertical: 4,
     borderRadius: 12,
@@ -301,99 +791,88 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontWeight: '700',
   },
-  closeBtn: {
-    padding: 4,
-  },
-  divider: {
-    height: 1,
-    marginVertical: 10,
-  },
-  title: {
-    fontSize: 15,
-    fontWeight: '600',
-    marginBottom: 12,
+  topicsList: {
+    padding: 16,
+    paddingTop: 12,
   },
   loadingContainer: {
-    paddingVertical: 40,
+    padding: 40,
     alignItems: 'center',
-    gap: 12,
   },
   loadingText: {
+    marginTop: 12,
     fontSize: 14,
-    textAlign: 'center',
   },
-  listContainer: {
-    maxHeight: 300,
-  },
-  listItem: {
+  topicCard: {
     flexDirection: 'row',
     alignItems: 'flex-start',
-    paddingVertical: 8,
+    padding: 12,
+    borderRadius: 10,
+    marginBottom: 8,
   },
-  listItemNumber: {
-    fontSize: 14,
-    fontWeight: '600',
-    marginRight: 8,
-    minWidth: 20,
+  lastTopicCard: {
+    marginBottom: 0,
   },
-  listItemText: {
-    fontSize: 14,
-    lineHeight: 20,
-    flex: 1,
-  },
-  checkItem: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    paddingVertical: 10,
-  },
-  checkbox: {
-    width: 22,
-    height: 22,
-    borderRadius: 11,
-    borderWidth: 2,
+  topicNumber: {
+    width: 26,
+    height: 26,
+    borderRadius: 13,
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 12,
-    marginTop: 2,
+    marginTop: 1,
   },
-  checkItemContent: {
+  topicNumberText: {
+    fontSize: 13,
+    fontWeight: '700',
+  },
+  topicText: {
     flex: 1,
-  },
-  checkItemText: {
     fontSize: 14,
     lineHeight: 20,
-    fontWeight: '500',
-  },
-  checkedText: {
-    textDecorationLine: 'line-through',
-    opacity: 0.6,
-  },
-  companyTag: {
-    alignSelf: 'flex-start',
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-    borderRadius: 4,
-    marginTop: 6,
-  },
-  companyTagText: {
-    fontSize: 10,
-    fontWeight: '600',
   },
   footer: {
-    borderTopWidth: 1,
-    paddingTop: 16,
-    marginTop: 16,
     flexDirection: 'row',
-    justifyContent: 'space-between',
+    padding: 16,
+    paddingTop: 12,
+    borderTopWidth: 1,
+    gap: 12,
+  },
+  refreshButton: {
+    flex: 1,
+    flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 12,
+    borderRadius: 10,
+    borderWidth: 1,
+    gap: 6,
   },
-  progressText: {
-    fontSize: 13,
-  },
-  readyText: {
+  refreshText: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#22C55E',
+  },
+  closeActionButton: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 12,
+    borderRadius: 10,
+  },
+  closeActionText: {
+    color: '#FFFFFF',
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  aiIndicator: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingBottom: 12,
+    gap: 4,
+  },
+  aiIndicatorText: {
+    fontSize: 11,
   },
 });
 
