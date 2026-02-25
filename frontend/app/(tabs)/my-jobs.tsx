@@ -2221,26 +2221,50 @@ export default function MyJobsScreen() {
       <View style={dynamicStyles.pageTitleRow}>
         <Text style={dynamicStyles.pageTitle}>My Jobs</Text>
         
-        {/* Three-dots Menu Button - moved above filter */}
-        {selectMode ? (
-          <TouchableOpacity 
-            style={dynamicStyles.selectButton}
-            onPress={selectedJobs.size > 0 ? deleteSelectedJobs : toggleSelectMode}
-          >
-            <Ionicons 
-              name={selectedJobs.size > 0 ? 'trash' : 'close'} 
-              size={20} 
-              color={selectedJobs.size > 0 ? '#EF4444' : colors.primary} 
-            />
-          </TouchableOpacity>
-        ) : (
-          <TouchableOpacity 
-            style={dynamicStyles.selectButton}
-            onPress={() => setShowOptionsMenu(true)}
-          >
-            <Ionicons name="ellipsis-vertical" size={20} color={colors.primary} />
-          </TouchableOpacity>
-        )}
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+          {/* Add Job Button */}
+          {!selectMode && (
+            <TouchableOpacity 
+              style={dynamicStyles.selectButton}
+              onPress={() => {
+                setSelectedJob(null);
+                setJobForm({
+                  company_name: '', position: '', status: 'applied', location: '', country: userCountry || 'United States',
+                  state: '', city: '', notes: '', job_url: '', date_applied: new Date().toISOString().split('T')[0],
+                  salary_min: '', salary_max: '', salary_currency: '', work_mode: 'remote', job_type: 'full_time',
+                  contact_person: '', contact_email: '', next_steps: '', skills_required: '', upcoming_schedule: '',
+                  upcoming_schedule_time: '', interview_type: '', time_zone: '', years_of_experience: '',
+                  resume_used: '', cover_letter: '', priority_level: 'medium', application_method: '',
+                  job_description: '', benefits: '',
+                });
+                setModalVisible(true);
+              }}
+            >
+              <Ionicons name="add" size={20} color={colors.primary} />
+            </TouchableOpacity>
+          )}
+          
+          {/* Three-dots Menu Button */}
+          {selectMode ? (
+            <TouchableOpacity 
+              style={dynamicStyles.selectButton}
+              onPress={selectedJobs.size > 0 ? deleteSelectedJobs : toggleSelectMode}
+            >
+              <Ionicons 
+                name={selectedJobs.size > 0 ? 'trash' : 'close'} 
+                size={20} 
+                color={selectedJobs.size > 0 ? '#EF4444' : colors.primary} 
+              />
+            </TouchableOpacity>
+          ) : (
+            <TouchableOpacity 
+              style={dynamicStyles.selectButton}
+              onPress={() => setShowOptionsMenu(true)}
+            >
+              <Ionicons name="ellipsis-vertical" size={20} color={colors.primary} />
+            </TouchableOpacity>
+          )}
+        </View>
       </View>
       
       {/* Horizontal Filters */}
