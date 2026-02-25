@@ -293,7 +293,6 @@ async def get_current_user(authorization: Optional[str] = Header(None)) -> User:
                 "payment_status": "trial",
                 "trial_end_date": datetime.now(timezone.utc) + timedelta(days=30),
                 "applications_count": 0,
-                "preferences": {"weekly_email": True, "monthly_email": True},
                 "created_at": datetime.now(timezone.utc),
                 "is_private_relay": False,
                 "preferred_display_name": None,
