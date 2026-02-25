@@ -27,13 +27,9 @@ export default function SettingsScreen() {
   const [profilePhoto, setProfilePhoto] = useState(user?.picture || null);
   const [preferredName, setPreferredName] = useState(user?.preferred_display_name || '');
   const [isEditingName, setIsEditingName] = useState(!user?.preferred_display_name); // Start in edit mode if no name set
-  const [weeklyEmail, setWeeklyEmail] = useState(user?.preferences?.weekly_email ?? true);
-  const [monthlyEmail, setMonthlyEmail] = useState(user?.preferences?.monthly_email ?? true);
   const [communicationEmail, setCommunicationEmail] = useState(user?.communication_email || user?.email || '');
   const [isEditingEmail, setIsEditingEmail] = useState(false);
   const [emailError, setEmailError] = useState('');
-  const [sendingWeekly, setSendingWeekly] = useState(false);
-  const [sendingMonthly, setSendingMonthly] = useState(false);
   
   // Domicile Country state
   const [domicileCountry, setDomicileCountry] = useState(user?.domicile_country || '');
