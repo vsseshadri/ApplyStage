@@ -527,10 +527,7 @@ export default function AnalyticsScreen() {
             <PipelineFunnel funnel={analytics.funnel} />
 
             {/* Insight Card */}
-            <InsightCard 
-              insight={analytics.insight} 
-              onAddPress={() => router.push('/(tabs)/my-jobs')}
-            />
+            <InsightCard insight={analytics.insight} />
 
             {/* Sparkline */}
             <Sparkline data={analytics.sparkline} />
