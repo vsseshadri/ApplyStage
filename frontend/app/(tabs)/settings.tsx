@@ -28,8 +28,6 @@ export default function SettingsScreen() {
   const [preferredName, setPreferredName] = useState(user?.preferred_display_name || '');
   const [isEditingName, setIsEditingName] = useState(!user?.preferred_display_name); // Start in edit mode if no name set
   const [communicationEmail, setCommunicationEmail] = useState(user?.communication_email || user?.email || '');
-  const [isEditingEmail, setIsEditingEmail] = useState(false);
-  const [emailError, setEmailError] = useState('');
   
   // Domicile Country state
   const [domicileCountry, setDomicileCountry] = useState(user?.domicile_country || '');
@@ -37,7 +35,6 @@ export default function SettingsScreen() {
   const [countrySearch, setCountrySearch] = useState('');
   
   // Settings state
-  const [twoFactorEnabled, setTwoFactorEnabled] = useState(false);
   const [biometricType, setBiometricType] = useState<string>('Biometrics');
   
   // Target Goals state
