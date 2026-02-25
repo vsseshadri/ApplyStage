@@ -361,7 +361,6 @@ async def exchange_session(session_id: str):
                     "payment_status": "trial",
                     "trial_end_date": datetime.now(timezone.utc) + timedelta(days=7),
                     "applications_count": 0,
-                    "preferences": {"weekly_email": True, "monthly_email": True},
                     "created_at": datetime.now(timezone.utc)
                 }
                 await db.users.insert_one(new_user)
