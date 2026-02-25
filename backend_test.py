@@ -12,7 +12,7 @@ import sys
 from datetime import datetime
 
 # Test configuration
-BASE_URL = "https://career-dash-refine.preview.emergentagent.com/api"
+BASE_URL = "https://application-intel.preview.emergentagent.com/api"
 TEST_TOKEN = "test_token_abc123"
 
 class BackendTester:
