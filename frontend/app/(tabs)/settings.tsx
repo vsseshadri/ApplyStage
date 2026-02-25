@@ -109,15 +109,6 @@ export default function SettingsScreen() {
     }
   }, [user?.preferred_display_name]);
 
-  // Update communication email when user loads
-  React.useEffect(() => {
-    if (user?.communication_email) {
-      setCommunicationEmail(user.communication_email);
-    } else if (user?.email) {
-      setCommunicationEmail(user.email);
-    }
-  }, [user?.communication_email, user?.email]);
-
   // Update domicile country when user loads
   React.useEffect(() => {
     if (user?.domicile_country) {
