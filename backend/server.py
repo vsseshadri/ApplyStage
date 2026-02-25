@@ -2720,22 +2720,6 @@ async def import_data(
                 user_count += 1
             results["imported"]["users"] = user_count
         
-        # Import reports
-        if "reports" in data and data["reports"]:
-            reports = data["reports"]
-            for report in reports:
-                if "_id" in report:
-                    del report["_id"]
-                for date_field in ["created_at"]:
-                    if date_field in report and isinstance(report[date_field], str):
-                        try:
-                            report[date_field] = datetime.fromisoformat(report[date_field].replace('Z', '+00:00'))
-                        except:
-                            pass
-            if reports:
-                result = await db.reports.insert_many(reports)
-                results["imported"]["reports"] = len(result.inserted_ids)
-        
         return {"status": "success", "results": results}
     
     except Exception as e:
