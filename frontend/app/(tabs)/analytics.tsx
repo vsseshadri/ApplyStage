@@ -87,9 +87,12 @@ interface AnalyticsData {
 export default function AnalyticsScreen() {
   const { sessionToken } = useAuth();
   const { isDark } = useTheme();
+  const { setFilter } = useFilter();
+  const router = useRouter();
   const [analytics, setAnalytics] = useState<AnalyticsData | null>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [showAddJobModal, setShowAddJobModal] = useState(false);
 
   const colors = {
     background: isDark ? '#000000' : '#F8FAFC',
@@ -101,6 +104,16 @@ export default function AnalyticsScreen() {
     success: '#22C55E',
     warning: '#F59E0B',
     danger: '#EF4444',
+  };
+
+  // Navigate to My Jobs with filter
+  const navigateToMyJobs = (filterType: 'all' | 'active') => {
+    if (filterType === 'active') {
+      setFilter('active', 'all');
+    } else {
+      setFilter('all', 'all');
+    }
+    router.push('/(tabs)/my-jobs');
   };
 
   const fetchAnalytics = useCallback(async () => {
