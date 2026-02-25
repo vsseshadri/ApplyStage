@@ -328,40 +328,6 @@ export default function SettingsScreen() {
     }
   };
 
-  const handleWeeklyEmailToggle = async (value: boolean) => {
-    setWeeklyEmail(value);
-    // TODO: Update backend
-    try {
-      await fetch(`${BACKEND_URL}/api/preferences`, {
-        method: 'PUT',
-        headers: {
-          'Authorization': `Bearer ${sessionToken}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ weekly_email: value, monthly_email: monthlyEmail }),
-      });
-    } catch (error) {
-      console.error('Error updating preference:', error);
-    }
-  };
-
-  const handleMonthlyEmailToggle = async (value: boolean) => {
-    setMonthlyEmail(value);
-    // TODO: Update backend
-    try {
-      await fetch(`${BACKEND_URL}/api/preferences`, {
-        method: 'PUT',
-        headers: {
-          'Authorization': `Bearer ${sessionToken}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ weekly_email: weeklyEmail, monthly_email: value }),
-      });
-    } catch (error) {
-      console.error('Error updating preference:', error);
-    }
-  };
-
   const handlePreferredNameChange = async (name: string) => {
     setPreferredName(name);
   };
