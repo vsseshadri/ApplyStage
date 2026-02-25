@@ -19,7 +19,7 @@ const getBackendUrl = (): string => {
 const BACKEND_URL = getBackendUrl();
 
 export default function SettingsScreen() {
-  const { theme, setTheme, colors, isDark } = useTheme();
+  const { theme, setTheme, colors } = useTheme();
   const { user, logout, sessionToken, biometricEnabled, biometricAvailable, enableBiometric, disableBiometric, refreshUser } = useAuth();
   const router = useRouter();
   
