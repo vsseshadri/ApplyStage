@@ -3214,21 +3214,23 @@ class AnalyticsEngine:
     
     @staticmethod
     def _compute_funnel(status_counts: Dict, total: int) -> List[Dict]:
-        """Compute pipeline funnel data"""
+        """Compute pipeline funnel data - consistent with Application Status stages"""
         stages = [
             ('applied', 'Applied', '#3B82F6'),
-            ('recruiter_screening', 'Screening', '#8B5CF6'),
-            ('phone_screen', 'Phone', '#06B6D4'),
-            ('technical_screen', 'Technical', '#10B981'),
-            ('coding_challenge', 'Challenge', '#F59E0B'),
-            ('onsite', 'Onsite', '#EF4444'),
-            ('hiring_manager', 'HM Round', '#EC4899'),
-            ('final_round', 'Final', '#6366F1'),
-            ('offer', 'Offer', '#22C55E')
+            ('recruiter_screening', 'Screening', '#F59E0B'),
+            ('phone_screen', 'Phone', '#8B5CF6'),
+            ('coding_round_1', 'Code R1', '#06B6D4'),
+            ('coding_round_2', 'Code R2', '#10B981'),
+            ('system_design', 'System', '#EC4899'),
+            ('behavioural', 'Behavior', '#6366F1'),
+            ('hiring_manager', 'HM', '#F97316'),
+            ('final_round', 'Final', '#8B5CF6'),
+            ('offer', 'Offer', '#22C55E'),
+            ('rejected', 'Rejected', '#EF4444'),
+            ('ghosted', 'Ghosted', '#6B7280')
         ]
         
         funnel = []
-        cumulative = total
         for stage_key, label, color in stages:
             count = status_counts.get(stage_key, 0)
             percentage = (count / total * 100) if total > 0 else 0
