@@ -242,7 +242,10 @@ export default function AnalyticsScreen() {
   // Pipeline Funnel Component
   const PipelineFunnel = ({ funnel }: { funnel: FunnelStage[] }) => {
     const maxCount = Math.max(...funnel.map(f => f.count), 1);
-    const activeStages = funnel.filter(f => f.count > 0);
+    // Filter to show only stages with activity or key stages
+    const displayStages = funnel.filter(f => 
+      f.count > 0 || ['applied', 'offer', 'rejected'].includes(f.stage)
+    );
     
     return (
       <View style={[styles.funnelContainer, { backgroundColor: colors.card, borderColor: colors.border }]}>
@@ -250,9 +253,13 @@ export default function AnalyticsScreen() {
           <Ionicons name="funnel" size={18} color={colors.primary} />
           <Text style={[styles.funnelTitle, { color: colors.text }]}>Pipeline Funnel</Text>
         </View>
-        <View style={styles.funnelBars}>
-          {funnel.slice(0, 6).map((stage, index) => (
-            <View key={stage.stage} style={styles.funnelStage}>
+        <ScrollView 
+          horizontal 
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.funnelBars}
+        >
+          {funnel.map((stage, index) => (
+            <View key={stage.stage} style={[styles.funnelStage, { minWidth: 50 }]}>
               <View style={styles.funnelBarContainer}>
                 <View 
                   style={[
@@ -270,7 +277,7 @@ export default function AnalyticsScreen() {
               </Text>
             </View>
           ))}
-        </View>
+        </ScrollView>
       </View>
     );
   };
