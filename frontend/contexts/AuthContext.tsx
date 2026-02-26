@@ -49,16 +49,37 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 // Get backend URL with proper fallbacks
 const getBackendUrl = (): string => {
+  // Try multiple ways to get the backend URL
+  // 1. From app.json extra via Constants
   const configUrl = Constants.expoConfig?.extra?.EXPO_PUBLIC_BACKEND_URL;
+  // 2. From manifest (for older Expo versions)
+  const manifestUrl = (Constants.manifest as any)?.extra?.EXPO_PUBLIC_BACKEND_URL;
+  // 3. From manifest2 (for newer Expo versions)  
+  const manifest2Url = (Constants.manifest2 as any)?.extra?.expoClient?.extra?.EXPO_PUBLIC_BACKEND_URL;
+  // 4. From process.env (build-time env)
   const envUrl = process.env.EXPO_PUBLIC_BACKEND_URL;
-  return configUrl || envUrl || '';
+  // 5. Hardcoded fallback for production
+  const fallbackUrl = 'https://repo-preview-43.emergent.host';
+  
+  const url = configUrl || manifestUrl || manifest2Url || envUrl || fallbackUrl;
+  
+  // Always log in production to help debug
+  console.log('AuthContext getBackendUrl:', {
+    configUrl,
+    manifestUrl,
+    manifest2Url,
+    envUrl,
+    fallbackUrl,
+    selected: url
+  });
+  
+  return url;
 };
 
 const BACKEND_URL = getBackendUrl();
 
-if (__DEV__) {
-  console.log('AuthContext BACKEND_URL:', BACKEND_URL);
-}
+// Log on startup regardless of __DEV__
+console.log('AuthContext BACKEND_URL:', BACKEND_URL);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
