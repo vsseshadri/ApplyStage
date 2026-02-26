@@ -90,7 +90,7 @@
       "./plugins/withShareExtension"
     ],
     "experiments": {
-      "typedRoutes": true
+      "typedRoutes": false
     },
     "extra": {
       "appName": "CareerFlow",
