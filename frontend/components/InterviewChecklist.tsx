@@ -3,7 +3,7 @@ import { View, Text, TouchableOpacity, Modal, StyleSheet, ScrollView, ActivityIn
 import { Ionicons } from '@expo/vector-icons';
 
 // ============================================================================
-// TYPES & INTERFACES
+// TYPES
 // ============================================================================
 
 interface FocusArea {
@@ -31,18 +31,13 @@ interface InterviewChecklistProps {
 }
 
 // ============================================================================
-// CONFIGURATION - Privacy First, No Logging
+// CONFIG - Privacy First
 // ============================================================================
 
 const EMERGENT_LLM_KEY = 'sk-emergent-66a2f7f8f020eDaA7B';
 const LLM_API_URL = 'https://api.openai.com/v1/chat/completions';
 const LLM_TIMEOUT_MS = 10000;
 
-// Session-scoped in-memory cache only - cleared on app restart
-const sessionCache = new Map<string, { topics: FocusArea[]; timestamp: number }>();
-const CACHE_TTL_MS = 3 * 60 * 1000; // 3 minutes
-
-// Stage display names
 const STAGE_NAMES: Record<string, string> = {
   recruiter_screening: 'Recruiter Screening',
   phone_screen: 'Phone Screen',
@@ -60,11 +55,11 @@ const STAGE_NAMES: Record<string, string> = {
 };
 
 // ============================================================================
-// ROLE & SENIORITY DETECTION - Pure Functions, No Side Effects
+// ROLE DETECTION
 // ============================================================================
 
 type Seniority = 'executive' | 'senior' | 'mid' | 'junior';
-type RoleType = 'swe' | 'data' | 'pm' | 'tpm' | 'design' | 'clinical' | 'aerospace' | 'finance' | 'consulting' | 'sales' | 'ops' | 'general';
+type RoleType = 'swe' | 'data' | 'pm' | 'tpm' | 'design' | 'clinical' | 'aerospace' | 'finance' | 'consulting' | 'general';
 
 const detectSeniority = (pos: string): Seniority => {
   const p = pos.toLowerCase();
@@ -85,1014 +80,941 @@ const detectRole = (pos: string): RoleType => {
   if (/\b(aerospace|avionics|flight|rocket|propulsion|aircraft)\b/.test(p)) return 'aerospace';
   if (/\b(finance|investment|banking|trader|accounting|controller)\b/.test(p)) return 'finance';
   if (/\b(consultant|consulting|strategy|advisory)\b/.test(p)) return 'consulting';
-  if (/\b(sales|account executive|business development)\b/.test(p)) return 'sales';
-  if (/\b(operations|supply chain|logistics|manufacturing)\b/.test(p)) return 'ops';
   return 'general';
 };
 
 // ============================================================================
-// COMPREHENSIVE TOPIC DATABASE
-// Indexed by: role -> stage -> seniority
-// Each entry has multiple topic sets for refresh variety
+// TOPIC POOLS - Large pools for each role/stage/seniority combination
+// Refresh picks 6 different topics from the pool each time
 // ============================================================================
 
-type TopicSets = string[][];
-
-interface TopicDB {
+interface TopicPool {
   [role: string]: {
     [stage: string]: {
-      [seniority: string]: TopicSets;
+      [seniority: string]: string[];
     };
   };
 }
 
-const TOPICS: TopicDB = {
-  // ==================== SOFTWARE ENGINEERING ====================
+// Each pool has 12-18 topics so refresh can pick different sets
+const TOPIC_POOLS: TopicPool = {
   swe: {
     system_design: {
       executive: [
-        [
-          'Prepare to lead architecture discussions for systems handling 10M+ daily users',
-          'Review your decisions on CAP theorem trade-offs with specific examples (chose CP for payment systems because...)',
-          'Document how you evaluated build vs buy for infrastructure components',
-          'Prepare examples of defining SLOs/SLAs and driving reliability improvements',
-          'Review your experience with multi-region deployments and disaster recovery',
-          'Prepare to discuss organizational impact of architecture decisions',
-        ],
-        [
-          'Study your approach to decomposing monoliths into microservices at scale',
-          'Prepare examples of cross-team API design and governance',
-          'Review cost optimization strategies you\'ve implemented (reduced infra spend by X%)',
-          'Document your experience with zero-downtime migration strategies',
-          'Prepare to discuss technical debt prioritization frameworks',
-          'Review observability architecture: metrics, logs, traces at scale',
-        ],
+        'Prepare to lead architecture discussions for systems handling 10M+ daily active users',
+        'Review CAP theorem decisions you\'ve made: when you chose consistency vs availability and why',
+        'Document examples of cross-team API governance and breaking change management',
+        'Prepare to discuss build vs buy decisions for infrastructure: costs, risks, timeline trade-offs',
+        'Review multi-region deployment strategies and disaster recovery plans you\'ve implemented',
+        'Prepare examples of defining SLOs/SLAs and driving reliability improvements (99.9% → 99.99%)',
+        'Document technical debt prioritization frameworks you\'ve used with ROI analysis',
+        'Review cost optimization initiatives: how you reduced infrastructure spend by X%',
+        'Prepare to discuss observability architecture at scale: metrics, logs, traces, alerting',
+        'Document experience with zero-downtime migrations and rollback strategies',
+        'Prepare examples of performance optimization at system level (P99 latency improvements)',
+        'Review your approach to capacity planning and resource forecasting',
       ],
       senior: [
-        [
-          'Practice designing systems for 100K concurrent users with specific load balancing strategies (round-robin vs least connections)',
-          'Review database sharding approaches: hash-based vs range-based with trade-offs',
-          'Prepare to implement API rate limiting: token bucket algorithm with Redis',
-          'Study caching patterns: cache-aside, write-through, write-behind with invalidation strategies',
-          'Practice capacity estimation: calculate QPS, storage, bandwidth for given user base',
-          'Review message queue patterns: at-least-once vs exactly-once delivery',
-        ],
-        [
-          'Study microservices patterns: circuit breakers (Hystrix), bulkheads, retries with backoff',
-          'Prepare to design a notification system with fanout, priority queues, rate limiting',
-          'Review consistency patterns: eventual consistency, read-your-writes, strong consistency',
-          'Practice designing a URL shortener with read/write optimization and analytics',
-          'Study database replication: leader-follower, multi-leader, conflict resolution',
-          'Prepare to discuss CDN architecture and edge caching strategies',
-        ],
+        'Practice designing for 100K+ concurrent users: load balancing (round-robin, least connections, consistent hashing)',
+        'Review database sharding strategies: hash-based vs range-based with specific trade-offs',
+        'Prepare to implement API rate limiting: token bucket algorithm implementation with Redis',
+        'Study caching patterns in depth: cache-aside, write-through, write-behind, cache invalidation strategies',
+        'Practice capacity estimation: calculate QPS, storage growth, bandwidth for given user scenarios',
+        'Review message queue patterns: at-least-once vs exactly-once delivery, dead letter queues',
+        'Prepare microservices patterns: circuit breakers, bulkheads, retry with exponential backoff',
+        'Study database replication: leader-follower setup, failover, read replicas, conflict resolution',
+        'Review CDN architecture: edge caching, cache invalidation, origin shielding',
+        'Prepare to design notification systems: fanout strategies, priority queues, rate limiting',
+        'Study consistency models: eventual consistency, read-your-writes, strong consistency trade-offs',
+        'Review event-driven architecture: event sourcing, CQRS, saga patterns',
+        'Prepare to discuss database indexing strategies: B-trees, hash indexes, composite indexes',
+        'Study API design: REST best practices, versioning strategies, pagination patterns',
       ],
       mid: [
-        [
-          'Study basic system components: what load balancers do, types (L4 vs L7)',
-          'Practice designing a simple key-value store with replication',
-          'Review SQL vs NoSQL: when to use PostgreSQL vs MongoDB vs Cassandra',
-          'Understand caching basics: what Redis does, TTL, cache hit ratio',
-          'Practice drawing system diagrams with clear data flow',
-          'Learn to ask clarifying questions: expected QPS, read/write ratio, latency SLA',
-        ],
-        [
-          'Study how web requests flow: DNS → CDN → Load Balancer → App → DB',
-          'Review horizontal vs vertical scaling with specific examples',
-          'Practice designing a simple chat application architecture',
-          'Understand database indexing: B-trees, when to add indexes',
-          'Study API design basics: REST principles, pagination, versioning',
-          'Review authentication patterns: JWT, sessions, OAuth basics',
-        ],
+        'Study system components: what load balancers do, L4 vs L7 differences, health checks',
+        'Practice designing a URL shortener: read/write ratio optimization, analytics, expiration',
+        'Review SQL vs NoSQL decision making: when to use PostgreSQL vs MongoDB vs Cassandra',
+        'Understand caching fundamentals: what Redis does, TTL strategies, cache hit ratio optimization',
+        'Practice drawing clear system diagrams with data flow and failure points',
+        'Learn to ask clarifying questions: expected QPS, read/write ratio, latency requirements, consistency needs',
+        'Study basic scaling: horizontal vs vertical, when to use each, cost implications',
+        'Review authentication patterns: JWT structure, session management, OAuth2 flows',
+        'Practice designing a simple chat application architecture',
+        'Study database indexing basics: primary keys, secondary indexes, query optimization',
+        'Review API design fundamentals: RESTful principles, status codes, error handling',
+        'Understand basic security: HTTPS, input validation, SQL injection prevention',
       ],
       junior: [
-        [
-          'Learn the basic request flow: what happens when you type a URL',
-          'Understand why we use databases and the difference between SQL and NoSQL',
-          'Study what a load balancer does and why it\'s needed',
-          'Learn about caching: why we cache, what Redis is',
-          'Practice explaining a simple 3-tier architecture',
-          'Prepare questions about the company\'s tech stack',
-        ],
-        [
-          'Review client-server architecture basics',
-          'Understand HTTP methods and status codes',
-          'Learn about APIs: what they are, how to use them',
-          'Study basic security: HTTPS, authentication vs authorization',
-          'Practice drawing simple system diagrams',
-          'Review what databases, web servers, and application servers do',
-        ],
+        'Learn the web request lifecycle: DNS resolution → TCP connection → HTTP request → response',
+        'Understand why databases exist and basic SQL vs NoSQL differences',
+        'Study what a load balancer does: distributing traffic, health checks, failover',
+        'Learn about caching: why we cache data, what Redis is, basic cache concepts',
+        'Practice explaining simple 3-tier architecture: client → server → database',
+        'Prepare questions about the company\'s current tech stack and architecture decisions',
+        'Review client-server model: request/response, stateless vs stateful',
+        'Understand HTTP basics: methods (GET, POST, PUT, DELETE), status codes, headers',
+        'Learn about APIs: what they are, REST basics, how frontend talks to backend',
+        'Study basic database concepts: tables, relationships, primary keys, queries',
       ],
     },
     coding_round_1: {
-      executive: [
-        [
-          'Review clean code principles - prepare to demonstrate and discuss',
-          'Practice explaining trade-offs in algorithm choices during coding',
-          'Prepare to discuss how you evaluate code quality in reviews',
-          'Review concurrency patterns: thread safety, locks, async/await',
-          'Practice coding while articulating design decisions',
-          'Prepare examples of refactoring legacy code',
-        ],
-      ],
       senior: [
-        [
-          'Practice sliding window problems: minimum window substring, longest substring without repeating',
-          'Master two-pointer technique: 3Sum, container with most water',
-          'Review binary search variations: search in rotated array, find peak element',
-          'Practice tree traversals: BFS, DFS, level order with modifications',
-          'Study graph algorithms: detect cycle, topological sort',
-          'Review dynamic programming: coin change, longest increasing subsequence',
-        ],
-        [
-          'Practice hashmap patterns: two sum, group anagrams, LRU cache',
-          'Review string manipulation: palindrome variations, string matching',
-          'Study heap problems: merge k sorted lists, top k frequent elements',
-          'Practice interval problems: merge intervals, meeting rooms',
-          'Review linked list: reverse, detect cycle, merge sorted lists',
-          'Study backtracking: permutations, combinations, subsets',
-        ],
+        'Master sliding window pattern: minimum window substring, longest substring without repeating chars',
+        'Practice two-pointer technique: 3Sum, container with most water, trapping rain water',
+        'Review binary search variations: search in rotated array, find peak element, search range',
+        'Study tree traversals with modifications: BFS level order, DFS paths, lowest common ancestor',
+        'Practice graph algorithms: detect cycle (DFS), topological sort, shortest path (BFS)',
+        'Review dynamic programming patterns: coin change, longest increasing subsequence, edit distance',
+        'Master hashmap patterns: two sum, group anagrams, LRU cache implementation',
+        'Practice string manipulation: palindrome variations, string matching, regex basics',
+        'Study heap problems: merge k sorted lists, top k frequent elements, median finder',
+        'Review interval problems: merge intervals, insert interval, meeting rooms',
+        'Practice linked list algorithms: reverse in groups, detect and find cycle start, merge sorted',
+        'Study backtracking patterns: permutations, combinations, subsets, N-queens',
+        'Review monotonic stack problems: next greater element, largest rectangle in histogram',
+        'Practice prefix sum and difference array techniques',
       ],
       mid: [
-        [
-          'Practice array problems: two sum, best time to buy/sell stock, maximum subarray',
-          'Review hashmap usage for O(1) lookups and counting frequencies',
-          'Study two-pointer basics: valid palindrome, reverse string',
-          'Practice string manipulation: reverse words, valid anagram',
-          'Review sorting algorithms: when to use which, built-in sort complexity',
-          'Study recursion basics: factorial, fibonacci, tree traversal',
-        ],
-        [
-          'Practice linked list basics: reverse, find middle, detect cycle',
-          'Review stack problems: valid parentheses, daily temperatures',
-          'Study binary search: basic implementation, search insert position',
-          'Practice matrix problems: rotate image, spiral matrix traversal',
-          'Review math problems: reverse integer, count primes',
-          'Study bit manipulation basics: single number, counting bits',
-        ],
+        'Practice array problems: two sum variations, best time to buy/sell stock, maximum subarray (Kadane)',
+        'Master hashmap for O(1) lookups: frequency counting, finding duplicates, anagram detection',
+        'Study two-pointer basics: valid palindrome, remove duplicates, reverse string in-place',
+        'Practice string problems: reverse words, valid anagram, longest common prefix',
+        'Review sorting: when to use built-in sort, understanding O(n log n), stable vs unstable',
+        'Study recursion fundamentals: base cases, recursive calls, call stack visualization',
+        'Practice linked list basics: reverse, find middle node, detect cycle with Floyd\'s',
+        'Review stack problems: valid parentheses, evaluate reverse polish notation, daily temperatures',
+        'Study binary search: basic implementation, search insert position, first/last occurrence',
+        'Practice matrix traversal: rotate image, spiral order, search in 2D matrix',
+        'Review basic math: reverse integer, palindrome number, count primes (Sieve)',
+        'Study bit manipulation basics: single number (XOR), counting bits, power of two',
       ],
       junior: [
-        [
-          'Review array fundamentals: iteration, indexing, common methods',
-          'Practice basic string operations: reverse, check palindrome',
-          'Study hashmap basics: how to use, when to use for lookups',
-          'Practice simple problems: find max/min, count occurrences',
-          'Review loop patterns: for, while, nested loops',
-          'Study Big-O basics: O(1), O(n), O(n²) with examples',
-        ],
-        [
-          'Practice tracing code step-by-step before running',
-          'Review function basics: parameters, return values, scope',
-          'Study conditional logic: if/else, switch statements',
-          'Practice simple sorting: understand bubble sort concept',
-          'Review array methods in your language: push, pop, slice',
-          'Study debugging techniques: print statements, step through',
-        ],
+        'Review array fundamentals: iteration, indexing, slice, common methods in your language',
+        'Practice basic string operations: reverse string, check if palindrome, count characters',
+        'Learn hashmap basics: creating maps, adding/getting values, checking existence',
+        'Practice simple problems: find maximum/minimum, count occurrences, remove element',
+        'Review loop patterns: for loops, while loops, nested loops, break/continue',
+        'Study Big-O basics: O(1) constant, O(n) linear, O(n²) quadratic with examples',
+        'Practice tracing code execution step-by-step before running',
+        'Review function basics: parameters, return values, variable scope',
+        'Study conditional logic: if/else chains, switch statements, ternary operators',
+        'Practice simple array sorting: understand what sorting does, use built-in sort',
       ],
     },
     behavioural: {
       executive: [
-        [
-          'Prepare a story about building engineering culture at scale (hiring, processes, values)',
-          'Document how you drove a major technical transformation with business impact',
-          'Review examples of navigating conflicting priorities with other executives',
-          'Prepare to discuss a technical bet that didn\'t pay off and how you handled it',
-          'Document how you developed and retained top engineering talent',
-          'Prepare examples of representing engineering to board/investors',
-        ],
+        'Prepare story about building engineering culture: hiring practices, values, team rituals',
+        'Document a major technical transformation: from monolith to microservices, cloud migration',
+        'Review examples of navigating conflicting priorities with C-suite peers',
+        'Prepare to discuss a technical bet that failed and how you communicated/recovered',
+        'Document how you developed engineering leaders (IC to manager transitions)',
+        'Prepare examples of representing engineering to board/investors with business metrics',
+        'Review how you built diverse, inclusive engineering teams',
+        'Document experience with organizational restructuring and managing through change',
+        'Prepare to discuss your engineering vision and how you communicated it org-wide',
+        'Review examples of driving innovation while maintaining operational excellence',
       ],
       senior: [
-        [
-          'Map your biggest project to STAR: situation, task, 3+ specific actions, quantified results',
-          'Prepare a story about mentoring an engineer from junior to senior level',
-          'Document a time you pushed back on product requirements with data',
-          'Review how you handled a production incident: detection, response, post-mortem',
-          'Prepare a "technical disagreement with peer" story with positive resolution',
-          'Document examples of balancing tech debt vs feature delivery',
-        ],
-        [
-          'Prepare a story about delivering a project with unclear requirements',
-          'Document how you improved team processes (code review, testing, deployment)',
-          'Review a time you had to make a decision with incomplete information',
-          'Prepare examples of cross-team collaboration challenges and solutions',
-          'Document a failure and specific changes you made afterwards',
-          'Prepare to discuss your approach to giving and receiving feedback',
-        ],
+        'Map your biggest project to STAR format with quantified impact (latency reduced 40%, costs down 30%)',
+        'Prepare story about mentoring an engineer from junior to senior: specific actions and outcomes',
+        'Document time you pushed back on product requirements with data and alternative solutions',
+        'Review production incident you handled: detection, response, communication, post-mortem improvements',
+        'Prepare "technical disagreement with peer" story: conflict, your approach, resolution, relationship after',
+        'Document balancing tech debt vs features: how you made the case, what you prioritized, results',
+        'Prepare story about delivering project with unclear/changing requirements',
+        'Review process improvements you drove: code review, testing, CI/CD, deployment',
+        'Document a time you made a decision with incomplete information and how it turned out',
+        'Prepare cross-functional collaboration story: working with PM, design, other teams',
+        'Review a failure/mistake: what happened, your responsibility, specific changes made after',
+        'Document your approach to receiving and giving difficult feedback',
       ],
       mid: [
-        [
-          'Prepare 5 STAR stories covering: impact, teamwork, challenge, learning, initiative',
-          'Quantify achievements: "improved latency by 40%", "reduced errors by 60%"',
-          'Document a time you went beyond your job description',
-          'Prepare a "learned from failure" story with specific takeaways',
-          'Review examples of working with difficult stakeholders',
-          'Prepare to discuss your career goals and why this role',
-        ],
+        'Prepare 5 STAR stories: biggest impact, teamwork challenge, learning from failure, initiative, conflict',
+        'Quantify all achievements: "improved API latency by 40%", "reduced errors by 60%", "saved 10 eng hours/week"',
+        'Document going above your job description: what you noticed, action you took, outcome',
+        'Prepare "learned from failure" story: the mistake, your responsibility, specific changes you made',
+        'Review working with difficult stakeholders: the situation, your approach, how you built the relationship',
+        'Prepare to discuss career goals and why this specific role/company advances them',
+        'Document receiving critical feedback: what it was, your initial reaction, how you acted on it',
+        'Prepare story about working under pressure: tight deadline, what you did, result',
+        'Review examples of proactive problem-solving: issue you identified before it was assigned',
+        'Document helping a teammate: what they needed, how you supported them, outcome',
       ],
       junior: [
-        [
-          'Prepare STAR stories from school projects, internships, or personal projects',
-          'Highlight learning agility: how quickly you picked up new technologies',
-          'Document a challenging project and how you overcame obstacles',
-          'Prepare to explain your interest in this specific company/role',
-          'Review teamwork examples: your role, contributions, outcomes',
-          'Prepare questions about mentorship and growth opportunities',
-        ],
+        'Prepare STAR stories from school projects, internships, hackathons, or personal projects',
+        'Highlight learning agility: specific example of picking up new technology/concept quickly',
+        'Document a challenging class project: the difficulty, your approach, what you delivered',
+        'Prepare to explain your interest in this company and role with specific reasons',
+        'Review teamwork examples: group projects, your specific contributions, outcomes',
+        'Prepare questions about mentorship, learning opportunities, and career growth paths',
+        'Document a time you had to learn something new under time pressure',
+        'Prepare story about receiving feedback and how you improved',
+        'Review examples of taking initiative outside of assigned work',
+        'Document how you handle stress and competing priorities',
       ],
     },
     technical_screen: {
       senior: [
-        [
-          'Review your most complex project - be ready for deep technical questions',
-          'Prepare to discuss architecture decisions and trade-offs you made',
-          'Review advanced language features in your primary language',
-          'Prepare to whiteboard a solution and explain your thinking',
-          'Study system design elements that may come up in technical discussions',
-          'Review testing strategies: unit, integration, e2e approaches',
-        ],
+        'Review your most complex technical project: be ready for 20+ minutes of deep questions',
+        'Prepare to discuss architecture decisions: what alternatives you considered, why you chose your approach',
+        'Review advanced language features in your primary language (generics, concurrency, memory management)',
+        'Prepare to whiteboard solutions while explaining your reasoning aloud',
+        'Study system design elements that may come up: caching, queuing, database choices',
+        'Review testing strategies: unit test design, mocking, integration tests, test coverage philosophy',
+        'Prepare to discuss debugging complex issues: tools you use, your systematic approach',
+        'Review code quality practices: clean code principles, refactoring experience, technical debt',
+        'Prepare examples of performance optimization: profiling, bottleneck identification, solutions',
+        'Study your primary framework/stack in depth: internals, best practices, common pitfalls',
       ],
       mid: [
-        [
-          'Review data structures: arrays, hashmaps, trees - when to use each',
-          'Prepare to explain your projects technically in 3-5 minutes',
-          'Practice coding simple problems while explaining your thought process',
-          'Review OOP concepts: inheritance, polymorphism, encapsulation',
-          'Study your primary language\'s standard library and common patterns',
-          'Prepare technical questions about the company\'s stack',
-        ],
+        'Review core data structures: arrays, hashmaps, trees, graphs - when to use each',
+        'Prepare 3-5 minute technical explanation of your main projects',
+        'Practice solving simple coding problems while explaining your thought process',
+        'Review OOP concepts: SOLID principles, design patterns you\'ve used',
+        'Study your language\'s standard library: collections, string methods, I/O',
+        'Prepare technical questions about the company\'s stack (research beforehand)',
+        'Review debugging techniques: reading stack traces, using debuggers, logging strategies',
+        'Prepare to discuss your development workflow: git, IDE, testing approach',
+        'Study basic SQL: JOINs, aggregations, subqueries, index usage',
+        'Review API design basics: REST principles, error handling, authentication',
       ],
       junior: [
-        [
-          'Review CS fundamentals: basic data structures, algorithms, complexity',
-          'Prepare to discuss your coursework and personal projects',
-          'Practice explaining technical concepts in simple terms',
-          'Review basic SQL: SELECT, JOIN, WHERE, GROUP BY',
-          'Study git basics: commit, branch, merge, pull request',
-          'Prepare to demonstrate your learning approach and debugging skills',
-        ],
+        'Review CS fundamentals: basic data structures, simple algorithms, Big-O',
+        'Prepare to discuss your coursework: favorite classes, challenging projects',
+        'Practice explaining technical concepts simply without jargon',
+        'Review basic SQL: SELECT, WHERE, JOIN, GROUP BY',
+        'Study git basics: commit, branch, merge, pull request workflow',
+        'Prepare to demonstrate your debugging approach: how you find and fix issues',
+        'Review your programming language syntax: loops, functions, classes',
+        'Prepare to discuss personal projects: what you built, technologies used, challenges',
+        'Study basic web concepts: HTTP, APIs, client-server model',
+        'Prepare questions about the tech stack and what you\'d be working on',
       ],
     },
   },
-
-  // ==================== PROGRAM MANAGEMENT ====================
   tpm: {
     system_design: {
       executive: [
-        [
-          'Prepare to discuss program architecture at portfolio level across 50+ engineers',
-          'Document your approach to aligning technical roadmaps with business strategy',
-          'Review examples of managing technical programs with $10M+ budgets',
-          'Prepare to discuss vendor management and build vs buy decisions',
-          'Document how you\'ve scaled TPM organizations and processes',
-          'Prepare examples of executive communication on technical programs',
-        ],
+        'Prepare to discuss program architecture across portfolio of 50+ engineers',
+        'Document aligning multi-year technical roadmaps with business strategy',
+        'Review managing technical programs with $10M+ budgets: tracking, reporting, decisions',
+        'Prepare to discuss vendor evaluation and management for critical systems',
+        'Document scaling TPM organization: hiring, processes, templates, tools',
+        'Prepare examples of executive communication on technical program status and risks',
+        'Review build vs buy analysis you\'ve led and recommendation process',
+        'Document experience with technical due diligence for acquisitions',
+        'Prepare to discuss governance models for large technical programs',
+        'Review change management for organization-wide technical initiatives',
       ],
       senior: [
-        [
-          'Prepare to discuss managing cross-team dependencies in distributed systems',
-          'Document how you create technical project plans with realistic estimates',
-          'Review your approach to technical risk identification and mitigation',
-          'Prepare examples of translating business requirements to technical specs',
-          'Document how you manage scope creep in technical programs',
-          'Prepare to discuss technical trade-offs: scope, timeline, quality, resources',
-        ],
-        [
-          'Study common system integration challenges and how to plan for them',
-          'Prepare examples of coordinating API changes across multiple teams',
-          'Review your experience with migration projects and rollback plans',
-          'Document how you work with architecture teams on technical decisions',
-          'Prepare to discuss managing technical debt conversations',
-          'Review your approach to technical documentation and knowledge sharing',
-        ],
+        'Prepare to discuss managing cross-team dependencies in complex technical programs',
+        'Document creating technical project plans with engineering-informed estimates',
+        'Review technical risk identification: what signals you look for, how you mitigate',
+        'Prepare examples of translating vague business requirements to technical specs',
+        'Document managing scope changes: evaluation process, stakeholder communication, trade-offs',
+        'Prepare to discuss technical trade-offs: scope vs timeline vs quality vs resources',
+        'Review experience coordinating API changes across multiple consuming teams',
+        'Document migration project experience: planning, rollback strategies, validation',
+        'Prepare to discuss working with architecture teams on technical direction',
+        'Review managing technical debt conversations with engineering leadership',
+        'Document your approach to technical documentation and knowledge management',
+        'Prepare examples of unblocking technical teams: removing obstacles, escalation',
       ],
       mid: [
-        [
-          'Review how to create dependency-aware project timelines',
-          'Study common technical risks in software projects and mitigation strategies',
-          'Prepare to discuss Agile/Scrum methodologies at team and program level',
-          'Document your experience tracking technical deliverables',
-          'Review how to communicate technical status to non-technical stakeholders',
-          'Prepare questions about the technical landscape you\'d be managing',
-        ],
+        'Review creating dependency-aware project timelines with engineering input',
+        'Study common technical risks in software projects: integration, performance, security',
+        'Prepare to discuss Agile methodology: sprints, ceremonies, metrics, scaling',
+        'Document tracking technical deliverables: what you track, how you report status',
+        'Review communicating technical status to non-technical executives',
+        'Prepare questions about the technical landscape you\'d be managing',
+        'Study basic system integration concepts: APIs, data formats, protocols',
+        'Document your experience with release management and deployment coordination',
+        'Prepare to discuss how you learn about technical domains you\'re not expert in',
+        'Review handling technical disagreements between engineering teams',
       ],
       junior: [
-        [
-          'Review software development lifecycle basics: planning, development, testing, deployment',
-          'Study project management tools: Jira workflows, sprint planning, backlog management',
-          'Understand technical dependencies and how to track them',
-          'Learn about APIs and system integrations at a high level',
-          'Prepare to discuss how you\'d learn the technical landscape quickly',
-          'Review Agile ceremonies: standups, planning, retros, demos',
-        ],
+        'Review software development lifecycle: planning → development → testing → deployment',
+        'Study Jira workflows: epics, stories, sprints, boards, reports',
+        'Understand technical dependencies and how to visualize/track them',
+        'Learn about APIs and system integrations at conceptual level',
+        'Prepare to discuss how you\'d learn the technical landscape quickly',
+        'Review Agile ceremonies: standup, planning, review, retrospective purposes',
+        'Study basic project management: scope, timeline, resources, risks',
+        'Prepare questions about TPM role in this organization',
+        'Review technical documentation basics: what makes docs useful',
+        'Understand engineering team structures: how different roles collaborate',
       ],
     },
     behavioural: {
       executive: [
-        [
-          'Prepare stories about managing multi-million dollar, multi-year programs',
-          'Document examples of influencing executive decisions without direct authority',
-          'Review how you\'ve navigated organizational change during major programs',
-          'Prepare to discuss conflict resolution at VP/Director level',
-          'Document program turnarounds: how you rescued failing initiatives',
-          'Prepare examples of building TPM teams and developing talent',
-        ],
+        'Prepare stories about managing multi-million dollar, multi-year technical programs',
+        'Document influencing executive decisions without direct authority',
+        'Review navigating organizational change during major program transformations',
+        'Prepare to discuss conflict resolution between VP-level engineering leaders',
+        'Document program turnarounds: identifying issues, intervention, outcomes',
+        'Prepare examples of building and developing TPM teams',
+        'Review stakeholder management at executive level: competing priorities, politics',
+        'Document driving accountability across engineering organizations',
+        'Prepare to discuss your leadership philosophy for TPM function',
+        'Review experience with program-level budget management and resource allocation',
       ],
       senior: [
-        [
-          'Prepare STAR stories about managing complex, ambiguous technical programs',
-          'Document examples of driving accountability across engineering teams',
-          'Review how you handled a program that was going off track',
-          'Prepare a story about resolving conflicts between engineering teams',
-          'Document your approach to stakeholder management with competing priorities',
-          'Prepare examples of escalation decisions and outcomes',
-        ],
-        [
-          'Document how you built trust with engineering leads',
-          'Prepare a story about managing a program with changing requirements',
-          'Review examples of risk communication to leadership',
-          'Prepare to discuss your meeting facilitation style',
-          'Document how you handle underperforming vendors or teams',
-          'Prepare examples of process improvements you\'ve implemented',
-        ],
+        'Prepare STAR stories about managing complex, ambiguous technical programs',
+        'Document driving accountability across multiple engineering teams',
+        'Review handling program that went off track: detection, intervention, recovery',
+        'Prepare story about resolving conflict between engineering teams or leads',
+        'Document stakeholder management with competing priorities and urgent requests',
+        'Prepare examples of escalation decisions: when you escalated, how, outcome',
+        'Review building trust with skeptical engineering leads',
+        'Document managing programs with frequently changing requirements',
+        'Prepare to discuss risk communication: how you present bad news to leadership',
+        'Review meeting facilitation: running effective meetings, driving decisions',
+        'Document handling underperforming vendors or partner teams',
+        'Prepare examples of process improvements you\'ve implemented',
       ],
       mid: [
-        [
-          'Prepare stories demonstrating stakeholder management across functions',
-          'Document examples of keeping projects on track despite obstacles',
-          'Review how you prioritize when multiple stakeholders have urgent requests',
-          'Prepare a story about managing a difficult stakeholder relationship',
-          'Document your approach to running effective meetings',
-          'Prepare examples of communicating bad news effectively',
-        ],
+        'Prepare stories demonstrating stakeholder management across technical and business teams',
+        'Document keeping projects on track despite unexpected technical obstacles',
+        'Review prioritizing when multiple stakeholders claim urgent priority',
+        'Prepare story about managing difficult stakeholder relationship over time',
+        'Document running effective meetings: preparation, facilitation, follow-up',
+        'Prepare examples of communicating bad news effectively and early',
+        'Review handling ambiguity: how you operate when requirements are unclear',
+        'Document coordination examples: aligning multiple teams toward deadline',
+        'Prepare to discuss your approach to status reporting and transparency',
+        'Review conflict resolution between team members or teams',
       ],
       junior: [
-        [
-          'Prepare stories about coordination from school, clubs, or internships',
-          'Document examples of organizing events or group projects',
-          'Review how you handle multiple deadlines and priorities',
-          'Prepare to discuss your organizational and communication skills',
-          'Document any leadership experience and what you learned',
-          'Prepare questions about how TPMs operate in this organization',
-        ],
+        'Prepare coordination stories from school, clubs, volunteer work, or internships',
+        'Document organizing group projects or events: planning, execution, outcomes',
+        'Review handling multiple deadlines and competing priorities',
+        'Prepare to discuss your organizational and communication strengths with examples',
+        'Document any leadership experience and specific lessons learned',
+        'Prepare questions about how TPMs work with engineering at this company',
+        'Review examples of proactive problem identification',
+        'Document working with people with different working styles',
+        'Prepare to discuss what draws you to program management vs other roles',
+        'Review examples of attention to detail catching important issues',
       ],
     },
     hiring_manager: {
       senior: [
-        [
-          'Research the hiring manager\'s programs and team structure',
-          'Prepare a 30-60-90 day plan for ramping on their programs',
-          'Document your approach to building relationships with eng leads quickly',
-          'Prepare questions about current program challenges and priorities',
-          'Review the org structure and key stakeholders you\'d work with',
-          'Prepare to discuss your program management philosophy',
-        ],
+        'Research hiring manager\'s current programs and organizational challenges',
+        'Prepare 30-60-90 day plan: learning the landscape, quick wins, longer-term impact',
+        'Document your approach to building relationships with engineering leads quickly',
+        'Prepare questions about current program challenges and what success looks like',
+        'Review organizational structure and key stakeholders you\'d work with',
+        'Prepare to discuss your program management philosophy and methodology',
+        'Document how you\'ve handled similar organizational contexts before',
+        'Prepare questions about team culture and how decisions are made',
+        'Review the manager\'s background to find connection points',
+        'Prepare to discuss what you need from a manager to be successful',
       ],
       mid: [
-        [
-          'Research the manager\'s background and current programs',
-          'Prepare to discuss your project management methodology',
-          'Document how you\'ve handled challenging stakeholder situations',
-          'Prepare questions about team structure and success metrics',
-          'Review what tools and processes the team uses',
-          'Prepare to discuss your communication and organization style',
-        ],
+        'Research manager\'s background and current portfolio of programs',
+        'Prepare to discuss your project management methodology and tools',
+        'Document handling challenging stakeholder situations with specific examples',
+        'Prepare questions about team structure, expectations, and success metrics',
+        'Review what tools and processes the team currently uses',
+        'Prepare to discuss your communication style and preferences',
+        'Document how you ramp up on new technical domains',
+        'Prepare questions about growth opportunities and career paths',
+        'Review recent company news that might affect the team\'s programs',
+        'Prepare to discuss what you\'re looking for in your next role',
       ],
     },
   },
-
-  // ==================== CLINICAL/HEALTHCARE ====================
   clinical: {
     clinical: {
       executive: [
-        [
-          'Prepare examples of improving clinical outcomes at department/unit level with metrics',
-          'Document your experience with quality improvement initiatives (PDSA cycles, Six Sigma)',
-          'Review regulatory compliance leadership: Joint Commission, CMS, state requirements',
-          'Prepare to discuss clinical staffing models and resource optimization',
-          'Document experience implementing evidence-based practice changes',
-          'Prepare examples of managing adverse events and system improvements',
-        ],
+        'Prepare examples of improving clinical outcomes at department level with metrics (mortality, readmissions)',
+        'Document quality improvement initiatives: PDSA cycles, root cause analysis, outcomes',
+        'Review regulatory compliance leadership: Joint Commission, CMS, state survey preparation',
+        'Prepare to discuss clinical staffing models: ratios, skill mix, float pool optimization',
+        'Document implementing evidence-based practice changes across units or facilities',
+        'Prepare examples of managing serious adverse events: investigation, disclosure, system changes',
+        'Review budget management for clinical departments: FTEs, supplies, equipment',
+        'Document interdisciplinary collaboration at leadership level',
+        'Prepare to discuss your approach to clinical staff development and retention',
+        'Review experience with clinical informatics and EHR optimization',
       ],
       senior: [
-        [
-          'Prepare detailed patient scenarios in your specialty with clinical reasoning',
-          'Review clinical protocols and situations where you\'d deviate from them',
-          'Document examples of clinical decision-making under time pressure',
-          'Practice SBAR format for critical handoffs and escalations',
-          'Review medication interactions and high-alert medications in your specialty',
-          'Prepare to discuss how you precept and mentor new staff',
-        ],
-        [
-          'Study complex case management scenarios in your specialty area',
-          'Prepare examples of patient advocacy and care coordination',
-          'Review your approach to difficult conversations with patients/families',
-          'Document how you stay current with clinical best practices',
-          'Prepare to discuss interdisciplinary collaboration examples',
-          'Review ethical dilemmas you\'ve navigated and your reasoning',
-        ],
+        'Prepare detailed patient scenarios in your specialty with clinical reasoning process',
+        'Review protocols in your specialty and situations where clinical judgment overrides protocol',
+        'Document clinical decision-making under time pressure: specific cases, your reasoning',
+        'Practice SBAR format for critical handoffs: Situation, Background, Assessment, Recommendation',
+        'Review medication management: high-alert meds, interactions, dosing in special populations',
+        'Prepare to discuss precepting and mentoring new clinicians: your approach, examples',
+        'Document complex case management: coordination, patient advocacy, outcomes',
+        'Review delegation and supervision: what you delegate, how you ensure safety',
+        'Prepare examples of patient/family teaching in challenging situations',
+        'Document conflict resolution with physicians, patients, or family members',
+        'Review your approach to staying current: journals, conferences, certifications',
+        'Prepare to discuss ethical dilemmas you\'ve navigated and your reasoning',
       ],
       mid: [
-        [
-          'Review clinical assessment frameworks for your patient population',
-          'Prepare patient cases demonstrating your clinical judgment',
-          'Document how you prioritize care with multiple patients',
-          'Review pharmacology: common medications, doses, interactions',
-          'Prepare to discuss documentation standards and EHR workflows',
-          'Study infection control and safety protocols for your setting',
-        ],
+        'Review clinical assessment frameworks for your patient population systematically',
+        'Prepare patient cases demonstrating clinical judgment: assessment, intervention, evaluation',
+        'Document prioritizing care with multiple patients: how you decide, examples',
+        'Review pharmacology: common medications in specialty, doses, interactions, monitoring',
+        'Prepare to discuss documentation standards: what to document, EHR workflows',
+        'Study infection control protocols: precautions, hand hygiene, outbreak management',
+        'Document patient safety initiatives you\'ve participated in',
+        'Prepare examples of patient education tailored to different learning needs',
+        'Review interdisciplinary collaboration: how you work with physicians, therapy, social work',
+        'Document a time you caught an error before it reached the patient',
       ],
       junior: [
-        [
-          'Review core clinical competencies from your program',
-          'Prepare examples from clinical rotations showing your learning',
-          'Study common diagnoses and treatments in the specialty',
-          'Review patient safety: fall prevention, medication safety, infection control',
-          'Prepare to discuss how you handle stressful patient situations',
-          'Document your clinical interests and professional goals',
-        ],
+        'Review core clinical competencies from your nursing/clinical program',
+        'Prepare examples from clinical rotations demonstrating learning and growth',
+        'Study common diagnoses and treatments in the specialty you\'re applying to',
+        'Review patient safety fundamentals: fall prevention, medication safety, infection control',
+        'Prepare to discuss how you handle stressful or emotional patient situations',
+        'Document your clinical interests and professional development goals',
+        'Review basic pharmacology: drug classes, common medications, safety checks',
+        'Prepare questions about orientation, preceptorship, and support for new grads',
+        'Study the hospital/facility: Magnet status, specialties, patient population',
+        'Document your approach to asking for help and seeking guidance',
       ],
     },
     behavioural: {
       senior: [
-        [
-          'Prepare STAR stories about complex patient cases and outcomes',
-          'Document examples of advocating for patients or staff',
-          'Review how you\'ve handled ethical dilemmas in clinical practice',
-          'Prepare a story about teaching or mentoring clinical staff',
-          'Document your approach to continuous learning and staying current',
-          'Prepare examples of interprofessional team collaboration',
-        ],
+        'Prepare STAR stories about complex patient cases with positive outcomes due to your intervention',
+        'Document advocating for patients or staff: situation, your actions, resolution',
+        'Review handling ethical dilemmas: specific cases, your reasoning process, outcome',
+        'Prepare story about teaching/mentoring clinical staff: approach, challenges, results',
+        'Document your commitment to continuous learning: certifications, education, skills',
+        'Prepare examples of interprofessional collaboration improving patient outcomes',
+        'Review handling a clinical error or near-miss: response, reporting, prevention',
+        'Document managing difficult family dynamics while maintaining patient advocacy',
+        'Prepare to discuss burnout prevention: self-care strategies, when you\'ve struggled',
+        'Review leadership examples: charge nurse, committee work, process improvement',
       ],
       mid: [
-        [
-          'Prepare stories demonstrating patient advocacy and communication',
-          'Document examples of handling difficult patient or family situations',
-          'Review how you manage stress and prevent burnout',
-          'Prepare to discuss your continuing education and certifications',
-          'Document examples of team collaboration in clinical settings',
-          'Prepare a story about learning from a clinical error or near-miss',
-        ],
-      ],
-      junior: [
-        [
-          'Prepare stories from clinical rotations showing compassion and care',
-          'Document examples of handling challenging patient interactions',
-          'Review why you chose this clinical specialty',
-          'Prepare to discuss your stress management strategies',
-          'Document preceptors or mentors who influenced your practice',
-          'Prepare questions about orientation and support for new staff',
-        ],
+        'Prepare stories demonstrating patient advocacy in challenging situations',
+        'Document handling difficult patient or family member interactions',
+        'Review stress management: how you cope with emotional demands of clinical work',
+        'Prepare to discuss continuing education and specialty certifications',
+        'Document team collaboration: how you work with different personalities and disciplines',
+        'Prepare story about learning from clinical error or near-miss experience',
+        'Review time management with competing patient needs',
+        'Document communication with physicians: SBAR, receiving orders, clarifying concerns',
+        'Prepare examples of going above and beyond for patients',
+        'Review handling disagreements with colleagues professionally',
       ],
     },
   },
-
-  // ==================== AEROSPACE ====================
-  aerospace: {
-    technical_screen: {
-      executive: [
-        [
-          'Prepare to discuss aerospace program leadership and certification experience',
-          'Review your experience with DO-178C/DO-254 compliance at program level',
-          'Document major milestone achievements in aerospace programs',
-          'Prepare examples of managing FAA/EASA certification processes',
-          'Review your approach to safety management systems',
-          'Prepare to discuss systems engineering at aircraft/spacecraft level',
-        ],
-      ],
-      senior: [
-        [
-          'Review flight dynamics: equations of motion, stability derivatives, control response',
-          'Prepare to discuss propulsion systems: turbofan performance, specific fuel consumption',
-          'Document your experience with V&V processes: test plans, requirements traceability',
-          'Review avionics architecture: ARINC 429, MIL-STD-1553, data buses',
-          'Prepare examples of solving complex aerospace engineering problems',
-          'Study recent developments in your aerospace specialty area',
-        ],
-        [
-          'Review structural analysis: FEM basics, fatigue analysis, damage tolerance',
-          'Prepare to discuss materials: composites, aluminum alloys, material selection',
-          'Document your experience with environmental qualification testing',
-          'Review aerodynamics: lift, drag, pressure distributions, CFD experience',
-          'Prepare examples of trade studies you\'ve conducted',
-          'Study regulatory requirements relevant to your specialty (FAR, MIL-STD)',
-        ],
-      ],
-      mid: [
-        [
-          'Review core aerospace fundamentals: aerodynamics, structures, propulsion basics',
-          'Prepare to discuss your experience with aerospace design tools (CATIA, MATLAB, NASTRAN)',
-          'Document your understanding of aerospace quality standards (AS9100)',
-          'Review materials properties and selection criteria for aerospace',
-          'Prepare to discuss your testing and validation experience',
-          'Study the company\'s products and recent aerospace programs',
-        ],
-      ],
-      junior: [
-        [
-          'Review aerospace engineering fundamentals from coursework',
-          'Prepare to discuss senior design project and key learnings',
-          'Study basic aerodynamics: lift equation, drag components, Bernoulli',
-          'Review orbital mechanics basics if applicable to the role',
-          'Prepare to discuss your CAD and analysis tool experience',
-          'Research the company\'s aerospace programs and missions',
-        ],
-      ],
-    },
-    system_design: {
-      senior: [
-        [
-          'Review system safety analysis methods: FMEA, FTA, hazard analysis, safety cases',
-          'Prepare to discuss avionics integration architecture and interfaces',
-          'Document experience with redundancy design and fault tolerance',
-          'Review environmental qualification: temperature, vibration, EMI/EMC',
-          'Prepare examples of interface control document development',
-          'Study system verification approaches: analysis, inspection, test, demo',
-        ],
-      ],
-      mid: [
-        [
-          'Review systems engineering V-model and lifecycle processes',
-          'Study interface definition and requirements flowdown',
-          'Prepare to discuss configuration management in aerospace',
-          'Review requirements management tools and traceability',
-          'Document your experience with integration testing',
-          'Prepare questions about the system architecture landscape',
-        ],
-      ],
-    },
-  },
-
-  // ==================== DATA SCIENCE ====================
   data: {
     technical_screen: {
-      executive: [
-        [
-          'Prepare to discuss ML strategy and ROI at organizational level',
-          'Document your experience building and scaling data science teams',
-          'Review your approach to ML infrastructure and MLOps decisions',
-          'Prepare to discuss ethical AI, bias mitigation, and responsible ML',
-          'Document examples of translating business problems to ML solutions at scale',
-          'Prepare to discuss data governance and privacy frameworks',
-        ],
-      ],
       senior: [
-        [
-          'Review advanced ML: gradient boosting (XGBoost, LightGBM), neural network architectures',
-          'Prepare to explain a model end-to-end: features, training, evaluation, deployment',
-          'Practice SQL: window functions, CTEs, complex joins, query optimization',
-          'Review A/B testing: power analysis, multiple comparisons, sequential testing',
-          'Document your feature engineering strategies and pipelines',
-          'Prepare to discuss ML monitoring and model drift detection',
-        ],
-        [
-          'Study deep learning architectures: CNNs, RNNs, transformers, attention',
-          'Prepare examples of debugging model performance issues',
-          'Review statistics: hypothesis testing, confidence intervals, Bayesian methods',
-          'Document your experience with ML in production systems',
-          'Prepare to discuss experimentation platforms and feature stores',
-          'Review causal inference methods: propensity scores, diff-in-diff, regression discontinuity',
-        ],
+        'Review ML algorithms in depth: gradient boosting (XGBoost, LightGBM), neural network architectures',
+        'Prepare to explain end-to-end ML project: problem framing, data, features, model, evaluation, deployment',
+        'Practice SQL: window functions (LAG, LEAD, ROW_NUMBER), CTEs, query optimization',
+        'Review A/B testing rigor: power analysis, multiple comparisons, guardrail metrics, sequential testing',
+        'Document feature engineering strategies: encoding, scaling, feature selection methods',
+        'Prepare to discuss ML monitoring: data drift, model drift, performance degradation detection',
+        'Review deep learning: CNN architectures, RNN/LSTM, transformers, attention mechanisms',
+        'Document debugging model performance: bias-variance diagnosis, error analysis',
+        'Prepare to discuss statistics: hypothesis testing, confidence intervals, Bayesian methods',
+        'Review ML in production: containerization, APIs, batch vs real-time inference',
+        'Document experimentation platforms and feature stores experience',
+        'Prepare examples of causal inference: propensity matching, diff-in-diff, instrumental variables',
       ],
       mid: [
-        [
-          'Review supervised learning: linear/logistic regression, decision trees, random forests',
-          'Practice Python pandas: groupby, merge, apply, window operations efficiently',
-          'Prepare SQL exercises: aggregations, joins, subqueries, case statements',
-          'Review evaluation metrics: precision, recall, F1, AUC-ROC, when to use each',
-          'Document your data pipeline and ETL experience',
-          'Practice explaining ML concepts to non-technical stakeholders',
-        ],
+        'Review supervised learning: linear/logistic regression, decision trees, random forests, SVMs',
+        'Practice Python pandas efficiently: groupby, merge, apply, vectorized operations',
+        'Prepare SQL exercises: complex aggregations, self-joins, correlated subqueries, window functions',
+        'Review evaluation metrics: precision/recall trade-off, F1, AUC-ROC, when to use each',
+        'Document data pipeline experience: ETL, data cleaning, handling missing values',
+        'Practice explaining ML concepts to non-technical stakeholders simply',
+        'Review statistics: distributions, hypothesis testing, p-values, confidence intervals',
+        'Prepare to discuss data visualization: choosing chart types, telling stories with data',
+        'Document your approach to exploratory data analysis',
+        'Review feature engineering: one-hot encoding, scaling, handling categorical variables',
       ],
       junior: [
-        [
-          'Review ML basics: train/test split, overfitting, cross-validation, bias-variance',
-          'Practice Python data manipulation with pandas and numpy',
-          'Review SQL fundamentals: SELECT, JOIN, GROUP BY, HAVING',
-          'Understand statistics basics: mean, variance, distributions, correlation',
-          'Prepare to discuss your data science projects and Kaggle experience',
-          'Review the company\'s data products and potential ML applications',
-        ],
+        'Review ML fundamentals: train/test split, overfitting, cross-validation, bias-variance tradeoff',
+        'Practice Python basics: numpy arrays, pandas dataframes, basic matplotlib',
+        'Study SQL fundamentals: SELECT, JOIN types, GROUP BY, HAVING, ORDER BY',
+        'Understand statistics basics: mean, variance, standard deviation, correlation, distributions',
+        'Prepare to discuss data science projects from coursework or Kaggle',
+        'Review the company\'s data products and potential ML applications',
+        'Study basic ML models: linear regression, logistic regression, decision trees',
+        'Prepare to demonstrate data manipulation in Python',
+        'Review data visualization basics: when to use bar, line, scatter plots',
+        'Document your approach to learning new data science tools',
       ],
     },
     behavioural: {
       senior: [
-        [
-          'Prepare STAR stories about impactful ML/data projects with business metrics',
-          'Document examples of collaborating with product and engineering teams',
-          'Review how you communicate complex analysis to non-technical stakeholders',
-          'Prepare a story about a model that failed or underperformed in production',
-          'Document your approach to mentoring junior data scientists',
-          'Prepare examples of prioritizing among multiple analysis requests',
-        ],
+        'Prepare STAR stories about ML/data projects with measurable business impact',
+        'Document cross-functional collaboration: working with product, engineering, stakeholders',
+        'Review communicating complex analysis to non-technical audiences effectively',
+        'Prepare story about model that failed or underperformed in production: diagnosis, fix',
+        'Document mentoring junior data scientists: your approach, their growth',
+        'Prepare examples of prioritizing among multiple analysis requests',
+        'Review data quality challenges: how you identified and resolved data issues',
+        'Document influencing decisions with data when stakeholders had different views',
+        'Prepare to discuss balancing perfectionism vs shipping: when good enough is enough',
+        'Review examples of self-directed projects that added unexpected value',
       ],
       mid: [
-        [
-          'Prepare stories about data projects with clear business impact',
-          'Document how you handle ambiguous data analysis requests',
-          'Review examples of presenting insights to leadership',
-          'Prepare to discuss how you ensure data quality and validate analysis',
-          'Document examples of working with engineers on data pipelines',
-          'Prepare a story about learning a new tool or technique quickly',
-        ],
+        'Prepare stories about data projects with clear business impact and metrics',
+        'Document handling ambiguous analysis requests: clarifying, scoping, delivering',
+        'Review presenting insights to leadership: how you structured, what worked',
+        'Prepare to discuss ensuring data quality and validating analysis',
+        'Document working with engineers on data pipelines and infrastructure',
+        'Prepare story about learning new tool or technique quickly for a project',
+        'Review handling conflicting data or unexpected analysis results',
+        'Document time management with multiple concurrent analysis requests',
+        'Prepare examples of proactive analysis that surfaced important insights',
+        'Review collaboration with product team on metrics and experimentation',
       ],
     },
   },
-
-  // ==================== FINANCE ====================
   finance: {
     technical_screen: {
       senior: [
-        [
-          'Review advanced financial modeling: DCF with multiple scenarios, LBO mechanics',
-          'Prepare to walk through a model you built: assumptions, sensitivity analysis',
-          'Document experience with financial systems: ERP, Bloomberg, FactSet',
-          'Review Excel advanced: INDEX-MATCH-MATCH, array formulas, financial functions',
-          'Prepare to discuss your approach to financial analysis and recommendations',
-          'Review current market conditions: rates, valuations, sector trends',
-        ],
+        'Review advanced financial modeling: DCF with multiple scenarios, LBO mechanics, merger models',
+        'Prepare to walk through a complex model you built: assumptions, drivers, sensitivity analysis',
+        'Document experience with financial systems: ERP, Bloomberg Terminal, FactSet, Capital IQ',
+        'Review Excel mastery: INDEX-MATCH-MATCH, OFFSET, array formulas, financial functions (XNPV, XIRR)',
+        'Prepare to discuss your financial analysis process and how you develop recommendations',
+        'Review current market conditions: interest rates, valuations, sector trends, macro factors',
+        'Document experience with financial reporting: 10-K/10-Q analysis, earnings calls',
+        'Prepare to discuss accounting concepts: revenue recognition, lease accounting, impairment',
+        'Review experience with forecasting: revenue builds, expense modeling, scenario planning',
+        'Document M&A experience: due diligence, valuation, synergy analysis, integration',
       ],
       mid: [
-        [
-          'Review financial statement analysis: ratios, trends, peer benchmarking',
-          'Practice Excel modeling: building 3-statement model, sensitivity tables',
-          'Prepare to discuss your budgeting and forecasting experience',
-          'Review GAAP/IFRS principles relevant to your area',
-          'Document financial analyses you\'ve conducted and their impact',
-          'Prepare examples of presenting financial information to leadership',
-        ],
+        'Review financial statement analysis: profitability ratios, liquidity, leverage, efficiency',
+        'Practice Excel modeling: 3-statement model linkages, sensitivity tables, scenario toggles',
+        'Prepare to discuss budgeting and forecasting experience: process, assumptions, accuracy',
+        'Review GAAP principles relevant to your area: revenue recognition, accruals, fair value',
+        'Document financial analyses you\'ve conducted and their business impact',
+        'Prepare examples of presenting financial data to leadership or board',
+        'Review Excel functions: SUMIFS, pivot tables, charts, conditional formatting for dashboards',
+        'Document your approach to variance analysis: budget vs actual, month over month',
+        'Prepare to discuss financial controls and audit experience',
+        'Review industry-specific metrics relevant to the company',
       ],
       junior: [
-        [
-          'Review core finance: time value of money, NPV, IRR, WACC basics',
-          'Practice Excel: pivot tables, VLOOKUP/INDEX-MATCH, charts',
-          'Understand financial statements: income statement, balance sheet, cash flow',
-          'Review basic accounting: debits/credits, accruals, journal entries',
-          'Prepare to discuss your finance coursework and interests',
-          'Research the company\'s financial position and recent earnings',
-        ],
+        'Review core finance concepts: time value of money, NPV, IRR, WACC components',
+        'Practice Excel: pivot tables, VLOOKUP/INDEX-MATCH, basic formulas, charts',
+        'Understand financial statements: income statement, balance sheet, cash flow statement linkages',
+        'Review basic accounting: debits/credits, journal entries, accrual vs cash basis',
+        'Prepare to discuss finance coursework: favorite classes, interesting projects',
+        'Research the company: financial statements, recent earnings, analyst coverage',
+        'Review financial ratios: gross margin, EBITDA margin, ROE, debt/equity',
+        'Prepare to discuss your interest in this specific finance area',
+        'Study basic valuation concepts: multiples, DCF at high level',
+        'Document Excel skills and modeling experience from coursework',
       ],
     },
     case_study: {
       senior: [
-        [
-          'Practice investment recommendation cases with clear thesis and catalysts',
-          'Review valuation: comparable companies, precedent transactions, DCF',
-          'Prepare to walk through your financial analysis framework',
-          'Practice presenting recommendations with supporting data and risks',
-          'Review industry metrics for 2-3 sectors in depth',
-          'Prepare to discuss current market opportunities and risks',
-        ],
+        'Practice investment recommendation cases: develop thesis, identify catalysts and risks',
+        'Review valuation mastery: when to use DCF vs comps vs precedents, common pitfalls',
+        'Prepare to walk through your analytical framework for evaluating investments',
+        'Practice presenting recommendations: structure, supporting data, handling pushback',
+        'Review industry deep dives in 2-3 sectors: drivers, trends, key metrics',
+        'Prepare to discuss current market opportunities and your investment viewpoint',
+        'Document complex transactions you\'ve analyzed or executed',
+        'Prepare to discuss risk factors and how you assess them',
+        'Review due diligence processes you\'ve led or participated in',
+        'Practice defending your analysis against challenging questions',
       ],
       mid: [
-        [
-          'Practice financial case studies with 30-minute time limits',
-          'Review valuation methods and when to apply each',
-          'Prepare to structure financial analyses systematically',
-          'Practice calculating financial metrics quickly: margins, returns, growth',
-          'Review how to present financial recommendations clearly',
-          'Prepare questions about the role\'s analytical responsibilities',
-        ],
+        'Practice financial cases with 30-45 minute time limits',
+        'Review valuation approaches: comparable company analysis, precedent transactions, DCF',
+        'Prepare to structure financial analysis systematically: framework, gather data, analyze, recommend',
+        'Practice quick calculations: margins, growth rates, multiples, returns',
+        'Review presenting financial recommendations clearly: headline, support, risks, next steps',
+        'Prepare questions about the role\'s analytical focus areas',
+        'Document your approach to dealing with incomplete or conflicting data',
+        'Practice interpreting financial statements under time pressure',
+        'Review industry knowledge for the company\'s sector',
+        'Prepare to discuss how you stay current on markets and financial news',
       ],
     },
   },
-
-  // ==================== CONSULTING ====================
   consulting: {
     case_study: {
-      executive: [
-        [
-          'Prepare to lead strategic case discussions at C-level',
-          'Review frameworks for organizational transformation and change management',
-          'Document major engagement turnarounds and lessons learned',
-          'Prepare to discuss client relationship development and account growth',
-          'Review your thought leadership and industry expertise',
-          'Prepare examples of winning competitive pursuits',
-        ],
-      ],
       senior: [
-        [
-          'Master frameworks: MECE issue trees, hypothesis-driven problem solving',
-          'Practice cases: market entry, profitability diagnosis, M&A synergies',
-          'Prepare to lead case discussions and push back on interviewer',
-          'Review industry analyses in 2-3 sectors with current trends',
-          'Practice synthesizing recommendations under time pressure',
-          'Prepare examples of managing client relationships and expectations',
-        ],
-        [
-          'Practice market sizing with clear, defensible assumptions',
-          'Review operations cases: cost reduction, process improvement',
-          'Prepare growth strategy cases: organic vs inorganic, market expansion',
-          'Practice financial analysis in case context: margins, break-even, ROI',
-          'Document client success stories with quantified impact',
-          'Prepare to discuss your industry expertise and perspectives',
-        ],
+        'Master case frameworks: MECE issue trees, hypothesis-driven, so-what chains',
+        'Practice diverse cases: market entry, profitability diagnosis, M&A synergies, pricing',
+        'Prepare to lead case discussions: drive the conversation, push back on interviewer',
+        'Review industry knowledge in 2-3 sectors: key players, trends, margin structures, value chains',
+        'Practice synthesis under pressure: 30-second summary of key findings and recommendation',
+        'Prepare examples of managing ambiguous client situations',
+        'Document client impact stories with specific metrics and outcomes',
+        'Practice market sizing with multiple approaches: top-down, bottom-up, triangulation',
+        'Review operations cases: cost reduction, process optimization, supply chain',
+        'Prepare growth strategy cases: organic vs inorganic, market expansion frameworks',
+        'Practice financial analysis in case context: break-even, NPV, ROI calculations',
+        'Document experience with quantitative analysis: Excel modeling, data analysis',
       ],
       mid: [
-        [
-          'Practice case frameworks: 3C\'s, Porter\'s forces, value chain',
-          'Master market sizing with top-down and bottom-up approaches',
-          'Practice mental math: percentages, compound growth, unit economics',
-          'Prepare structured approaches to profitability and market entry cases',
-          'Practice delivering recommendations with clear logic chain',
-          'Review 2-3 industries to demonstrate commercial awareness',
-        ],
+        'Practice case frameworks: 3C\'s, Porter\'s Five Forces, value chain, profit tree',
+        'Master market sizing: explicit assumptions, top-down and bottom-up, reasonableness checks',
+        'Practice mental math: percentages, compound growth, quick multiplication/division',
+        'Prepare structured approaches: profitability cases, market entry frameworks',
+        'Practice delivering recommendations: clear structure, logic chain, actionable',
+        'Review 2-3 industries to demonstrate commercial awareness',
+        'Document your approach to ambiguous problems: how you structure, what questions you ask',
+        'Practice brainstorming business ideas creatively and structurally',
+        'Review basic financial analysis: margins, growth rates, break-even',
+        'Prepare examples of analytical work from previous experience',
       ],
       junior: [
-        [
-          'Learn core frameworks: SWOT, 3C\'s, Porter\'s 5 forces, profit tree',
-          'Practice market sizing: be explicit about assumptions and math',
-          'Practice structuring problems into mutually exclusive components',
-          'Review mental math: get comfortable with quick calculations',
-          'Practice presenting analysis clearly and responding to pushback',
-          'Prepare examples demonstrating analytical and structured thinking',
-        ],
+        'Learn core frameworks: SWOT, 3C\'s, Porter\'s Five Forces, profit tree basics',
+        'Practice market sizing: be explicit about every assumption, show your math',
+        'Practice structuring problems: break into MECE components, prioritize',
+        'Review mental math: get comfortable with quick calculations, percentages, rounding',
+        'Practice presenting analysis: clear, confident, acknowledge uncertainties',
+        'Prepare examples from coursework demonstrating structured, analytical thinking',
+        'Document your interest in consulting: why this career, why this firm',
+        'Practice brainstorming: generating creative ideas within a structure',
+        'Review basic business concepts: revenue, costs, margins, market share',
+        'Prepare thoughtful questions about the firm\'s culture and work',
       ],
     },
     behavioural: {
       senior: [
-        [
-          'Prepare STAR stories about complex client engagements and impact',
-          'Document examples of managing difficult client situations',
-          'Review how you\'ve developed client relationships and grown accounts',
-          'Prepare a story about recovering a challenging project',
-          'Document your approach to developing and mentoring consultants',
-          'Prepare examples of business development and proposal wins',
-        ],
+        'Prepare STAR stories about complex client engagements and measurable impact',
+        'Document managing difficult client situations: conflicts, expectation mismatches',
+        'Review developing client relationships: from project delivery to trusted advisor',
+        'Prepare story about recovering a project that was going poorly',
+        'Document developing and mentoring junior consultants',
+        'Prepare examples of business development: proposals, pitches, relationship building',
+        'Review handling ambiguity: client didn\'t know what they needed, how you figured it out',
+        'Document working with challenging client stakeholders',
+        'Prepare to discuss your expertise areas and how you developed them',
+        'Review examples of going beyond the project scope to add value',
       ],
       mid: [
-        [
-          'Prepare stories demonstrating problem-solving and analytical skills',
-          'Document examples of working under pressure with tight deadlines',
-          'Review how you handle ambiguity and incomplete information',
-          'Prepare a story about receiving tough feedback and improving',
-          'Document teamwork examples and your role on project teams',
-          'Prepare to discuss your motivation for consulting',
-        ],
+        'Prepare stories demonstrating analytical problem-solving with real examples',
+        'Document working in high-pressure, fast-paced environments effectively',
+        'Review handling ambiguity: unclear requirements, incomplete data',
+        'Prepare story about receiving tough feedback and making concrete improvements',
+        'Document teamwork on consulting projects: your role, collaboration, outcomes',
+        'Prepare to discuss motivation for consulting: what attracts you, what you know about it',
+        'Review examples of leadership in team settings',
+        'Document learning quickly: new industry, new skill, new tool',
+        'Prepare examples of attention to detail catching important issues',
+        'Review client interaction experience if any',
       ],
     },
   },
-
-  // ==================== GENERAL (Fallback for all roles) ====================
   general: {
     recruiter_screening: {
-      executive: [
-        [
-          'Prepare executive summary of your career impact in 60 seconds',
-          'Research the company\'s board, investors, and recent strategic moves',
-          'Document your compensation expectations with market data (Levels.fyi, Glassdoor)',
-          'Prepare your leadership philosophy in 2-3 sentences',
-          'Review recent company news and prepare relevant observations',
-          'Prepare strategic questions about the role and organization',
-        ],
-      ],
       senior: [
-        [
-          'Prepare 60-second career summary highlighting progression and impact',
-          'Research company on Glassdoor, LinkedIn, and news for recent developments',
-          'Document salary expectations with market data justification',
-          'Prepare 3 key achievements with quantified impact (%, $, time)',
-          'Prepare questions about team structure and growth trajectory',
-          'Review job description and map your experience to requirements',
-        ],
+        'Prepare 60-second career summary: progression, key achievements, why this opportunity',
+        'Research company: recent news, products, culture, leadership, funding/financials',
+        'Document salary expectations with market data from Levels.fyi, Glassdoor, Blind',
+        'Prepare 3 quantified achievements that directly relate to this role',
+        'Prepare questions about team size, structure, challenges, and growth trajectory',
+        'Review job description and map your experience to each requirement',
+        'Document your motivation for leaving current role and seeking this one',
+        'Prepare to discuss timeline, other processes, and your decision factors',
+        'Review company values and prepare examples of alignment',
+        'Document questions about interview process and what to expect',
       ],
       mid: [
-        [
-          'Prepare concise overview of your experience and career goals',
-          'Research company culture, mission, products, and recent news',
-          'Understand market rate for this role in your location',
-          'Prepare 3 reasons why you\'re interested in this specific role',
-          'Document questions about the role, team, and company',
-          'Review your resume and be ready to discuss any point in depth',
-        ],
+        'Prepare concise career overview: background, current role, why you\'re looking',
+        'Research company culture, mission, products, and recent developments',
+        'Understand market compensation: salary ranges for role and location',
+        'Prepare 3 reasons why you\'re specifically interested in this role and company',
+        'Document questions about day-to-day responsibilities and success metrics',
+        'Review your resume: be ready to discuss any gap or transition',
+        'Prepare your availability and timeline for interview process',
+        'Document what you\'re looking for: role type, company size, culture',
+        'Research the recruiter on LinkedIn if possible',
+        'Prepare questions about benefits, WFH policy, team culture',
       ],
       junior: [
-        [
-          'Prepare brief introduction covering education and relevant experience',
-          'Research company thoroughly: products, culture, values, mission',
-          'Understand entry-level compensation ranges in your area',
-          'Prepare your "why this role/company" answer with specific reasons',
-          'Document questions about training, mentorship, and growth',
-          'Review job posting and prepare relevant examples from your background',
-        ],
+        'Prepare brief introduction: education, relevant experience, enthusiasm for role',
+        'Research company thoroughly: products, mission, values, office locations',
+        'Understand entry-level compensation in your area for this role type',
+        'Prepare specific reasons for interest in this company (not generic)',
+        'Document questions about training, mentorship, and growth paths',
+        'Review job posting requirements and map to your background',
+        'Prepare to explain any gaps or unusual transitions in your background',
+        'Research what day-to-day work looks like in this role',
+        'Document your career interests and why this is a good first step',
+        'Prepare questions that show you\'ve researched the company',
       ],
     },
     phone_screen: {
       senior: [
-        [
-          'Map top 3 achievements to specific metrics and business outcomes',
-          'Research interviewer on LinkedIn and identify connection points',
-          'Prepare compelling "why this company" answer with specific reasons',
-          'Draft 3 STAR stories covering: leadership, impact, problem-solving',
-          'Test your phone/video setup in a quiet environment',
-          'Prepare 3-4 insightful questions about team challenges',
-        ],
+        'Map your top 3 achievements to specific business outcomes with metrics',
+        'Research interviewer on LinkedIn: background, tenure, common connections',
+        'Prepare compelling "why this company" answer with company-specific research',
+        'Draft 4 STAR stories covering: leadership, impact, problem-solving, collaboration',
+        'Test phone/video setup in quiet environment with good lighting',
+        'Prepare 3-4 insightful questions showing understanding of role challenges',
+        'Document your "weakness" answer: genuine area of growth with mitigation',
+        'Prepare to explain your career trajectory: decisions, transitions, growth',
+        'Review company competitors and market position',
+        'Prepare to discuss timeline and other opportunities professionally',
       ],
       mid: [
-        [
-          'Review resume and prepare to discuss each role in detail',
-          'Research interviewer and company recent developments',
-          'Prepare your career story and motivation for this transition',
-          'Draft 3 STAR stories covering different skills/situations',
-          'Test technology setup and find a quiet location',
-          'Prepare 3-4 thoughtful questions about the role and team',
-        ],
+        'Review resume thoroughly: be ready to discuss each role and transition',
+        'Research interviewer and company recent news or announcements',
+        'Prepare career story: where you\'ve been, where you\'re going, why this role',
+        'Draft 3-4 STAR stories covering different skills and situations',
+        'Test technology setup: camera, microphone, internet, background',
+        'Prepare thoughtful questions about the role, team, and expectations',
+        'Document your motivation for the move: positive framing',
+        'Prepare to discuss salary expectations if asked (know market rates)',
+        'Review the job description and highlight relevant experience',
+        'Prepare closing: reiterate interest, ask about next steps',
       ],
       junior: [
-        [
-          'Review resume and prepare to explain all experiences clearly',
-          'Research company and interviewer on LinkedIn',
-          'Prepare "tell me about yourself" in 60 seconds max',
-          'Draft examples from school, projects, or internships',
-          'Test technology setup and find quiet location',
-          'Prepare questions about the role and development opportunities',
-        ],
+        'Review resume and prepare to discuss every item in depth',
+        'Research company and interviewer on LinkedIn for context',
+        'Prepare "tell me about yourself" in 60 seconds: education, experience, interest',
+        'Draft examples from school, projects, internships using STAR structure',
+        'Test technology and find quiet, well-lit location',
+        'Prepare questions about the role, training, and growth opportunities',
+        'Document why you\'re interested in this specific company and role',
+        'Prepare to discuss relevant coursework, projects, or activities',
+        'Review basic industry knowledge related to the role',
+        'Prepare to express enthusiasm and ask about next steps',
       ],
     },
     behavioural: {
       senior: [
-        [
-          'Prepare 5+ STAR stories with quantified business impact',
-          'Document examples of influencing without direct authority',
-          'Prepare "disagreement with leadership" story with resolution',
-          'Review examples of developing and mentoring team members',
-          'Prepare to discuss handling ambiguity and prioritization',
-          'Document cross-functional initiative examples',
-        ],
+        'Prepare 6+ STAR stories with quantified impact (revenue, cost savings, efficiency)',
+        'Document examples of influencing others without formal authority',
+        'Prepare "disagreement with manager/leadership" story with professional resolution',
+        'Review developing team members: mentoring, delegating, performance conversations',
+        'Prepare to discuss handling ambiguous situations: how you create clarity',
+        'Document cross-functional initiative examples: stakeholders, obstacles, outcomes',
+        'Prepare to discuss your failures: genuine ownership, specific learning, changes made',
+        'Review examples of prioritization: competing demands, how you decided',
+        'Document your leadership style with specific examples',
+        'Prepare questions about culture and team dynamics',
       ],
       mid: [
-        [
-          'Prepare STAR stories: achievement, challenge, teamwork, failure, initiative',
-          'Quantify achievements: percentages, dollars, time saved, users impacted',
-          'Prepare to discuss strengths and areas for development',
-          'Document examples of receiving and acting on feedback',
-          'Prepare "conflict resolution" story with positive outcome',
-          'Review how your values align with company culture',
-        ],
+        'Prepare STAR stories covering: impact, teamwork, challenge, learning, initiative',
+        'Quantify achievements wherever possible: percentages, dollars, time, users',
+        'Prepare to discuss your strengths with examples and areas for development',
+        'Document receiving and acting on difficult feedback constructively',
+        'Prepare "conflict with coworker" story: the issue, your approach, resolution',
+        'Review examples of adapting to change or unexpected challenges',
+        'Prepare "failed project" story: what went wrong, your responsibility, what you learned',
+        'Document your motivation: why this role, why this company, why now',
+        'Prepare questions about team culture and collaboration',
+        'Review company values and map your examples to them',
       ],
       junior: [
-        [
-          'Prepare STAR stories from school, internships, or activities',
-          'Focus on learning agility and growth mindset examples',
-          'Prepare to discuss why you\'re passionate about this field',
-          'Document teamwork examples: your role and contributions',
-          'Prepare "challenge overcome" story with learnings',
-          'Prepare questions about culture and development programs',
-        ],
+        'Prepare STAR stories from academics, internships, jobs, activities, or volunteering',
+        'Focus on learning agility: examples of quickly picking up something new',
+        'Prepare to discuss why you\'re passionate about this field/role',
+        'Document teamwork examples: your specific contributions and role',
+        'Prepare "challenge overcome" story: the obstacle, your actions, result',
+        'Review examples of initiative or going beyond requirements',
+        'Document handling stress or pressure: finals, project deadlines, work',
+        'Prepare "failure or mistake" story: what happened, what you learned',
+        'Prepare questions about mentorship and professional development',
+        'Document what you hope to learn in your first role',
       ],
     },
     hiring_manager: {
       senior: [
-        [
-          'Research manager\'s background and team structure',
-          'Prepare 30-60-90 day plan with specific milestones',
-          'Document approach to building relationships with the team',
-          'Prepare questions about success metrics and challenges',
-          'Review team\'s recent projects and priorities',
-          'Prepare to discuss management and collaboration style',
-        ],
+        'Research manager\'s background, tenure, and team structure thoroughly',
+        'Prepare 30-60-90 day plan: learning phase, quick wins, longer-term contributions',
+        'Document approach to building relationships with team and stakeholders quickly',
+        'Prepare questions about team challenges, priorities, and success metrics',
+        'Review organizational context: where team fits, key collaborators',
+        'Prepare to discuss management style you work best with and why',
+        'Document how you handle disagreements with managers constructively',
+        'Prepare questions about decision-making processes and autonomy',
+        'Review recent team accomplishments or challenges if discoverable',
+        'Prepare to discuss what support you need to be successful',
       ],
       mid: [
-        [
-          'Research hiring manager\'s background on LinkedIn',
-          'Prepare to discuss how you\'d ramp up in the role',
-          'Document questions about team dynamics and priorities',
-          'Prepare to discuss working style and preferences',
-          'Review what success looks like in first 6 months',
-          'Prepare to discuss career goals and growth interests',
-        ],
+        'Research hiring manager: background, team, LinkedIn posts or articles',
+        'Prepare to discuss how you\'d approach ramping up in the role',
+        'Document questions about team dynamics, priorities, and challenges',
+        'Prepare to discuss your preferred working style and communication',
+        'Review what success looks like in first 3-6 months if you can find out',
+        'Prepare to discuss career goals and how this role fits',
+        'Document how you handle feedback: examples of implementing suggestions',
+        'Prepare questions about manager\'s style and expectations',
+        'Review the team\'s work if visible (blog posts, products, etc.)',
+        'Prepare to discuss what motivates you and keeps you engaged',
       ],
       junior: [
-        [
-          'Research hiring manager and understand their role',
-          'Prepare to discuss what mentorship you\'re seeking',
-          'Document questions about training and development',
-          'Prepare to discuss working style and learning approach',
-          'Review what entry-level role looks like day-to-day',
-          'Prepare to discuss career interests and goals',
-        ],
+        'Research hiring manager and understand their role and team',
+        'Prepare to discuss what kind of mentorship and guidance you\'re seeking',
+        'Document questions about training, onboarding, and ramp-up expectations',
+        'Prepare to discuss your working style: collaboration, communication, learning',
+        'Review what entry-level work looks like: daily tasks, projects',
+        'Prepare to discuss career interests and why this is exciting first step',
+        'Document how you seek and receive feedback',
+        'Prepare questions about growth opportunities and career paths',
+        'Review manager\'s background for connection points',
+        'Prepare to express enthusiasm and eagerness to learn',
       ],
     },
     final_round: {
       senior: [
-        [
-          'Review all previous interview feedback and address concerns',
-          'Research senior leadership and company strategic direction',
-          'Prepare high-level vision for role\'s impact',
-          'Document questions about growth trajectory and success metrics',
-          'Review compensation benchmarks and prepare for discussion',
-          'Prepare closing statement: why you, why now, why this company',
-        ],
+        'Review all previous rounds: feedback received, concerns raised, questions asked',
+        'Research all interviewers: executives, skip-levels, cross-functional partners',
+        'Prepare strategic perspective: where you see the team/company in 2-3 years',
+        'Document questions about company strategy, challenges, and your role in it',
+        'Review compensation expectations and prepare for discussion',
+        'Prepare closing summary: why you, why now, what you\'ll accomplish',
+        'Document how you\'d approach first major project or initiative',
+        'Prepare for culture/values discussion: alignment examples',
+        'Review competitive landscape and your informed perspective',
+        'Prepare questions about decision timeline and next steps',
       ],
       mid: [
-        [
-          'Reflect on previous interviews and common themes/feedback',
-          'Research any new interviewers you\'ll meet',
-          'Prepare to reinforce strengths and address any concerns',
-          'Document questions about team direction and your growth',
-          'Prepare to discuss compensation expectations',
-          'Prepare closing: enthusiasm, fit, and clear next steps',
-        ],
+        'Review and reflect on all previous conversations: themes, concerns, positives',
+        'Research any new interviewers you\'ll be meeting',
+        'Prepare to reinforce key strengths and address any lingering concerns',
+        'Document questions about team growth, your progression, company direction',
+        'Prepare to discuss compensation if appropriate for round',
+        'Prepare strong close: summarize your fit, express genuine enthusiasm',
+        'Review any company announcements since previous interviews',
+        'Document what you\'ve learned about the role through the process',
+        'Prepare to discuss timeline and competing opportunities professionally',
+        'Review culture fit: examples that demonstrate alignment',
       ],
       junior: [
-        [
-          'Review notes from all previous interviews',
-          'Research any new interviewers on LinkedIn',
-          'Prepare to demonstrate continued enthusiasm and fit',
-          'Document remaining questions about the role',
-          'Understand entry-level compensation and benefits',
-          'Prepare to express excitement and commitment',
-        ],
+        'Review notes from all previous interviews: what you discussed, what went well',
+        'Research any new interviewers on LinkedIn',
+        'Prepare to show consistent enthusiasm and professionalism',
+        'Document remaining questions about the role and opportunity',
+        'Review entry-level compensation and benefits',
+        'Prepare genuine expression of excitement and commitment',
+        'Document what you\'ve learned about company through process',
+        'Prepare to discuss timeline: when you can start, other processes',
+        'Review culture and values: reinforce alignment',
+        'Prepare to ask about next steps and decision timeline',
       ],
     },
     offer: {
       senior: [
-        [
-          'Research total comp on Levels.fyi for similar roles and levels',
-          'List negotiation priorities: base, equity, sign-on, start date',
-          'Understand equity details: grant type, vesting, refresh policy',
-          'Prepare data points to justify counter-offer',
-          'Calculate total compensation including benefits value',
-          'Know your walk-away number and decision timeline',
-        ],
+        'Research total compensation benchmarks: Levels.fyi, Blind, Glassdoor, recruiter data',
+        'Document negotiation priorities: base, equity, bonus, sign-on, benefits, title',
+        'Review equity details thoroughly: grant type, vesting, cliff, refresh policy',
+        'Prepare justification for counter: competing offers, market data, experience',
+        'Calculate total annual compensation including all components and benefits value',
+        'Know your reservation price: minimum you\'d accept, and walk-away number',
+        'Prepare professional response timeline: when you\'ll decide, any dependencies',
+        'Document questions about equity: strike price, 409A, secondary sales',
+        'Review benefits details: health insurance, 401k match, PTO policy',
+        'Prepare to negotiate non-salary items if salary is firm',
       ],
       mid: [
-        [
-          'Research market rates for role and experience level',
-          'Understand all compensation components: base, bonus, equity',
-          'Prepare questions about benefits: health, 401k match, PTO',
-          'Document your priorities: what matters most to you',
-          'Prepare professional counter-offer approach',
-          'Understand timeline and next steps',
-        ],
+        'Research market rates for your role, level, and location specifically',
+        'Understand all offer components: base, bonus, equity, signing bonus',
+        'Prepare questions about benefits: healthcare plans, retirement, PTO accrual',
+        'Document your priorities: what matters most vs nice-to-haves',
+        'Prepare professional counter-offer approach with data',
+        'Understand timeline: when they need an answer, your decision factors',
+        'Review equity grant: type (RSU/options), vesting schedule, value',
+        'Document questions about performance reviews, raises, promotions',
+        'Prepare to negotiate respectfully: what you want, why it\'s fair',
+        'Know that it\'s okay to ask for time to consider',
       ],
       junior: [
-        [
-          'Research entry-level compensation for role and location',
-          'Understand offer components: salary, benefits, start date',
-          'Prepare questions about benefits and development programs',
-          'Know that it\'s okay to ask for time to consider',
-          'Understand signing bonus and relocation if applicable',
-          'Prepare to accept or negotiate professionally',
-        ],
+        'Research entry-level compensation for role and location on Glassdoor/Levels.fyi',
+        'Understand offer components: base salary, any bonus, benefits',
+        'Document questions about benefits: health insurance, 401k, PTO',
+        'Know that asking for time to consider is professional and expected',
+        'Understand signing bonus and relocation assistance if applicable',
+        'Prepare to accept graciously or counter professionally',
+        'Review start date flexibility and any constraints you have',
+        'Document your actual needs: salary floor, must-have benefits',
+        'Understand equity if offered: basics of RSUs or options',
+        'Prepare to express enthusiasm while making informed decision',
       ],
     },
   },
 };
 
 // ============================================================================
-// TOPIC GENERATION - Pure Functions, Deterministic Fallback
+// TOPIC SELECTION - Picks different topics on each refresh
 // ============================================================================
+
+const selectTopicsFromPool = (
+  pool: string[],
+  count: number,
+  seed: number
+): string[] => {
+  if (pool.length === 0) return [];
+  if (pool.length <= count) return [...pool];
+  
+  // Use seed to select different subset each time
+  const shuffled = [...pool];
+  
+  // Fisher-Yates shuffle with seeded random
+  let currentSeed = seed;
+  for (let i = shuffled.length - 1; i > 0; i--) {
+    // Simple seeded random
+    currentSeed = (currentSeed * 1103515245 + 12345) & 0x7fffffff;
+    const j = currentSeed % (i + 1);
+    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+  }
+  
+  return shuffled.slice(0, count);
+};
 
 const getTopicsForProfile = (
   role: RoleType,
   stage: string,
   seniority: Seniority,
-  setIndex: number = 0
+  refreshSeed: number
 ): string[] => {
   const stageLower = stage.toLowerCase();
   
-  // Try role-specific topics first
-  const roleSets = TOPICS[role]?.[stageLower]?.[seniority];
-  if (roleSets && roleSets.length > 0) {
-    const idx = setIndex % roleSets.length;
-    return roleSets[idx];
-  }
+  // Try role-specific pool first
+  let pool = TOPIC_POOLS[role]?.[stageLower]?.[seniority];
   
-  // Fall back to general topics
-  const generalSets = TOPICS.general?.[stageLower]?.[seniority];
-  if (generalSets && generalSets.length > 0) {
-    const idx = setIndex % generalSets.length;
-    return generalSets[idx];
+  // Fall back to general pool
+  if (!pool || pool.length === 0) {
+    pool = TOPIC_POOLS.general?.[stageLower]?.[seniority];
   }
   
   // Ultimate fallback
-  return TOPICS.general?.phone_screen?.mid?.[0] || [];
+  if (!pool || pool.length === 0) {
+    pool = TOPIC_POOLS.general?.phone_screen?.mid || [];
+  }
+  
+  // Select 6 topics from the pool using the refresh seed
+  return selectTopicsFromPool(pool, 6, refreshSeed);
 };
 
 const generateTopicsFromDB = (
   stage: string,
   position: string,
   company: string,
-  refreshCount: number = 0
+  refreshSeed: number
 ): FocusArea[] => {
   const seniority = detectSeniority(position);
   const role = detectRole(position);
   
-  let topics = getTopicsForProfile(role, stage, seniority, refreshCount);
+  let topics = getTopicsForProfile(role, stage, seniority, refreshSeed);
   
-  // Add company-specific topic if company provided
+  // Add company research topic if company provided
   if (company && company.trim() && topics.length > 0) {
-    const companyTopic = `Research ${company}: recent news, products, engineering blog, Glassdoor reviews`;
+    const companyTopic = `Research ${company}: recent news, products, engineering blog, Glassdoor culture reviews`;
     topics = [companyTopic, ...topics.slice(0, 5)];
   }
   
-  return topics.slice(0, 6).map((text, i) => ({
-    id: `db_${refreshCount}_${i}_${Date.now()}`,
+  return topics.map((text, i) => ({
+    id: `topic_${refreshSeed}_${i}_${Date.now()}`,
     text,
   }));
 };
 
 // ============================================================================
-// LLM GENERATION - No Logging of User Data
+// LLM GENERATION
 // ============================================================================
 
 const generateTopicsFromLLM = async (
@@ -1108,21 +1030,22 @@ const generateTopicsFromLLM = async (
   const seniority = detectSeniority(position);
   const role = detectRole(position);
 
-  const prompt = `Generate 6 specific interview preparation topics.
+  const prompt = `Generate 6 specific, actionable interview preparation topics.
 
-Role: ${position}
-Stage: ${stageDisplay}
-Level: ${seniority}
+Position: ${position}
+Interview Stage: ${stageDisplay}
+Seniority: ${seniority}
+Role Type: ${role}
 ${company ? `Company: ${company}` : ''}
 
 Requirements:
-- Specific to ${seniority} ${role} interviewing for ${stageDisplay}
-- Each topic is actionable, completable in 30min-2hrs
-- Include specific techniques, tools, or resources
-- NOT generic advice like "research the company"
-${isRefresh ? `- Generate DIFFERENT topics than typical advice. Timestamp: ${Date.now()}` : ''}
+- Highly specific to ${seniority}-level ${role} preparing for ${stageDisplay}
+- Each actionable in 30min-2hrs
+- Include specific resources, techniques, or frameworks
+- NOT generic (avoid "research company", "prepare questions")
+${isRefresh ? `- Generate COMPLETELY DIFFERENT topics. Seed: ${Date.now()}` : ''}
 
-Return ONLY a JSON array of 6 strings, no markdown.`;
+Return ONLY a JSON array of 6 strings. No markdown.`;
 
   try {
     const response = await fetch(LLM_API_URL, {
@@ -1137,8 +1060,8 @@ Return ONLY a JSON array of 6 strings, no markdown.`;
           { role: 'system', content: 'Return only valid JSON arrays. No markdown.' },
           { role: 'user', content: prompt },
         ],
-        max_tokens: 700,
-        temperature: isRefresh ? 1.0 : 0.8,
+        max_tokens: 800,
+        temperature: isRefresh ? 1.2 : 0.9,
       }),
       signal: controller.signal,
     });
@@ -1153,10 +1076,10 @@ Return ONLY a JSON array of 6 strings, no markdown.`;
     const match = content.match(/\[[\s\S]*?\]/);
     if (!match) return null;
     
-    const topics: string[] = JSON.parse(match[0]);
-    if (!Array.isArray(topics) || topics.length < 4) return null;
+    const parsed: string[] = JSON.parse(match[0]);
+    if (!Array.isArray(parsed) || parsed.length < 4) return null;
     
-    return topics.slice(0, 6).map((text, i) => ({
+    return parsed.slice(0, 6).map((text, i) => ({
       id: `llm_${Date.now()}_${i}`,
       text: String(text),
     }));
@@ -1167,7 +1090,7 @@ Return ONLY a JSON array of 6 strings, no markdown.`;
 };
 
 // ============================================================================
-// MAIN COMPONENT - Stateless, Client-Side Only
+// COMPONENT
 // ============================================================================
 
 const InterviewChecklist: React.FC<InterviewChecklistProps> = ({
@@ -1183,10 +1106,9 @@ const InterviewChecklist: React.FC<InterviewChecklistProps> = ({
   const [loading, setLoading] = useState(false);
   const [isAI, setIsAI] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
-  const [refreshCount, setRefreshCount] = useState(0);
+  const [refreshSeed, setRefreshSeed] = useState(() => Date.now());
   const mountedRef = useRef(true);
   
-  // Derived state - no side effects
   const seniority = useMemo(() => detectSeniority(position), [position]);
   const roleType = useMemo(() => detectRole(position), [position]);
   const stageDisplay = useMemo(() => 
@@ -1197,59 +1119,47 @@ const InterviewChecklist: React.FC<InterviewChecklistProps> = ({
     return () => { mountedRef.current = false; };
   }, []);
   
-  // Load topics when modal opens - instant fallback, background AI upgrade
+  // Load on open
   useEffect(() => {
     if (!visible || !stage) return;
     
-    const cacheKey = `${stage}_${position}`.toLowerCase();
-    const cached = sessionCache.get(cacheKey);
-    
-    // Check session cache first
-    if (cached && Date.now() - cached.timestamp < CACHE_TTL_MS) {
-      setTopics(cached.topics);
-      setIsAI(true);
-      return;
-    }
-    
-    // INSTANT: Show fallback immediately (<100ms)
-    const fallback = generateTopicsFromDB(stage, position, company, 0);
+    // INSTANT fallback (<50ms)
+    const initialSeed = Date.now();
+    setRefreshSeed(initialSeed);
+    const fallback = generateTopicsFromDB(stage, position, company, initialSeed);
     setTopics(fallback);
     setIsAI(false);
     setLoading(true);
     
-    // BACKGROUND: Try to upgrade with AI
+    // Background AI upgrade
     generateTopicsFromLLM(stage, position, company, false).then(llmTopics => {
-      if (mountedRef.current && llmTopics) {
+      if (mountedRef.current && llmTopics && llmTopics.length >= 4) {
         setTopics(llmTopics);
         setIsAI(true);
-        sessionCache.set(cacheKey, { topics: llmTopics, timestamp: Date.now() });
       }
       if (mountedRef.current) setLoading(false);
     });
   }, [visible, stage, position, company]);
   
-  // Refresh handler - always generates NEW topics
+  // Refresh - ALWAYS new topics
   const handleRefresh = async () => {
     if (refreshing) return;
-    
     setRefreshing(true);
-    const newCount = refreshCount + 1;
-    setRefreshCount(newCount);
     
-    // Clear cache for this combination
-    const cacheKey = `${stage}_${position}`.toLowerCase();
-    sessionCache.delete(cacheKey);
+    // New seed for completely different selection
+    const newSeed = Date.now();
+    setRefreshSeed(newSeed);
     
-    // Show next fallback set immediately
-    const fallback = generateTopicsFromDB(stage, position, company, newCount);
+    // Show new fallback set immediately
+    const fallback = generateTopicsFromDB(stage, position, company, newSeed);
     setTopics(fallback);
     setIsAI(false);
     
-    // Try AI in background
+    // Try LLM for even better topics
     const llmTopics = await generateTopicsFromLLM(stage, position, company, true);
     
     if (mountedRef.current) {
-      if (llmTopics) {
+      if (llmTopics && llmTopics.length >= 4) {
         setTopics(llmTopics);
         setIsAI(true);
       }
@@ -1272,7 +1182,6 @@ const InterviewChecklist: React.FC<InterviewChecklistProps> = ({
         <TouchableOpacity style={styles.backdrop} activeOpacity={1} onPress={onClose} />
         
         <View style={[styles.card, { backgroundColor: colors.card }]}>
-          {/* Header */}
           <View style={styles.header}>
             <View style={styles.headerContent}>
               <Text style={[styles.title, { color: colors.text }]}>Preparation Focus</Text>
@@ -1288,12 +1197,11 @@ const InterviewChecklist: React.FC<InterviewChecklistProps> = ({
             </TouchableOpacity>
           </View>
           
-          {/* Context badges */}
           <View style={[styles.badges, { borderBottomColor: colors.border }]}>
             <View style={styles.badgeRow}>
               <View style={[styles.badge, { backgroundColor: colors.primary + '18' }]}>
                 <Text style={[styles.badgeText, { color: colors.primary }]}>
-                  {seniority.charAt(0).toUpperCase() + seniority.slice(1)} Level
+                  {seniority.charAt(0).toUpperCase() + seniority.slice(1)}
                 </Text>
               </View>
               <View style={[styles.badge, { backgroundColor: colors.textSecondary + '18' }]}>
@@ -1309,7 +1217,6 @@ const InterviewChecklist: React.FC<InterviewChecklistProps> = ({
             )}
           </View>
           
-          {/* Topics */}
           <ScrollView style={styles.list} showsVerticalScrollIndicator={false}>
             {topics.map((topic, i) => (
               <View key={topic.id} style={[styles.item, { backgroundColor: colors.background }]}>
@@ -1321,7 +1228,6 @@ const InterviewChecklist: React.FC<InterviewChecklistProps> = ({
             ))}
           </ScrollView>
           
-          {/* Footer */}
           <View style={[styles.footer, { borderTopColor: colors.border }]}>
             <TouchableOpacity
               style={[styles.refreshBtn, { borderColor: colors.border }]}
@@ -1342,11 +1248,10 @@ const InterviewChecklist: React.FC<InterviewChecklistProps> = ({
             </TouchableOpacity>
           </View>
           
-          {/* Source indicator */}
           <View style={styles.source}>
             <Ionicons name={isAI ? 'sparkles' : 'cube-outline'} size={11} color={colors.textSecondary} />
             <Text style={[styles.sourceText, { color: colors.textSecondary }]}>
-              {isAI ? 'AI-personalized' : 'Role-specific tips'}
+              {isAI ? 'AI-personalized' : 'Role-specific'}
               {loading && !isAI ? ' • Enhancing...' : ''}
             </Text>
           </View>
@@ -1356,24 +1261,11 @@ const InterviewChecklist: React.FC<InterviewChecklistProps> = ({
   );
 };
 
-// ============================================================================
-// STYLES
-// ============================================================================
-
 const styles = StyleSheet.create({
   overlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', alignItems: 'center' },
   backdrop: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 },
-  card: {
-    width: '92%',
-    maxWidth: 400,
-    maxHeight: '85%',
-    borderRadius: 16,
-    overflow: 'hidden',
-    ...Platform.select({
-      ios: { shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.15, shadowRadius: 12 },
-      android: { elevation: 8 },
-    }),
-  },
+  card: { width: '92%', maxWidth: 400, maxHeight: '85%', borderRadius: 16, overflow: 'hidden',
+    ...Platform.select({ ios: { shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.15, shadowRadius: 12 }, android: { elevation: 8 } }) },
   header: { flexDirection: 'row', justifyContent: 'space-between', padding: 16, paddingBottom: 10 },
   headerContent: { flex: 1, marginRight: 12 },
   title: { fontSize: 18, fontWeight: '700', marginBottom: 2 },
