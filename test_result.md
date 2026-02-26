@@ -146,6 +146,9 @@ backend:
       - working: true
         agent: "testing"
         comment: "✅ PASS - All job CRUD operations working perfectly. AI categorization successfully categorizes jobs (fallback to keyword matching when AI budget exceeded). Business day aging calculations working correctly. All endpoints (create, list, get, update, delete, stage update) tested and functional."
+      - working: true
+        agent: "testing"
+        comment: "✅ PASS - POST /api/jobs endpoint re-tested as specifically requested. All 8/8 tests PASSED (100% success rate). Job creation with all required fields (company_name, position, date_applied, job_type) working correctly. Jobs are saved and returned properly with correct response status codes and format. GET /api/jobs returns created jobs correctly. Input validation working (rejects incomplete data with 422 status). Individual job retrieval via GET /api/jobs/{id} working. All optional fields (job_url, recruiter_email, upcoming_stage, upcoming_schedule, notes, is_priority) preserved correctly. Response structure includes all expected fields (job_id, user_id, company_name, position, location, salary_range, work_mode, job_type, status, created_at, updated_at). Authentication with test token working correctly. Backend connectivity confirmed at https://prep-checklist-app.preview.emergentagent.com."
 
   - task: "Dashboard statistics endpoint"
     implemented: true
