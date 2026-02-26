@@ -11,8 +11,11 @@ import * as ImagePicker from 'expo-image-picker';
 
 // Get backend URL from configuration
 const getBackendUrl = (): string => {
-  // TEMPORARY: Force dev server URL for testing until production is fixed
-  return 'https://career-topics.preview.emergentagent.com';
+  const envUrl = process.env.EXPO_PUBLIC_BACKEND_URL;
+  if (envUrl) return envUrl;
+  const configUrl = Constants.expoConfig?.extra?.EXPO_PUBLIC_BACKEND_URL;
+  if (configUrl) return configUrl;
+  return 'https://repo-preview-43.emergent.host';
 };
 const BACKEND_URL = getBackendUrl();
 
