@@ -12,7 +12,7 @@ import sys
 import traceback
 
 # Backend URL from environment
-BACKEND_URL = "https://career-topics.preview.emergentagent.com"
+BACKEND_URL = "https://interview-coach-96.preview.emergentagent.com"
 TEST_TOKEN = "test_token_abc123"
 
 class JobAPITester:

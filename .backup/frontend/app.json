@@ -50,7 +50,7 @@
       "typedRoutes": true
     },
     "extra": {
-      "EXPO_PUBLIC_BACKEND_URL": "https://career-topics.preview.emergentagent.com"
+      "EXPO_PUBLIC_BACKEND_URL": "https://interview-coach-96.preview.emergentagent.com"
     }
   }
 }
