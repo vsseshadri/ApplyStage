@@ -101,6 +101,21 @@ const detectRole = (pos: string): RoleType => {
     return 'tpm';
   }
   
+  // PMO - Program Management Office
+  if (/\b(pmo|program management office|portfolio manager|portfolio management|program director)\b/.test(p)) {
+    return 'pmo';
+  }
+  
+  // PROJECT MANAGEMENT - Separate from program management
+  if (/\b(project manager|pmp\b|project lead|project coordinator|construction manager|it project)\b/.test(p) && !/program/.test(p)) {
+    return 'project_mgmt';
+  }
+  
+  // CUSTOMER SUCCESS - Check before general sales
+  if (/\b(customer success|csm\b|cs manager|cs director|client success|customer experience|cx\b|customer advocate|renewal manager|adoption manager)\b/.test(p)) {
+    return 'customer_success';
+  }
+  
   // ML/AI ENGINEER - More specific than general data
   if (/\b(ml engineer|machine learning eng|ai engineer|deep learning eng|mlops|ml ops)\b/.test(p)) {
     return 'ml_engineer';
@@ -112,13 +127,24 @@ const detectRole = (pos: string): RoleType => {
   }
   
   // SOFTWARE - Must have software-specific keywords, not just "engineer"
+  // Also captures VP/SVP/Director of Engineering when combined with software context
   if (/\b(software|developer|programmer|coder|full.?stack|front.?end|back.?end|web dev|mobile dev|ios dev|android dev|devops|sre|site reliability|platform eng|cloud eng|swe\b|sde\b)\b/.test(p)) {
+    return 'software';
+  }
+  
+  // VP/SVP/Director of Engineering (when not caught by software above)
+  if (/\b(vp of engineering|vice president.*engineering|svp.*engineering|director of engineering|head of engineering|engineering director|engineering manager)\b/.test(p)) {
     return 'software';
   }
   
   // DATA SCIENCE / Analytics (not ML Engineer which is caught above)
   if (/\b(data scientist|data science|data anal|business intel|bi analyst|statistician|quantitative|data eng|analytics eng)\b/.test(p)) {
     return 'data';
+  }
+  
+  // PHARMACIST - Check before general clinical
+  if (/\b(pharmacist|pharmacy|pharmd|pharm\.?d|clinical pharmacist|retail pharmacist|hospital pharmacist|pharmacy manager|pharmacy director|pharmaceutical)\b/.test(p)) {
+    return 'pharmacist';
   }
   
   // AEROSPACE - Turbine, propulsion, flight, aircraft, rockets, avionics
@@ -136,8 +162,8 @@ const detectRole = (pos: string): RoleType => {
     return 'electrical_hw';
   }
   
-  // CHEMICAL - Process, chemistry, pharmaceutical, biotech
-  if (/\b(chemical eng|process eng|chemistry|pharmaceutical|biotech|biochem|materials sci|polymer|petrochemical)\b/.test(p)) {
+  // CHEMICAL - Process, chemistry, pharmaceutical (not pharmacist), biotech
+  if (/\b(chemical eng|process eng|chemistry|biotech|biochem|materials sci|polymer|petrochemical|chemical plant|refinery)\b/.test(p) && !/pharmacist/.test(p)) {
     return 'chemical';
   }
   
@@ -147,7 +173,7 @@ const detectRole = (pos: string): RoleType => {
   }
   
   // CLINICAL / HEALTHCARE - Added many medical specialties
-  if (/\b(nurse|rn\b|lpn|np\b|physician|doctor|md\b|surgeon|clinician|therapist|pharmacist|dentist|medical|healthcare|patient care|clinical|pediatrician|cardiologist|neurologist|oncologist|radiologist|anesthesiologist|dermatologist|psychiatrist|psychologist|optometrist|ophthalmologist|gynecologist|obstetrician|urologist|orthopedic|emt|paramedic|phlebotomist|sonographer|technologist|pathologist|veterinarian|chiropractor|podiatrist|midwife|dietitian|nutritionist|respiratory|occupational|physical therapist|speech therapist|audiologist|social worker|counselor|cna|lvn|aprn|pa\b|physician assistant)\b/.test(p)) {
+  if (/\b(nurse|rn\b|lpn|np\b|physician|doctor|md\b|surgeon|clinician|therapist|dentist|medical|healthcare|patient care|clinical|pediatrician|cardiologist|neurologist|oncologist|radiologist|anesthesiologist|dermatologist|psychiatrist|psychologist|optometrist|ophthalmologist|gynecologist|obstetrician|urologist|orthopedic|emt|paramedic|phlebotomist|sonographer|technologist|pathologist|veterinarian|chiropractor|podiatrist|midwife|dietitian|nutritionist|respiratory|occupational|physical therapist|speech therapist|audiologist|social worker|counselor|cna|lvn|aprn|pa\b|physician assistant)\b/.test(p)) {
     return 'clinical';
   }
   
@@ -171,8 +197,8 @@ const detectRole = (pos: string): RoleType => {
     return 'product';
   }
   
-  // PROGRAM / PROJECT MANAGEMENT
-  if (/\b(program manager|project manager|pmp|scrum master|agile coach|delivery manager|tpm|technical program)\b/.test(p)) {
+  // PROGRAM MANAGEMENT (broader, not TPM or PMO)
+  if (/\b(program manager|scrum master|agile coach|delivery manager)\b/.test(p)) {
     return 'program';
   }
   
@@ -181,8 +207,8 @@ const detectRole = (pos: string): RoleType => {
     return 'design';
   }
   
-  // SALES
-  if (/\b(sales|account exec|ae\b|bdr|sdr|business develop|customer success|account manager|territory)\b/.test(p)) {
+  // SALES (excluding customer success which is caught above)
+  if (/\b(sales|account exec|ae\b|bdr|sdr|business develop|account manager|territory)\b/.test(p)) {
     return 'sales';
   }
   
@@ -191,8 +217,8 @@ const detectRole = (pos: string): RoleType => {
     return 'marketing';
   }
   
-  // HR
-  if (/\b(human resource|hr\b|recruiter|talent|people ops|hrbp|compensation|benefits|payroll|training|l&d)\b/.test(p)) {
+  // HR - Human Resources, People Operations, HRBP, Payroll, Training
+  if (/\b(human resource|hr\b|recruiter|talent|people ops|people operations|people advisor|people partner|hrbp|hr business partner|compensation|benefits|payroll|training|l&d|learning and development|employee relations|workforce|staffing)\b/.test(p)) {
     return 'hr';
   }
   
