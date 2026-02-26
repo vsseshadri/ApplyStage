@@ -196,6 +196,13 @@ function formatCompanyName(slug: string): string {
  */
 export function initializeShareListener(callback: (data: SharedJobData) => void): () => void {
   if (Platform.OS === 'android') {
+    // Check if the native module is available (requires custom dev client, not Expo Go)
+    const nativeModule = NativeModules.ReceiveSharingIntent;
+    if (!nativeModule) {
+      console.log('ReceiveSharingIntent native module not available (Expo Go does not support it). Skipping share listener.');
+      return () => {};
+    }
+
     // Get initial shared files on app launch
     ReceiveSharingIntent.getReceivedFiles(
       (files: any[]) => {

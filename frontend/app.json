@@ -94,16 +94,14 @@
       "expo-apple-authentication",
       "expo-document-picker",
       "./plugins/withShareExtension",
-      "expo-image",
-      "expo-sharing",
       "expo-web-browser"
     ],
     "experiments": {
       "typedRoutes": false
     },
     "extra": {
-      "appName": "CareerFlow",
-      "EXPO_PUBLIC_BACKEND_URL": "https://prep-checklist-app.preview.emergentagent.com"
+      // "appName": "CareerFlow",
+      // "EXPO_PUBLIC_BACKEND_URL": "https://prep-checklist-app.preview.emergentagent.com"
     }
   }
 }
