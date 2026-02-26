@@ -112,8 +112,8 @@ const detectRole = (pos: string): RoleType => {
     return 'civil';
   }
   
-  // CLINICAL / HEALTHCARE
-  if (/\b(nurse|rn\b|lpn|np\b|physician|doctor|md\b|surgeon|clinician|therapist|pharmacist|dentist|medical|healthcare|patient care|clinical)\b/.test(p)) {
+  // CLINICAL / HEALTHCARE - Added many medical specialties
+  if (/\b(nurse|rn\b|lpn|np\b|physician|doctor|md\b|surgeon|clinician|therapist|pharmacist|dentist|medical|healthcare|patient care|clinical|pediatrician|cardiologist|neurologist|oncologist|radiologist|anesthesiologist|dermatologist|psychiatrist|psychologist|optometrist|ophthalmologist|gynecologist|obstetrician|urologist|orthopedic|emt|paramedic|phlebotomist|sonographer|technologist|pathologist|veterinarian|chiropractor|podiatrist|midwife|dietitian|nutritionist|respiratory|occupational|physical therapist|speech therapist|audiologist|social worker|counselor|cna|lvn|aprn|pa\b|physician assistant)\b/.test(p)) {
     return 'clinical';
   }
   
