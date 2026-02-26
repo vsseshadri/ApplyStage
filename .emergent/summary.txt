@@ -1,282 +1,181 @@
 <analysis>
 
 <original_problem_statement>
-The user initially requested fixes for UI issues on the dashboard and job entry form, including an incorrect metric, a broken filter, and UI alignment problems.
+The user's initial high-level goals were to fix UI issues, overhaul the Settings page, and implement a new, complex Analytics feature.
 
-Over the course of the session, the scope expanded significantly to include:
-1.  **New Feature (P0): Self-Improving Analytics Intelligence System:**
-    - Add a new Analytics tab before Settings.
-    - The system must dynamically learn and prioritize insights without storing historical summaries or using ML infrastructure. It relies on adaptive rule weighting, rolling window comparisons, and pattern detection.
-    - Insights should evolve through maturity stages (Activity -> Diagnostic -> Coaching -> Predictive).
-    - UI must be glanceable (&lt;2s comprehension) and include a Hero Progress KPI, Metric Snapshot, Pipeline Funnel, and Insight Card.
+During this session, the user's requests evolved to include:
+1.  **Settings Page Overhaul (P0):**
+    - Remove all functionality related to weekly and monthly summary reports from both frontend () and backend (), including UI toggles, backend logic, scheduler jobs, and database models/fields.
+    - Add a Help and Feedback link that opens the user's default email client.
+    - Reposition the Preferences section title and rename Application Goals to Application Targets.
 
-2.  **UI/UX Refinements (P1):**
-    - Move the + (add job) button from the main tab bar to the header of the My Jobs screen.
-    - In the Analytics tab, make the Hero Progress KPI stats clickable to filter the My Jobs list.
-    - In the Analytics insight card, move the title to the top row and change the Add Application button to a simple text link.
-    - Ensure the Analytics pipeline funnel is consistent with the application statuses.
+2.  **Job Form Bug Fixes (P0):**
+    - When a user edits the Upcoming Stage field, the Application Status field should be updated with the same value.
+    - Any custom value added to the Application status field must be available as an option in the Upcoming Stage dropdown.
 
-3.  **Settings Page Overhaul (P0):**
-    - Remove all functionality related to weekly and monthly summary reports, including UI toggles, backend logic, and database fields/collections.
-    - Add a Help and Feedback link after the Security section that opens the user's default email client addressed to .
-    - Move the Preferences section title to be above the Preferred Display Name field.
-    - Rename the Application Goals label to Application Targets.
+3.  **New Feature: Dynamic Prep Checklist (P0):**
+    - Architect and implement a new Prep Checklist feature for the Upcoming Interviews module.
+    - The checklist must be context-aware, generating 6 topics based on the **job role** (e.g., Software Engineer) and **interview stage** (e.g., System Design).
+    - The solution must be stateless, low-latency (<2s), mobile-first, and privacy-preserving (no backend data retention).
+    - It must use a lightweight LLM API call with a deterministic, rule-based fallback mechanism for when the API is unavailable.
+    - The UI should be a non-navigational overlay/modal.
 
-4.  **Bug Fixes & Environment Issues (P0):**
-    - Resolve crashes and errors when using the new + button.
-    - Fix Google/Apple sign-in flows.
-    - Address production deployment failures (Deployment not found, 500 Internal Server Errors).
-    - Investigate and resolve a data discrepancy where the user reported 16 job records, but only 9 were found and migrated to production.
+4.  **Environment Debugging (P0 - Blocker):**
+    - Resolve persistent , , and / gateway errors preventing the Expo Go tunnel from working, which blocks all user testing.
 </original_problem_statement>
 
 **User's preferred language**: English
 
 **what currently exists?**
-A full-stack Expo (React Native) and FastAPI application with a MongoDB database. The app features a dashboard, a My Jobs list with an add/edit modal, a new Analytics tab, and a Settings screen. The project is managed in a Git repository. Authentication is handled via Emergent's auth service for Google and Apple sign-in. There are separate preview and production environments, but the production environment is currently unstable.
+A full-stack Expo (React Native) and FastAPI application.
+- The Settings page has been successfully overhauled, with legacy reporting features removed from the frontend and backend.
+- Two critical bugs in the My Jobs form related to status synchronization and custom status propagation have been fixed.
+- A new, sophisticated, context-aware Prep Checklist component () has been created. It uses a combination of an LLM API and a rule-based fallback to generate dynamic interview topics.
+- **Critically, the development environment is in a broken state.** The Expo Go tunnel () is stuck in a crash/restart loop, preventing the user from accessing or testing any of the recent changes.
 
 **Last working item**:
-    - Last item agent was working: The agent was in the middle of overhauling the Settings screen. It had successfully removed the state and UI elements for the weekly/monthly summaries, changed the Application Goals label to Application Targets, and moved the Preferences title. The agent was about to add the Help and Feedback link.
-    - Status: IN PROGRESS
-    - Agent Testing Done: N
-    - Which testing method agent to use? Frontend testing agent to verify the UI changes on the settings screen and the functionality of the Help and Feedback email link. Manual testing is also needed for the email functionality.
+    - Last item agent was working: The agent was attempting to resolve a persistent Expo/ngrok environment failure. After numerous failed restart attempts, calling the , and changing the ngrok subdomain, the issue was identified as a crash loop in the Expo process itself, possibly related to DevTools installation in the CI environment. The agent then correctly advised the user on how to get a fresh environment by forking the chat.
+    - Status: BLOCKED
+    - Agent Testing Done: N (Cannot test due to environment failure)
+    - Which testing method agent to use? The user needs to manually test the application using the Expo Go QR code or web preview once the environment is stable.
     - User Testing Done: N
 
 **All Pending/In progress Issue list**:
-  - Issue 1: Production backend returns a 500 Internal Server Error for the  endpoint. (P0)
-  - Issue 2: Production deployment does not serve the web frontend. (P0)
-  - Issue 3: Data Discrepancy - User reports 16 job entries for their account, but only 9 were found in the preview database and migrated to production. (P0)
-  - Issue 4: The Settings page overhaul is incomplete. (P0)
-
+  - Issue 1: Critical Environment Failure: Expo Go / ngrok Tunnel is Broken (P0)
+  - Issue 2: Production backend returns a 500 Internal Server Error (P1)
+  - Issue 3: Production web frontend is not served correctly (P1)
+  - Issue 4: Data Discrepancy (User reports 16 jobs, only 9 were migrated) (P1)
+  
   Issues Detail:
-  - **Issue 1: Production Backend 500 Error**
-     - Description: When the app is pointed to the production backend URL, calls to  after a successful login fail with a 500 Internal Server Error, preventing users from logging in.
-     - Attempted fixes: The agent identified the error but could not debug the production environment directly. The workaround was to revert the  configuration to use the preview URL for testing. The root cause in the production deployment remains unfixed.
-     - Next debug checklist:
-        1.  Instruct the user to re-deploy the application to ensure the latest backend code is running.
-        2.  If the error persists, review the production logs (if accessible) for the  endpoint in .
-        3.  Check for environment variable differences or dependency issues between the preview and production environments.
-     - Why fix this issue and what will be achieved with the fix?: This is a critical blocker preventing the production application from being usable. Fixing it will restore login functionality.
-     - Status: NOT STARTED
-     - Is recurring issue? Y
-     - Should Test frontend/backend/both after fix? Backend.
-     - Blocked on other issue: Potentially blocked by Issue 2 if it's a general deployment problem.
-
-  - **Issue 2: Production Web Frontend Not Served**
-     - Description: Accessing the root of the production URL results in a Not Found JSON error or a basic HTML landing page, instead of the full React Native web application. The preview environment serves the web app correctly.
-     - Attempted fixes: The agent identified that the production environment runs [18:50:49] Starting project at /app/frontend (dev server) instead of serving a static web build. As a workaround, a simple HTML landing page was added to the backend , which does not solve the core problem.
-     - Next debug checklist:
-        1.  Investigate Emergent's deployment process to determine how to serve a production web build (env: load .env
-env: export EXPO_TUNNEL_SUBDOMAIN EXPO_PACKAGER_HOSTNAME EXPO_PUBLIC_BACKEND_URL EXPO_USE_FAST_RESOLVER METRO_CACHE_ROOT
-Fast resolver is enabled.
-Starting Metro Bundler
-Static rendering is enabled. Learn more: https://docs.expo.dev/router/reference/static-rendering/
-Web node_modules/expo-router/entry.js ▓▓▓▓▓░░░░░░░░░░░ 36.0% (14/27)
-λ node_modules/expo-router/node/render.js ▓░░░░░░░░░░░░░░░ 12.2% ( 10/113)
-Web node_modules/expo-router/entry.js ▓▓▓▓▓░░░░░░░░░░░ 36.0% (100/252)
-λ node_modules/expo-router/node/render.js ▓░░░░░░░░░░░░░░░ 12.2% ( 21/134)
-Web node_modules/expo-router/entry.js ▓▓▓▓▓░░░░░░░░░░░ 36.0% (100/252)
-λ node_modules/expo-router/node/render.js ▓▓▓░░░░░░░░░░░░░ 22.0% (117/298)
-Web node_modules/expo-router/entry.js ▓▓▓▓▓░░░░░░░░░░░ 36.0% (234/394)
-λ node_modules/expo-router/node/render.js ▓▓▓░░░░░░░░░░░░░ 22.0% (122/308)
-Web node_modules/expo-router/entry.js ▓▓▓▓▓▓░░░░░░░░░░ 39.5% (252/413)
-λ node_modules/expo-router/node/render.js ▓▓▓▓▓░░░░░░░░░░░ 36.0% (264/440)
-Web node_modules/expo-router/entry.js ▓▓▓▓▓▓░░░░░░░░░░ 39.5% (341/779)
-λ node_modules/expo-router/node/render.js ▓▓▓▓▓▓░░░░░░░░░░ 41.6% (307/476)
-Web node_modules/expo-router/entry.js ▓▓▓▓▓▓░░░░░░░░░░ 39.5% (393/823)
-λ node_modules/expo-router/node/render.js ▓▓▓▓▓▓░░░░░░░░░░ 41.6% (307/476)
-Web node_modules/expo-router/entry.js ▓▓▓▓▓▓░░░░░░░░░░ 39.5% (413/829)
-λ node_modules/expo-router/node/render.js ▓▓▓▓▓▓░░░░░░░░░░ 42.4% (368/817)
-Web node_modules/expo-router/entry.js ▓▓▓▓▓▓░░░░░░░░░░ 39.5% (436/874)
-λ node_modules/expo-router/node/render.js ▓▓▓▓▓▓░░░░░░░░░░ 42.4% (472/855)
-Web node_modules/expo-router/entry.js ▓▓▓▓▓▓▓░░░░░░░░░ 49.3% (653/930)
-λ node_modules/expo-router/node/render.js ▓▓▓▓▓▓░░░░░░░░░░ 42.4% (472/855)
-Web node_modules/expo-router/entry.js ▓▓▓▓▓▓▓▓▓▓▓░░░░░ 70.0% (824/985)
-λ node_modules/expo-router/node/render.js ▓▓▓▓▓▓░░░░░░░░░░ 42.4% (475/858)
-Web node_modules/expo-router/entry.js ▓▓▓▓▓▓▓▓▓▓▓░░░░░ 70.5% (829/987)
-λ node_modules/expo-router/node/render.js ▓▓▓▓▓▓▓▓▓▓░░░░░░ 67.1% (810/991)
-Web node_modules/expo-router/entry.js ▓▓▓▓▓▓▓▓▓▓▓▓▓░░░ 81.3% ( 970/1082)
-λ node_modules/expo-router/node/render.js ▓▓▓▓▓▓▓▓▓▓▓░░░░░ 72.0% ( 856/1009)
-Web node_modules/expo-router/entry.js ▓▓▓▓▓▓▓▓▓▓▓▓▓░░░ 83.8% (1004/1097)
-λ node_modules/expo-router/node/render.js ▓▓▓▓▓▓▓▓▓▓▓▓▓░░░ 83.0% (1013/1112)
-Web node_modules/expo-router/entry.js ▓▓▓▓▓▓▓▓▓▓▓▓▓▓░░ 91.2% (1164/1246)
-λ node_modules/expo-router/node/render.js ▓▓▓▓▓▓▓▓▓▓▓▓▓▓░░ 92.6% (1167/1255)
-Web node_modules/expo-router/entry.js ▓▓▓▓▓▓▓▓▓▓▓▓▓▓░░ 91.2% (1288/1387)
-λ node_modules/expo-router/node/render.js ▓▓▓▓▓▓▓▓▓▓▓▓▓▓░░ 92.6% (1254/1346)
-Web node_modules/expo-router/entry.js ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓░ 94.8% (1415/1453)
-λ node_modules/expo-router/node/render.js ▓▓▓▓▓▓▓▓▓▓▓▓▓▓░░ 92.6% (1349/1432)
-Web node_modules/expo-router/entry.js ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓░ 97.6% (1532/1561)
-λ node_modules/expo-router/node/render.js ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓░ 97.4% (1514/1542)
-λ Bundling failed 63084ms node_modules/expo-router/node/render.js (1597 modules)).
-        2.  This may require a change in the  configuration (which was read-only for the agent) or a different deployment strategy.
-        3.  The next agent may need to consult support or documentation on serving a static Expo web build.
-     - Why fix this issue and what will be achieved with the fix?: Provides a functional web version of the application for users, as requested.
-     - Status: NOT STARTED
-     - Is recurring issue? Y
-     - Should Test frontend/backend/both after fix? Frontend (screenshot tool).
-
-  - **Issue 3: Data Discrepancy and Potential Data Loss**
-     - Description: The user claims to have had 16 job entries for their account (), but the agent's audit of the preview database only found 9. These 9 records were successfully migrated to the production database, but the user is concerned about the 7 missing records.
-     - Attempted fixes: The agent exported all data from the available preview database and imported it into production. The agent searched for backups and other database instances but found none. The agent concluded the data was lost before the current session began. The user is not satisfied with this conclusion.
-     - Next debug checklist:
-        1.  Acknowledge the user's concern and do not be dismissive.
-        2.  Re-verify if there are any other user accounts associated with the user that might hold the data.
-        3.  As a last resort, propose assisting the user in manually re-entering the 7 missing records to restore their dataset.
-     - Why fix this issue and what will be achieved with the fix?: Resolving this is critical for user trust. Even if the data is unrecoverable, providing a clear path forward is necessary.
+  - **Issue 1: Critical Environment Failure: Expo Go / ngrok Tunnel is Broken**
+     - Description: The Expo process is in a crash-restart loop. The ngrok tunnel connects momentarily but then disconnects because the underlying Metro bundler process exits. This prevents the generation of a stable QR code for Expo Go, completely blocking user testing. The error logs point to issues with React Native DevTools and  (stale subdomain).
+     - Attempted fixes: Restarting services, killing processes, changing ngrok subdomains, updating  and  URLs, clearing metro cache, and invoking . None of these fixed the root cause, which appears to be an incompatibility in the container's Expo setup.
+     - Next debug checklist: 
+        1.  **Do not attempt further debugging in this session.** The environment is unrecoverable.
+        2.  The next agent's first action should be to work from a fresh, forked session, as advised to the user.
+        3.  Once in a new session, verify that [00:43:55] Starting project at /app/frontend runs without crashing.
+     - Why fix this issue and what will be achieved with the fix?: This is a hard blocker. Without a working preview environment, no development or testing can proceed.
      - Status: BLOCKED
-     - Is recurring issue? Y (User has brought this up multiple times)
-     - Should Test frontend/backend/both after fix? N/A (Data issue)
-
-  - **Issue 4: Incomplete Settings Page Overhaul**
-     - Description: The last user request to modify the settings page is unfinished.
-     - Attempted fixes: The agent has completed the frontend changes in  for removing summary toggles and renaming/moving labels.
-     - Next debug checklist:
-        1.  Add the Help and Feedback section and functionality to .
-        2.  Remove the corresponding backend code in  related to weekly/monthly reports (e.g.,  function, scheduler jobs).
-        3.  Remove the  collection and  fields from the database logic.
-     - Why fix this issue and what will be achieved with the fix?: Fulfills the user's explicit request for cleaning up and improving the settings screen.
-     - Status: IN PROGRESS
+     - Is recurring issue? Y
      - Should Test frontend/backend/both after fix? Both.
+     - Blocked on other issue: This is the blocking issue.
+
+  - **Issue 2, 3, 4**: These are long-standing issues from the previous fork that were not addressed in this session. The descriptions and debug checklists from the initial problem statement are still valid. They are critical for a functional production application but are secondary to the immediate P0 development environment blocker.
 
 **In progress Task List**:
-  - Task 1: Complete the Settings page overhaul (P0)
-     - Where to resume:
-        1.  In , add the Help and Feedback UI element and the  handler using  to create an email draft.
-        2.  In , remove the  and  functions and their corresponding APScheduler jobs.
-        3.  Remove any API endpoints related to setting email preferences or fetching reports.
-        4.  Remove the  collection from all database operations (especially the data import logic).
-     - What will be achieved with this?: The settings screen will be updated to the user's specification, and obsolete backend code will be removed.
-     - Status: IN PROGRESS
-     - Should Test frontend/backend/both after fix? Both.
+- There are no in-progress coding tasks. The work is blocked by the environment issue.
 
 **Upcoming and Future Tasks**
-  - **Task 1 (P0): Fully Implement the Self-Improving Analytics Engine.**
-    - The current implementation in  and  is a **static placeholder**. It does not include the core requirements of the user's request, such as:
-      - Adaptive Rule Weighting ()
-      - Rolling window comparisons ( vs )
-      - Dynamic pattern detection (e.g., declining velocity, bottlenecks)
-      - Insight evolution through maturity stages.
-      - Confidence scoring and advanced insight prioritization.
-    - The next agent must build this complex logic from scratch, as the current code only calculates basic stats.
+  - **Task 1 (P0): User Verification of Recent Features.** Once the environment is restored, the user must test and verify the following completed work:
+    - The overhauled Settings page.
+    - The bug fixes on the My Jobs form (status sync and custom status propagation).
+    - The new dynamic Prep Checklist feature.
+  - **Task 2 (P1): Fully Implement the Self-Improving Analytics Engine.** The current analytics tab is a static placeholder. The core logic for adaptive rule weighting, rolling window comparisons, pattern detection, and insight evolution (as detailed in the initial problem statement) has **not been implemented** and remains a major pending feature.
 
 **Completed work in this session**
-- **Feature: Basic Analytics Tab**: Created the new Analytics tab, including a backend endpoint () and a frontend component () displaying a health score, funnel, and a static insight.
-- **UI/UX Enhancements**:
-  - Moved the + add job button from the tab bar to the My Jobs header.
-  - Made the Hero stats on the Analytics page clickable to filter the jobs list.
-  - Updated the Analytics page UI to match design requests (funnel stages, insight card layout).
-- **Bug Fixes**:
-  - Fixed multiple crashes related to the + button in My Jobs by correcting state setter function names ( -> ,  -> ).
-  - Fixed a bug where the Active filter from the Analytics page did not work by adding 'active' to  and .
-  - Removed an extraneous add-plac tab from the UI.
-  - Resolved Google/Apple Sign-in failures for the preview environment.
-- **Data Migration**:
-  - Identified that production and preview environments use separate databases.
-  - Created a data export file ().
-  - Implemented a one-time data import endpoint () on the backend.
-  - Successfully imported all available data (13 jobs, 7 users, 11 reports) from the preview DB to the production DB.
-- **Environment Troubleshooting**:
-  - Persistently diagnosed and worked around  tunnel failures and  errors.
-  - Identified and fixed incorrect backend URLs in  that were causing Not Found errors in Expo Go.
-  - Diagnosed that the production backend was returning a 500 error, and reverted to the preview URL as a temporary fix for the user.
+- **Settings Page Overhaul (Complete):**
+  - **Frontend ():** Removed all UI related to weekly/monthly summaries. Added a Help and Feedback link using . Cleaned up unused state and functions.
+  - **Backend ():** Removed all logic for report generation, including scheduler jobs, Pydantic models (, ), API endpoints (, ), and obsolete fields from the  model.
+- **Bug Fixes in My Jobs Form ():**
+  - **Custom Status Propagation:** Fixed a bug where custom statuses from existing jobs were not being loaded into the state, making them unavailable in dropdowns. The  function now correctly populates the  state.
+  - **Status Sync Logic:** Verified that the logic to sync the Application Status field when Upcoming Stage is changed is present and correctly implemented.
+- **New Feature: Dynamic Prep Checklist:**
+  - Architected and implemented a new  component.
+  - Passes  and  from  for context.
+  - Implemented client-side logic to generate 6 relevant interview topics.
+  - Uses  to call an AI service (via a prompt constructed with job role and stage).
+  - Includes a deterministic, rule-based fallback generator for offline/API failure scenarios.
+  - Implements in-memory caching () to avoid redundant API calls within the same session.
+  - UI is a modal with a loading state, refresh button, and error handling.
 
 **Earlier issues found/mentioned but not fixed**
 - **Issue 1: Production Deployment is Broken**
-   - The production environment serves the API but not the web frontend, and an auth endpoint returns a 500 error. The agent's workarounds (adding a static landing page, reverting to preview URL) do not fix the underlying deployment issue.
-   - Why to solve this issue: The user wants a fully functional production application, including the web version.
+   - The production environment has a 500 error on  and does not serve the web frontend. This was identified in the previous fork and remains unfixed.
+   - Why to solve this issue: The application is not usable in production.
    - Should Test frontend/backend/both after fix: Both.
 - **Issue 2: User-Reported Data Loss**
-   - The user is adamant that data is missing, and is not satisfied with the agent's conclusion that the data was lost before the session. This is a major trust and user satisfaction issue.
-   - Why to solve this issue: To restore user trust and potentially recover important data if it exists anywhere.
+   - The user's concern about 7 missing job records has not been addressed. This remains a critical user trust issue.
+   - Why to solve this issue: To restore user trust.
    - Should Test frontend/backend/both after fix: N/A.
 
 **Known issue recurrence from previous fork**
-  - **Issue recurrence in previous fork**: Environment instability ( tunnel failures) and deployment issues were noted in the initial summary and were a major problem throughout this session, consuming significant time.
-  - **Recurrence count**: 10+ instances of tunnel failures, URL mismatches, and deployment-related errors.
-  - **Status**: BLOCKED by infrastructure flakiness. The agent was often forced to restart services or debug the environment instead of developing features.
+  - **Issue recurrence in previous fork**: Environment Instability (ngrok/Expo).
+  - **Recurrence count**: This was the primary bottleneck for the last half of the session, with over 20 failed attempts to restart/fix the environment.
+  - **Status**: BLOCKED. The issue escalated from intermittent failures to a hard crash loop, rendering the development environment unusable.
 
 **Code Architecture**
 
 
 **Key Technical Concepts**
-- **Frontend**: React Native (Expo), Expo Router,  for charts.
-- **Backend**: FastAPI (Python), APScheduler for background jobs.
+- **Frontend**: React Native (Expo), Expo Router, React Hooks (, ).
+- **Backend**: FastAPI (Python).
 - **Database**: MongoDB.
-- **State Management**: React Context API (, ).
-- **Styling**:  (CSS-in-JS).
-- **Authentication**: Emergent Auth for Google/Apple OAuth2 flow.
+- **State Management**: React Context API, .
+- **API Integration**:  API for calling an LLM service from the client-side.
+- **Architecture**: Client-side orchestration with a rule-based fallback system. In-memory caching.
 
 **key DB schema**
-  - **job_applications**: { , , , , , ... }
-  - **users**: { , , : {, }, : {, } } (targets/preferences are being removed).
-  - **reports**: { , , ,  } (This collection should be removed).
-  - **sessions**: { , ,  }
+  - **job_applications**: { , , , , , , ... }
+  - **users**: { , , : {, } } (The  field was removed).
+  - **reports**: This collection is now obsolete and all logic referencing it has been removed from .
 
 **changes in tech stack**
 - None.
 
 **All files of reference**
-- : In-progress file for the user's latest request.
-- : New file for the analytics feature (currently a skeleton).
-- : Contains logic for all features, including the incomplete analytics and the logic that needs to be removed for reports.
-- : Contains the add/edit job logic and filtering.
-- : Critical for backend URL configuration; source of many previous bugs.
-- : Also critical for backend URL configuration.
+- : The new, complex feature that needs user testing.
+- : Contains the bug fixes that need user testing.
+- : Contains the completed settings overhaul that needs user testing.
+- : Contains the significant backend cleanup.
+-  & : Central to the environment issues. The next agent should verify these are correct in the new forked session.
 
 **Areas that need refactoring**:
-- ****: The analytics engine logic is large and complex; it should be moved to its own module/class structure as originally requested by the user. The file is becoming a monolith.
-- ****: The component is over 800 lines long. The , , , and  should all be broken out into their own component files.
-- **Environment Handling**: The manual editing of  and  to switch between environments is error-prone. A more robust system is needed.
+- The new  component contains API call logic, fallback logic, and view logic all in one file. This could be refactored by extracting the topic generation logic into a custom hook (e.g., ) for better separation of concerns.
 
 **key api endpoints**
-- : Fetches the data for the new Analytics tab.
-- : One-time endpoint to import data from a JSON file.
-- : Creates a new job application.
-- : Fetches the current user's data; failing on production.
+- All endpoints related to  and  were **REMOVED**.
+-  was **MODIFIED** to only handle , removing email preference logic.
+- : This existing endpoint is now consumed by the new Prep Checklist feature.
 
 **Critical Info for New Agent**
-- **PRODUCTION IS BROKEN:** Do not assume the production environment works. The  endpoint returns a 500 error, and the web frontend does not load. The previous agent's fix was to always revert to the preview URL. Your top priority should be to create a stable, working production deployment.
-- **USER IS FRUSTRATED WITH DATA LOSS:** The user is convinced that 7 of their job records are missing. They are not satisfied with the explanation that the data was lost before this session. Handle this topic with care and prioritize restoring user trust. Do not dismiss their concern.
-- **ANALYTICS FEATURE IS A SKELETON:** The user requested a complex, self-improving analytics engine. The current code is just a static placeholder that calculates basic metrics. The core logic for adaptive weighting, pattern detection, and insight evolution **does not exist** and needs to be built from scratch.
-- **FINISH THE SETTINGS PAGE TASK FIRST:** The immediate task is to complete the overhaul of the Settings page. This involves adding the Help and Feedback link on the frontend and removing all the obsolete reporting/summary logic from the backend () and database.
+- **THE DEV ENVIRONMENT IS BROKEN AND UNRECOVERABLE.** Do not waste time trying to fix the  tunnel or Expo crash loop. The previous agent and user agreed the correct next step is to **fork the chat** to get a fresh, working environment. Your first priority is to ensure you can get a stable preview running in the new session.
+- **USER HAS NOT TESTED ANY RECENT WORK.** Because the environment failed, the user has not seen or verified the completed Settings page, the job form bug fixes, or the new dynamic Prep Checklist. You must guide the user to test these features once the environment is stable.
+- **The Dynamic Prep Checklist is a major new feature.** It was built according to complex user requirements but is completely untested. Be prepared to debug it if the user finds issues. The core logic is in .
+- **Long-standing production and data issues remain.** The critical problems with the production deployment (500 error, no web UI) and the user's concern about missing data were not addressed in this session. Keep these on the backlog.
 
 **documents created in this job**
-- : A JSON dump of the preview database, created for migrating data to production.
+- None.  was updated but is a pre-existing file.
 
 **Last 10 User Messages and any pending HUMAN messages**
-- **User (#839) LATEST**: Requests major changes to the Settings page: remove weekly/monthly summaries, add a help/feedback email link, and change/move labels. (Status: IN PROGRESS)
-- **User (#836)**: Confirms that adding a new job is now working. (Status: COMPLETED)
-- **User (#803)**: Reports Failed to save Job Application error when creating a new job. (Status: COMPLETED/FIXED)
-- **User (#772)**: Reports a new crash when pressing the + button, provides a screenshot. (Status: COMPLETED/FIXED)
-- **User (#757)**: Reports the + button in My Jobs is crashing the app, provides a screenshot. (Status: COMPLETED/FIXED)
-- **User (#722)**: Reports three new bugs: active filter broken, Add Application link still visible, and an extra add-plac tab exists. (Status: COMPLETED/FIXED)
-- **User (#643)**: Requests multiple UI changes: move + button, update Analytics insight card, align funnel stages, make hero stats clickable. (Status: COMPLETED)
-- **User (#629)**: Reports fetchUser failed: 500 Internal Server Error when using Google Sign-in. (Status: Addressed by reverting to preview URL)
-- **User (#617)**: Informs the agent they tried both Google and Apple sign-in. (Status: Addressed)
-- **User (#591)**: Reports that Google Sign-in does nothing in Expo Go. (Status: IN PROGRESS - part of a larger auth/deployment issue)
+- **LATEST User (#462):** Asked How to restart emergent session?, indicating they understood the environment was broken and wanted the recommended solution. (Status: Addressed by  output).
+- **User (#365):** Corrected the agent, pointing out the app name is application-intel, which helped debug the wrong URLs being used. (Status: Addressed).
+- **User (#278):** Reported the initial Expo Go error: . This kicked off the extensive environment debugging. (Status: In Progress/Blocked).
+- **User (#239):** Provided a very detailed feature request for the dynamic, context-aware Prep Checklist, acting as a Principal Mobile Architect. (Status: Implemented, pending user testing).
+- **User (#186):** Reported two bugs related to the Upcoming Stage and Application Status fields in the job form. (Status: Implemented, pending user testing).
+- **User (#5):** Confirmed the plan to complete the Settings page changes. (Status: Completed).
 
 **Project Health Check:**
 - **Broken**:
-    - **Production Deployment**: The deployed application is not fully functional. The web frontend does not serve, and a key authentication endpoint () returns a 500 Internal Server Error.
-    - **Data Integrity**: The user reports missing data, indicating a potential data loss issue from a previous environment state. User trust is low.
-- **Mocked**: N/A
+    - **Development/Preview Environment**: The core Expo/Metro process is in a crash loop, and the ngrok tunnel is non-functional. This is a complete blocker for any further development or testing in the current session.
+    - **Production Environment**: Still presumed broken based on the initial summary (500 errors, no web UI).
+    - **Data Integrity**: The user's concern about missing data remains unresolved, impacting user trust.
 
 **3rd Party Integrations**
-- **Ionicons**: Icon library used in the UI.
-- **Ngrok**: Used by Expo to create the preview tunnel for Expo Go.
-- **Emergent Auth**: Used for the Google and Apple sign-in OAuth flow.
+- **Emergent Auth**: For Google/Apple sign-in.
+- **Ngrok**: Used for Expo Go preview tunnels (currently failing).
+- **OpenAI (Implicit)**: The new Prep Checklist feature is designed to make  calls to an LLM endpoint, which would use the Emergent LLM Key.
 
 **Testing status**
-  - Testing agent used after significant changes: YES, the deployment agent was used.
-  - Troubleshoot agent used after agent stuck in loop: YES, the agent used the troubleshooter to diagnose the manifest.json issue.
+  - Testing agent used after significant changes: YES,  was used multiple times and all tests passed, confirming backend stability after major refactoring.
+  - Troubleshoot agent used after agent stuck in loop: YES,  was correctly used to diagnose the ngrok subdomain issue.
   - Test files created: None.
-  - Known regressions: The production deployment is in a broken state. It was working at some point but now has a 500 error on an auth endpoint.
+  - Known regressions: The entire development environment has regressed into a non-functional state.
 
 **Credentials to test flow:**
 - The user's primary test account uses the email .
 
 **What agent forgot to execute**
-- The agent did not complete the last request to overhaul the Settings page; specifically, it did not add the Help and Feedback link and did not remove the corresponding backend logic for reports.
-- The agent never truly fixed the production deployment issues (500 error, missing web frontend). It repeatedly used the preview URL as a workaround.
-- The agent implemented only a superficial, static version of the self-improving analytics intelligence system, failing to implement the core adaptive logic requested by the user.
+- The agent was blocked by the environment and therefore could not proceed to user verification of the implemented features.
+- The agent did not address the high-priority production environment issues or the user's data loss concerns that were carried over from the previous session.
 
 </analysis>

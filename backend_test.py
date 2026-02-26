@@ -10,7 +10,7 @@ import sys
 from datetime import datetime, timedelta
 
 # Configuration
-BASE_URL = "https://application-intel.preview.emergentagent.com/api"
+BASE_URL = "https://prep-checklist-app.preview.emergentagent.com/api"
 TEST_TOKEN = "test_token_abc123"
 HEADERS = {
     "Authorization": f"Bearer {TEST_TOKEN}",
