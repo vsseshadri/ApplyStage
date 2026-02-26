@@ -10,7 +10,7 @@ import sys
 from datetime import datetime
 
 # Backend URL from the review request
-BACKEND_URL = "https://prep-checklist-app.preview.emergentagent.com"
+BACKEND_URL = "https://career-topics.preview.emergentagent.com"
 
 # Test token for authenticated endpoints (from backend code)
 TEST_TOKEN = "test_token_abc123"

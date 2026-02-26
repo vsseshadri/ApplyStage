@@ -10,7 +10,7 @@ import sys
 from datetime import datetime, timezone
 
 # Backend URL from environment
-BACKEND_URL = "https://prep-checklist-app.preview.emergentagent.com"
+BACKEND_URL = "https://career-topics.preview.emergentagent.com"
 API_BASE = f"{BACKEND_URL}/api"
 
 # Test authentication token
