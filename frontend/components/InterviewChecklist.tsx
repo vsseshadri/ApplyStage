@@ -554,19 +554,20 @@ const InterviewChecklist: React.FC<InterviewChecklistProps> = ({
     
     setLoading(true);
     
-    // Immediately show fallback for instant perceived response
-    const fallbackTopics = generateFallbackTopics(stage, position, company);
-    setFocusAreas(fallbackTopics);
-    setIsAiGenerated(false);
-    setLoading(false);
-    
-    // Try to get AI-generated topics in background
-    const aiTopics = await generateDynamicTopics(stage, position, company);
+    // Try to get AI-generated topics first for better quality
+    const aiTopics = await generateDynamicTopics(stage, position, company, forceRefresh);
     
     if (mountedRef.current && aiTopics && aiTopics.length >= 4) {
       setFocusAreas(aiTopics);
       setIsAiGenerated(true);
       setCachedTopics(stage, position, aiTopics);
+      setLoading(false);
+    } else if (mountedRef.current) {
+      // Fall back to deterministic topics only if AI fails
+      const fallbackTopics = generateFallbackTopics(stage, position, company);
+      setFocusAreas(fallbackTopics);
+      setIsAiGenerated(false);
+      setLoading(false);
     }
   };
   
