@@ -61,15 +61,19 @@ const STAGE_NAMES: Record<string, string> = {
 
 type Seniority = 'executive' | 'senior' | 'mid' | 'junior';
 type RoleType = 
-  | 'software' | 'data' | 'product' | 'program' | 'design'
+  | 'software' | 'software_architect' | 'data' | 'ml_engineer' | 'product' | 'program' | 'tpm' | 'design'
+  | 'professional_services' | 'solutions_architect'
   | 'mechanical' | 'aerospace' | 'electrical_hw' | 'chemical' | 'civil'
   | 'clinical' | 'accounting' | 'finance' | 'consulting' | 'sales'
   | 'marketing' | 'hr' | 'legal' | 'admin' | 'operations' | 'general';
 
 const detectSeniority = (pos: string): Seniority => {
   const p = pos.toLowerCase();
-  if (/\b(vp|vice president|director|head of|chief|cto|ceo|cfo|coo|principal|staff|distinguished|fellow)\b/.test(p)) return 'executive';
-  if (/\b(senior|sr\.?|lead|manager|architect|ii|iii|2|3)\b/.test(p)) return 'senior';
+  // Executive level - SVP, VP, C-suite, Director, Principal, Staff
+  if (/\b(svp|senior vice president|evp|executive vice president|vp\b|vice president|director|head of|chief|cto|ceo|cfo|coo|cmo|cpo|cro|principal|staff|distinguished|fellow|partner)\b/.test(p)) return 'executive';
+  // Senior level
+  if (/\b(senior|sr\.?|lead|manager|architect|ii|iii|iv|2|3|4)\b/.test(p)) return 'senior';
+  // Junior level
   if (/\b(junior|jr\.?|associate|entry|intern|graduate|trainee|apprentice|i\b|1\b)\b/.test(p)) return 'junior';
   return 'mid';
 };
@@ -77,13 +81,38 @@ const detectSeniority = (pos: string): Seniority => {
 const detectRole = (pos: string): RoleType => {
   const p = pos.toLowerCase();
   
+  // SOFTWARE ARCHITECT - Check first as it's more specific
+  if (/\b(software architect|solution architect|systems architect|enterprise architect|technical architect|platform architect|cloud architect)\b/.test(p)) {
+    return 'software_architect';
+  }
+  
+  // SOLUTIONS ARCHITECT / PROFESSIONAL SERVICES
+  if (/\b(solutions architect|solutions eng|professional services|implementation|customer success eng|technical account|field eng|sales eng)\b/.test(p)) {
+    return 'solutions_architect';
+  }
+  
+  // PROFESSIONAL SERVICES (broader)
+  if (/\b(professional services|consulting eng|services eng|delivery|implementation manager|customer eng)\b/.test(p)) {
+    return 'professional_services';
+  }
+  
+  // TECHNICAL PROGRAM MANAGEMENT - Check before general program
+  if (/\b(technical program|tpm|technical project)\b/.test(p)) {
+    return 'tpm';
+  }
+  
+  // ML/AI ENGINEER - More specific than general data
+  if (/\b(ml engineer|machine learning eng|ai engineer|deep learning eng|mlops|ml ops)\b/.test(p)) {
+    return 'ml_engineer';
+  }
+  
   // SOFTWARE - Must have software-specific keywords, not just "engineer"
   if (/\b(software|developer|programmer|coder|full.?stack|front.?end|back.?end|web dev|mobile dev|ios dev|android dev|devops|sre|site reliability|platform eng|cloud eng|swe\b|sde\b)\b/.test(p)) {
     return 'software';
   }
   
-  // DATA SCIENCE / ML / AI / Analytics
-  if (/\b(data scientist|data science|machine learning|ml eng|ai eng|deep learning|nlp|computer vision|data anal|business intel|bi analyst|statistician|quantitative|data eng)\b/.test(p)) {
+  // DATA SCIENCE / Analytics (not ML Engineer which is caught above)
+  if (/\b(data scientist|data science|data anal|business intel|bi analyst|statistician|quantitative|data eng|analytics eng)\b/.test(p)) {
     return 'data';
   }
   
