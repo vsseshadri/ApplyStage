@@ -337,26 +337,93 @@ const getCategoryForTopic = (text: string): string => {
 // LLM API INTEGRATION
 // ============================================================================
 
+const getStageSpecificPromptContext = (stage: string): string => {
+  const stageLower = stage.toLowerCase();
+  
+  const stageContexts: { [key: string]: string } = {
+    recruiter_screening: `This is an initial recruiter call (15-30 min). Focus on: salary expectations research, company culture fit signals, role scope clarity, and making a strong first impression. Topics should help the candidate avoid being screened out.`,
+    
+    phone_screen: `This is a phone screen with hiring team (30-45 min). Focus on: resume deep-dive preparation, motivation articulation, role fit demonstration, and thoughtful questions. Topics should help establish credibility and interest.`,
+    
+    technical_screen: `This is a technical screening call (45-60 min). Focus on: fundamental concepts review, problem-solving demonstration, technical communication clarity, and domain knowledge. Topics should be specific to passing technical evaluation.`,
+    
+    coding_round_1: `This is the first coding interview (45-60 min). Focus on: specific algorithm patterns (arrays, strings, hashmaps), time complexity optimization, edge case handling, and clear code communication. Topics must be directly actionable for coding problems.`,
+    
+    coding_round_2: `This is an advanced coding round. Focus on: complex data structures (trees, graphs, heaps), dynamic programming patterns, optimization techniques, and system-aware coding. Topics should prepare for harder problems.`,
+    
+    system_design: `This is a system design interview (45-60 min). Focus on: requirement clarification techniques, capacity estimation methods, specific system components (load balancers, caches, databases), and trade-off articulation. Topics must be architecturally specific.`,
+    
+    behavioural: `This is a behavioral interview (45-60 min). Focus on: STAR story structuring, specific competencies (leadership, conflict, failure), company values alignment, and impactful quantification. Topics should prepare concrete stories.`,
+    
+    hiring_manager: `This is a hiring manager interview (45-60 min). Focus on: team dynamics understanding, management style alignment, 30-60-90 day planning, and strategic contribution vision. Topics should demonstrate team fit and initiative.`,
+    
+    final_round: `This is a final/executive round. Focus on: executive presence, strategic vision articulation, long-term career alignment, and compensation discussion readiness. Topics should prepare for high-stakes evaluation.`,
+    
+    offer: `This is offer negotiation stage. Focus on: specific compensation components (base, equity, bonus, benefits), market rate data sources, negotiation tactics, and decision timeline management. Topics must be actionable for negotiation.`,
+    
+    clinical: `This is a clinical interview for healthcare roles. Focus on: specific patient care scenarios, clinical decision protocols, compliance requirements, and care outcome examples. Topics must be clinically relevant.`,
+    
+    case_study: `This is a case study presentation. Focus on: structured frameworks (MECE, hypothesis-driven), quantitative analysis methods, recommendation synthesis, and presentation clarity. Topics should prepare analytical delivery.`,
+  };
+  
+  return stageContexts[stageLower] || stageContexts.phone_screen;
+};
+
 const generateDynamicTopics = async (
   stage: string,
   position: string,
-  company: string
+  company: string,
+  forceNewGeneration: boolean = false
 ): Promise<FocusArea[] | null> => {
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), LLM_TIMEOUT_MS);
   
   const stageDisplay = STAGE_DISPLAY_NAMES[stage.toLowerCase()] || stage.replace(/_/g, ' ');
+  const stageContext = getStageSpecificPromptContext(stage);
+  const seniority = detectSeniority(position);
+  const roleFamily = detectRoleFamily(position);
   
-  const prompt = `Generate exactly 6 concise interview preparation topics for a ${position} interview at the ${stageDisplay} stage${company ? ` at ${company}` : ''}.
+  const seniorityContext = seniority === 'senior' || seniority === 'principal' 
+    ? 'This is a senior-level candidate who should demonstrate leadership, architectural thinking, and strategic impact.'
+    : seniority === 'junior' 
+    ? 'This is an early-career candidate who should demonstrate learning agility, fundamentals mastery, and growth potential.'
+    : 'This is a mid-level candidate who should demonstrate solid execution and growth trajectory.';
 
-Requirements:
-- Topics must be practical, role-specific, and actionable
-- Each topic should be one clear sentence (max 60 characters)
-- Focus on what will make the candidate successful
-- Consider the seniority level implied by the job title
-- No explanations, just the topics
+  const variationSeed = forceNewGeneration ? `\n[Variation seed: ${Date.now()}]` : '';
+  
+  const prompt = `You are an expert interview coach. Generate exactly 6 highly specific, actionable preparation topics for this interview:
 
-Return ONLY a JSON array of 6 strings, nothing else.`;
+**Role:** ${position}
+**Interview Stage:** ${stageDisplay}
+${company ? `**Company:** ${company}` : ''}
+**Seniority Level:** ${seniority}
+**Role Type:** ${roleFamily}
+
+**Stage Context:** ${stageContext}
+
+**Seniority Context:** ${seniorityContext}
+
+**CRITICAL REQUIREMENTS:**
+1. Each topic must be a SPECIFIC, ACTIONABLE task (not generic advice)
+2. Topics must directly help succeed in THIS specific stage
+3. Include concrete details: specific techniques, frameworks, or resources
+4. For technical roles: include specific technologies, patterns, or tools to review
+5. Each topic should be completable in 30 min - 2 hours
+6. NO generic advice like "research the company" - be specific about WHAT to research
+${forceNewGeneration ? '7. Generate DIFFERENT topics than typical suggestions - focus on often-overlooked but critical preparation areas' : ''}
+${variationSeed}
+
+**Examples of GOOD specific topics:**
+- "Practice the 'Top K Elements' pattern using heap - do 3 LeetCode medium problems"
+- "Map your biggest project to STAR format with specific metrics (revenue, users, efficiency gains)"
+- "Review CAP theorem trade-offs and prepare examples of when you'd choose CP vs AP systems"
+
+**Examples of BAD generic topics:**
+- "Review data structures" (too vague)
+- "Prepare for behavioral questions" (not actionable)
+- "Research the company" (not specific)
+
+Return ONLY a JSON array of exactly 6 strings. No markdown, no explanation.`;
 
   try {
     const response = await fetch(LLM_API_URL, {
