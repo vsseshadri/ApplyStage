@@ -106,6 +106,11 @@ const detectRole = (pos: string): RoleType => {
     return 'ml_engineer';
   }
   
+  // DATABASE ADMINISTRATOR / DBA
+  if (/\b(dba|database admin|database engineer|db admin|database architect|sql server admin|oracle dba|mysql admin|postgres admin|mongodb admin|data architect)\b/.test(p)) {
+    return 'dba';
+  }
+  
   // SOFTWARE - Must have software-specific keywords, not just "engineer"
   if (/\b(software|developer|programmer|coder|full.?stack|front.?end|back.?end|web dev|mobile dev|ios dev|android dev|devops|sre|site reliability|platform eng|cloud eng|swe\b|sde\b)\b/.test(p)) {
     return 'software';
