@@ -221,10 +221,15 @@ const detectRole = (pos: string): RoleType => {
 const getRoleDisplayName = (role: RoleType): string => {
   const names: Record<RoleType, string> = {
     software: 'Software',
-    data: 'Data/ML',
+    software_architect: 'SW Architect',
+    data: 'Data/Analytics',
+    ml_engineer: 'ML Engineer',
     product: 'Product',
     program: 'Program Mgmt',
+    tpm: 'Tech Program',
     design: 'Design',
+    professional_services: 'Prof Services',
+    solutions_architect: 'Solutions',
     mechanical: 'Mechanical',
     aerospace: 'Aerospace',
     electrical_hw: 'Electrical',
