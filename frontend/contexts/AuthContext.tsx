@@ -49,12 +49,20 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 // Get backend URL with proper fallbacks
 const getBackendUrl = (): string => {
-  // TEMPORARY: Force dev server URL for testing until production is fixed
-  const devServerUrl = 'https://career-topics.preview.emergentagent.com';
+  // From EAS build environment
+  const envUrl = process.env.EXPO_PUBLIC_BACKEND_URL;
+  if (envUrl) return envUrl;
   
-  console.log('AuthContext getBackendUrl: Using dev server:', devServerUrl);
+  // From app.json extra via Constants
+  const configUrl = Constants.expoConfig?.extra?.EXPO_PUBLIC_BACKEND_URL;
+  if (configUrl) return configUrl;
   
-  return devServerUrl;
+  // From manifest (older Expo versions)
+  const manifestUrl = (Constants.manifest as any)?.extra?.EXPO_PUBLIC_BACKEND_URL;
+  if (manifestUrl) return manifestUrl;
+  
+  // Production fallback
+  return 'https://repo-preview-43.emergent.host';
 };
 
 const BACKEND_URL = getBackendUrl();
