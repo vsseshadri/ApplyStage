@@ -61,11 +61,11 @@ const STAGE_NAMES: Record<string, string> = {
 
 type Seniority = 'executive' | 'senior' | 'mid' | 'junior';
 type RoleType = 
-  | 'software' | 'software_architect' | 'data' | 'ml_engineer' | 'dba' | 'product' | 'program' | 'tpm' | 'design'
-  | 'professional_services' | 'solutions_architect'
+  | 'software' | 'software_architect' | 'data' | 'ml_engineer' | 'dba' | 'product' | 'program' | 'tpm' | 'pmo' | 'project_mgmt' | 'design'
+  | 'professional_services' | 'solutions_architect' | 'customer_success'
   | 'mechanical' | 'aerospace' | 'electrical_hw' | 'chemical' | 'civil'
-  | 'clinical' | 'accounting' | 'finance' | 'consulting' | 'sales'
-  | 'marketing' | 'hr' | 'payroll' | 'legal' | 'admin' | 'operations' | 'general';
+  | 'clinical' | 'pharmacist' | 'accounting' | 'finance' | 'consulting' | 'sales'
+  | 'marketing' | 'hr' | 'legal' | 'admin' | 'operations' | 'general';
 
 const detectSeniority = (pos: string): Seniority => {
   const p = pos.toLowerCase();
