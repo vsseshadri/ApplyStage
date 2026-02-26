@@ -437,15 +437,15 @@ Return ONLY a JSON array of exactly 6 strings. No markdown, no explanation.`;
         messages: [
           {
             role: 'system',
-            content: 'You are an expert career coach. Return ONLY valid JSON arrays of strings.',
+            content: 'You are an expert interview coach specializing in technical and behavioral interview preparation. You provide highly specific, actionable advice. Return ONLY valid JSON arrays of strings with no markdown formatting.',
           },
           {
             role: 'user',
             content: prompt,
           },
         ],
-        max_tokens: 300,
-        temperature: 0.7,
+        max_tokens: 600,
+        temperature: forceNewGeneration ? 0.9 : 0.7, // Higher temperature for refresh to get more variety
       }),
       signal: controller.signal,
     });
