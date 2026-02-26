@@ -17,6 +17,15 @@ import * as XLSX from 'xlsx';
 import CalendarPicker from '../../components/CalendarPicker';
 import { parseJobDetailsFromContent } from '../../utils/shareReceiver';
 
+// Cross-platform alert that works on both web and mobile
+const showAlert = (title: string, message: string) => {
+  if (Platform.OS === 'web') {
+    window.alert(`${title}: ${message}`);
+  } else {
+    Alert.alert(title, message);
+  }
+};
+
 // Currency mapping based on country
 const COUNTRY_CURRENCY = {
   'United States': { code: 'USD', symbol: '$' },
