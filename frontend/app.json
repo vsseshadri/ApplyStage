@@ -17,7 +17,9 @@
       "config": {
         "usesNonExemptEncryption": false
       },
-      "associatedDomains": ["applinks:application-intel.emergent.host"],
+      "associatedDomains": [
+        "applinks:application-intel.emergent.host"
+      ],
       "infoPlist": {
         "NSUserTrackingUsageDescription": "Track your job applications and progress",
         "NSCalendarsUsageDescription": "Schedule reminders for job follow-ups",
@@ -29,12 +31,16 @@
         "CFBundleURLTypes": [
           {
             "CFBundleURLName": "com.vsseshadri.careerflow",
-            "CFBundleURLSchemes": ["careerflow"]
+            "CFBundleURLSchemes": [
+              "careerflow"
+            ]
           }
         ]
       },
       "entitlements": {
-        "com.apple.security.application-groups": ["group.com.vsseshadri.careerflow"]
+        "com.apple.security.application-groups": [
+          "group.com.vsseshadri.careerflow"
+        ]
       }
     },
     "android": {
@@ -87,7 +93,10 @@
       "@react-native-community/datetimepicker",
       "expo-apple-authentication",
       "expo-document-picker",
-      "./plugins/withShareExtension"
+      "./plugins/withShareExtension",
+      "expo-image",
+      "expo-sharing",
+      "expo-web-browser"
     ],
     "experiments": {
       "typedRoutes": false
