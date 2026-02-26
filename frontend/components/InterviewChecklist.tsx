@@ -83,7 +83,7 @@ const detectRole = (pos: string): RoleType => {
   }
   
   // DATA SCIENCE / ML / AI / Analytics
-  if (/\b(data scien|machine learning|ml eng|ai eng|deep learning|nlp|computer vision|data anal|business intel|bi analyst|statistician|quantitative)\b/.test(p)) {
+  if (/\b(data scientist|data science|machine learning|ml eng|ai eng|deep learning|nlp|computer vision|data anal|business intel|bi analyst|statistician|quantitative|data eng)\b/.test(p)) {
     return 'data';
   }
   
