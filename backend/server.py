@@ -330,9 +330,7 @@ async def get_current_user(authorization: Optional[str] = Header(None)) -> User:
 @api_router.post("/auth/exchange-session")
 async def exchange_session(session_id: str):
     try:
-        auth_service_url = os.environ.get('AUTH_SERVICE_URL')
-        if not auth_service_url:
-            raise HTTPException(status_code=500, detail="AUTH_SERVICE_URL not configured")
+        auth_service_url = os.environ.get('AUTH_SERVICE_URL', 'https://auth.emergentagent.com/auth/v1/env/oauth/session-data')
         async with httpx.AsyncClient() as client:
             response = await client.get(
                 auth_service_url,
