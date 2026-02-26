@@ -18,11 +18,23 @@ import CalendarPicker from '../../components/CalendarPicker';
 import { parseJobDetailsFromContent } from '../../utils/shareReceiver';
 
 // Cross-platform alert that works on both web and mobile
-const showAlert = (title: string, message: string) => {
+const showAlert = (title: string, message: string, buttons?: Array<{text: string, style?: string, onPress?: () => void}>) => {
   if (Platform.OS === 'web') {
-    window.alert(`${title}: ${message}`);
+    if (buttons && buttons.length > 1) {
+      // This is a confirmation dialog
+      const confirmed = window.confirm(`${title}\n\n${message}`);
+      if (confirmed) {
+        // Find the non-cancel button and call its onPress
+        const confirmButton = buttons.find(b => b.style !== 'cancel');
+        if (confirmButton?.onPress) {
+          confirmButton.onPress();
+        }
+      }
+    } else {
+      window.alert(`${title}: ${message}`);
+    }
   } else {
-    showAlert(title, message);
+    Alert.alert(title, message, buttons);
   }
 };
 
