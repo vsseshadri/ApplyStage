@@ -2523,7 +2523,11 @@ export default function MyJobsScreen() {
                 <Ionicons name="close" size={28} color={colors.text} />
               </TouchableOpacity>
               <Text style={dynamicStyles.modalTitle}>{editingJob ? (partialEditMode ? 'Update Interview Status' : 'Edit Job') : 'Add Job'}</Text>
-              <TouchableOpacity onPress={handleSubmit}>
+              <TouchableOpacity 
+                onPress={handleSubmit}
+                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                style={{ padding: 8 }}
+              >
                 <Text style={dynamicStyles.saveButton}>Save</Text>
               </TouchableOpacity>
             </View>
