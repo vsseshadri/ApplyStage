@@ -1356,18 +1356,24 @@ export default function MyJobsScreen() {
 
   const handleSubmit = async () => {
     // Debug logging
-    console.log('Form Data on Submit:', formData);
+    console.log('=== FORM SUBMIT STARTED ===');
+    console.log('Form Data on Submit:', JSON.stringify(formData, null, 2));
     console.log('Position Value:', formData.position);
+    console.log('Job Type Value:', formData.job_type);
+    console.log('Date Applied Text:', dateAppliedText);
+    console.log('Selected State:', selectedState);
+    console.log('Work Mode:', formData.work_mode);
     
     // Only Company Name, Position, Date Applied, and Position Type are mandatory
     // Location (State & City) is only mandatory if Work Mode is NOT Remote
     if (!formData.company_name.trim()) {
+      console.log('Validation failed: Company Name empty');
       Alert.alert('Error', 'Company Name is required');
       return;
     }
     if (!formData.position || !formData.position.trim()) {
+      console.log('Validation failed: Position empty');
       Alert.alert('Error', 'Position is required');
-      console.log('Position validation failed:', formData.position);
       return;
     }
     
