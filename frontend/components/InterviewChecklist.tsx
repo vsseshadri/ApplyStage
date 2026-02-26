@@ -791,6 +791,46 @@ const TOPIC_POOLS: TopicPool = {
 
   // ==================== DATA SCIENCE / ML ====================
   data: {
+    system_design: {
+      senior: [
+        'Review ML system design patterns: batch vs real-time inference, online vs offline training',
+        'Prepare to design recommendation systems: collaborative filtering, content-based, hybrid',
+        'Study feature store architecture: offline/online stores, feature freshness, consistency',
+        'Review data pipeline design: streaming vs batch, Lambda vs Kappa architecture',
+        'Prepare to design A/B testing infrastructure: randomization, sample size, metrics logging',
+        'Document experience with ML model serving: latency optimization, model versioning, canary deploys',
+        'Review data warehouse design: star schema, fact/dimension tables, query optimization',
+        'Prepare to discuss ML training infrastructure: distributed training, GPU clusters, experiment tracking',
+        'Study data quality systems: validation rules, monitoring, anomaly detection',
+        'Review search and ranking system design: inverted index, relevance scoring, personalization',
+        'Prepare to design fraud detection systems: feature engineering, real-time scoring, feedback loops',
+        'Document experience with embeddings: vector search, approximate nearest neighbors, indexing',
+      ],
+      mid: [
+        'Review basic ML pipeline design: data ingestion, feature engineering, training, serving',
+        'Prepare to design a simple recommendation system: what data, what model, how to serve',
+        'Study ETL pipeline patterns: extract, transform, load, scheduling, error handling',
+        'Review data warehouse basics: dimensional modeling, slowly changing dimensions',
+        'Prepare to discuss batch vs real-time processing trade-offs',
+        'Document experience with data orchestration: Airflow, Luigi, Prefect',
+        'Review model serving basics: REST APIs, latency considerations, caching',
+        'Prepare to design A/B test analysis pipeline: metrics collection, statistical tests, reporting',
+        'Study data validation approaches: schema validation, statistical tests, anomaly detection',
+        'Review basic feature store concepts: what features to store, how to serve them',
+      ],
+      junior: [
+        'Review basic data pipeline concepts: sources, transformations, destinations',
+        'Study what a data warehouse is and how it differs from a database',
+        'Understand batch vs streaming data processing at a high level',
+        'Review how ML models are deployed and served in production',
+        'Prepare to discuss data quality: why it matters, basic validation',
+        'Study what feature engineering is and why it matters',
+        'Review basic A/B testing concepts: control, treatment, metrics',
+        'Prepare questions about the company\'s data infrastructure',
+        'Understand ETL: Extract, Transform, Load basics',
+        'Review the company\'s data products and how they might be built',
+      ],
+    },
     technical_screen: {
       senior: [
         'Review ML algorithms in depth: gradient boosting, neural architectures',
