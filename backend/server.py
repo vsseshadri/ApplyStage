@@ -150,6 +150,8 @@ async def create_indexes():
         logging.warning(f"Index creation warning (may already exist): {e}")
 
 class User(BaseModel):
+    model_config = ConfigDict(extra='ignore')
+    
     user_id: str
     email: str
     name: Optional[str] = None
