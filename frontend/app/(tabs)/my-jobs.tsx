@@ -22,7 +22,7 @@ const showAlert = (title: string, message: string) => {
   if (Platform.OS === 'web') {
     window.alert(`${title}: ${message}`);
   } else {
-    Alert.alert(title, message);
+    showAlert(title, message);
   }
 };
 
@@ -101,7 +101,7 @@ const getOrCreateCalendar = async (): Promise<string | null> => {
   try {
     const { status } = await Calendar.requestCalendarPermissionsAsync();
     if (status !== 'granted') {
-      Alert.alert('Permission Required', 'Calendar permission is needed to add events.');
+      showAlert('Permission Required', 'Calendar permission is needed to add events.');
       return null;
     }
 
@@ -150,14 +150,14 @@ const addEventToCalendar = async (
   try {
     const calendarId = await getOrCreateCalendar();
     if (!calendarId) {
-      Alert.alert('Error', 'Could not access calendar. Please check your permissions.');
+      showAlert('Error', 'Could not access calendar. Please check your permissions.');
       return false;
     }
 
     // Parse the scheduled date (MM/DD/YYYY format)
     const parts = scheduledDate.replace('/', '-').replace('/', '-').split('-');
     if (parts.length !== 3) {
-      Alert.alert('Error', 'Invalid date format');
+      showAlert('Error', 'Invalid date format');
       return false;
     }
     
@@ -206,7 +206,7 @@ const promptAddToCalendar = (
     word.charAt(0).toUpperCase() + word.slice(1)
   ).join(' ');
 
-  Alert.alert(
+  showAlert(
     'Add to Calendar',
     `Would you like to add this interview to your calendar?\n\n${companyName} - ${formattedStage}\n${scheduledDate} at 9:00 AM`,
     [
@@ -226,7 +226,7 @@ const promptAddToCalendar = (
             notes
           );
           if (success) {
-            Alert.alert('Success', 'Event added to your calendar!');
+            showAlert('Success', 'Event added to your calendar!');
           }
         }
       }
@@ -535,7 +535,7 @@ export default function MyJobsScreen() {
   const deleteSelectedJobs = async () => {
     if (selectedJobs.size === 0) return;
     
-    Alert.alert(
+    showAlert(
       'Delete Jobs',
       `Are you sure you want to delete ${selectedJobs.size} job(s)?`,
       [
@@ -557,7 +557,7 @@ export default function MyJobsScreen() {
               fetchJobs();
             } catch (error) {
               console.error('Error deleting jobs:', error);
-              Alert.alert('Error', 'Failed to delete some jobs');
+              showAlert('Error', 'Failed to delete some jobs');
             }
           }
         }
@@ -567,7 +567,7 @@ export default function MyJobsScreen() {
   
   // Single job deletion (for swipe action)
   const deleteJob = async (jobId: string) => {
-    Alert.alert(
+    showAlert(
       'Delete Job',
       'Are you sure you want to delete this job application?',
       [
@@ -585,7 +585,7 @@ export default function MyJobsScreen() {
               fetchJobs();
             } catch (error) {
               console.error('Error deleting job:', error);
-              Alert.alert('Error', 'Failed to delete job');
+              showAlert('Error', 'Failed to delete job');
             }
           }
         }
@@ -768,9 +768,9 @@ export default function MyJobsScreen() {
       console.error('Document picker error:', pickerError);
       // If it's a "different picking in progress" error, inform user to try again
       if (pickerError?.message?.includes('Different document picking')) {
-        Alert.alert('Please Wait', 'A file picker is already open. Please close it and try again.');
+        showAlert('Please Wait', 'A file picker is already open. Please close it and try again.');
       } else {
-        Alert.alert('Picker Error', `Could not open file picker: ${pickerError?.message || 'Unknown error'}`);
+        showAlert('Picker Error', `Could not open file picker: ${pickerError?.message || 'Unknown error'}`);
       }
       return;
     }
@@ -783,7 +783,7 @@ export default function MyJobsScreen() {
     
     // Check if we have assets
     if (!pickerResult.assets || pickerResult.assets.length === 0) {
-      Alert.alert('Error', 'No file was selected. Please try again.');
+      showAlert('Error', 'No file was selected. Please try again.');
       return;
     }
   
@@ -796,7 +796,7 @@ export default function MyJobsScreen() {
     const isExcel = fileName.endsWith('.xlsx') || fileName.endsWith('.xls');
     
     if (!isCSV && !isExcel) {
-      Alert.alert('Invalid File', 'Please select a CSV (.csv) or Excel (.xlsx, .xls) file.');
+      showAlert('Invalid File', 'Please select a CSV (.csv) or Excel (.xlsx, .xls) file.');
       return;
     }
     
@@ -818,13 +818,13 @@ export default function MyJobsScreen() {
           console.log('CSV content length:', csvText.length);
         } catch (readError) {
           console.error('Error reading CSV file:', readError);
-          Alert.alert('Read Error', 'Could not read the CSV file content. Please try again.');
+          showAlert('Read Error', 'Could not read the CSV file content. Please try again.');
           setIsImporting(false);
           return;
         }
         
         if (!csvText || csvText.trim().length === 0) {
-          Alert.alert('Empty File', 'The CSV file appears to be empty.');
+          showAlert('Empty File', 'The CSV file appears to be empty.');
           setIsImporting(false);
           return;
         }
@@ -855,14 +855,14 @@ export default function MyJobsScreen() {
           console.log('Excel rows parsed:', dataRows.length);
         } catch (readError) {
           console.error('Error reading Excel file:', readError);
-          Alert.alert('Read Error', 'Could not read the Excel file. Please ensure it is a valid .xlsx or .xls file.');
+          showAlert('Read Error', 'Could not read the Excel file. Please ensure it is a valid .xlsx or .xls file.');
           setIsImporting(false);
           return;
         }
       }
       
       if (dataRows.length < 1) {
-        Alert.alert('Empty File', 'The file appears to be empty.');
+        showAlert('Empty File', 'The file appears to be empty.');
         setIsImporting(false);
         return;
       }
@@ -922,7 +922,7 @@ export default function MyJobsScreen() {
       const startIndex = hasHeaders ? 1 : 0;
       
       if (dataRows.length <= startIndex) {
-        Alert.alert('Empty File', 'The file has no data rows to import.');
+        showAlert('Empty File', 'The file has no data rows to import.');
         setIsImporting(false);
         return;
       }
@@ -1025,7 +1025,7 @@ export default function MyJobsScreen() {
       }
       
       if (newJobsToCreate.length === 0 && jobsToUpdate.length === 0) {
-        Alert.alert('No Changes', 'No new entries to create or existing entries to update.');
+        showAlert('No Changes', 'No new entries to create or existing entries to update.');
         setIsImporting(false);
         return;
       }
@@ -1108,20 +1108,20 @@ export default function MyJobsScreen() {
         let message = '';
         if (createSuccessCount > 0) message += `${createSuccessCount} new job(s) created. `;
         if (updateSuccessCount > 0) message += `${updateSuccessCount} existing job(s) updated.`;
-        Alert.alert('Import Successful', message.trim());
+        showAlert('Import Successful', message.trim());
       } else if (totalSuccess > 0 && totalFail > 0) {
         let message = '';
         if (createSuccessCount > 0) message += `${createSuccessCount} job(s) created. `;
         if (updateSuccessCount > 0) message += `${updateSuccessCount} job(s) updated. `;
         message += `${totalFail} operation(s) failed.`;
-        Alert.alert('Partial Import', message.trim());
+        showAlert('Partial Import', message.trim());
       } else {
-        Alert.alert('Import Failed', 'Failed to import/update jobs. Please try again.');
+        showAlert('Import Failed', 'Failed to import/update jobs. Please try again.');
       }
     } catch (error) {
       console.error('Import error:', error);
       setIsImporting(false);
-      Alert.alert('Import Error', 'An error occurred while importing the file. Please try again.');
+      showAlert('Import Error', 'An error occurred while importing the file. Please try again.');
     }
   };
 
@@ -1329,7 +1329,7 @@ export default function MyJobsScreen() {
         // Validate file type
         const fileName = file.name.toLowerCase();
         if (!fileName.endsWith('.pdf') && !fileName.endsWith('.doc') && !fileName.endsWith('.docx')) {
-          Alert.alert('Invalid File', 'Please select a PDF or Word document (.pdf, .doc, .docx)');
+          showAlert('Invalid File', 'Please select a PDF or Word document (.pdf, .doc, .docx)');
           return;
         }
         
@@ -1346,7 +1346,7 @@ export default function MyJobsScreen() {
       }
     } catch (error) {
       console.error('Error picking document:', error);
-      Alert.alert('Error', 'Unable to pick document. Please try again.');
+      showAlert('Error', 'Unable to pick document. Please try again.');
     }
   };
 
@@ -1388,32 +1388,32 @@ export default function MyJobsScreen() {
     
     // Location validation - only required if Work Mode is not Remote
     if (formData.work_mode !== 'remote' && !selectedState) {
-      Alert.alert('Error', 'State is required for non-remote positions');
+      showAlert('Error', 'State is required for non-remote positions');
       return;
     }
     // City is always optional now
 
     // Date Applied is mandatory
     if (!dateAppliedText.trim()) {
-      Alert.alert('Error', 'Date Applied is required');
+      showAlert('Error', 'Date Applied is required');
       return;
     }
 
     // Position Type is mandatory
     if (!formData.job_type) {
-      Alert.alert('Error', 'Position Type is required');
+      showAlert('Error', 'Position Type is required');
       return;
     }
 
     // Scheduled On is mandatory if Upcoming Stage is selected
     if (formData.upcoming_stage && !formData.upcoming_schedule) {
-      Alert.alert('Error', 'Scheduled On date is required when Upcoming Stage is selected');
+      showAlert('Error', 'Scheduled On date is required when Upcoming Stage is selected');
       return;
     }
 
     const parsedDate = parseDate(dateAppliedText);
     if (!parsedDate) {
-      Alert.alert('Error', 'Please enter a valid date (MM/DD/YYYY)');
+      showAlert('Error', 'Please enter a valid date (MM/DD/YYYY)');
       return;
     }
 
@@ -1421,7 +1421,7 @@ export default function MyJobsScreen() {
     const today = new Date();
     today.setHours(23, 59, 59, 999);
     if (parsedDate > today) {
-      Alert.alert('Invalid Date', 'Date applied cannot be in the future');
+      showAlert('Invalid Date', 'Date applied cannot be in the future');
       return;
     }
 
@@ -1429,7 +1429,7 @@ export default function MyJobsScreen() {
     const oneYearAgo = new Date();
     oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
     if (parsedDate < oneYearAgo) {
-      Alert.alert('Invalid Date', 'Date applied cannot be more than 1 year ago');
+      showAlert('Invalid Date', 'Date applied cannot be more than 1 year ago');
       return;
     }
 
@@ -1440,7 +1440,7 @@ export default function MyJobsScreen() {
       minSal = parseFloat(unformatSalary(formData.min_salary));
       maxSal = parseFloat(unformatSalary(formData.max_salary));
       if (minSal >= maxSal) {
-        Alert.alert('Error', 'Maximum salary must be greater than minimum salary');
+        showAlert('Error', 'Maximum salary must be greater than minimum salary');
         return;
       }
     } else if (formData.min_salary) {
@@ -1524,16 +1524,16 @@ export default function MyJobsScreen() {
             );
           }, 500);
         } else {
-          Alert.alert('Success', editingJob ? 'Job updated successfully' : 'Job added successfully');
+          showAlert('Success', editingJob ? 'Job updated successfully' : 'Job added successfully');
         }
       } else {
         const errorText = await response.text();
         console.error('API Error Response:', response.status, errorText);
-        Alert.alert('Error', `Failed to save job application: ${response.status}`);
+        showAlert('Error', `Failed to save job application: ${response.status}`);
       }
     } catch (error) {
       console.error('Error saving job:', error);
-      Alert.alert('Error', 'Failed to save job application: Network error');
+      showAlert('Error', 'Failed to save job application: Network error');
     }
   };
 
