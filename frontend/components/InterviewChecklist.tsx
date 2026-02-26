@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { View, Text, TouchableOpacity, Modal, StyleSheet, ScrollView, ActivityIndicator, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import Constants from 'expo-constants';
 
 // ============================================================================
 // TYPES & INTERFACES
@@ -38,8 +37,7 @@ interface InterviewChecklistProps {
 
 const EMERGENT_LLM_KEY = 'sk-emergent-66a2f7f8f020eDaA7B';
 const LLM_API_URL = 'https://api.openai.com/v1/chat/completions';
-const LLM_TIMEOUT_MS = 8000; // 8 second timeout
-const CACHE_TTL_MS = 5 * 60 * 1000; // 5 minute cache
+const LLM_TIMEOUT_MS = 12000; // 12 second timeout
 
 // Stage display names mapping
 const STAGE_DISPLAY_NAMES: { [key: string]: string } = {
@@ -58,256 +56,971 @@ const STAGE_DISPLAY_NAMES: { [key: string]: string } = {
   case_study: 'Case Study',
 };
 
-// Role seniority detection
-const SENIORITY_KEYWORDS = {
-  principal: ['principal', 'staff', 'distinguished', 'fellow', 'architect'],
-  senior: ['senior', 'sr.', 'sr ', 'lead', 'manager', 'director', 'vp', 'head'],
-  mid: ['mid', 'intermediate', 'level ii', 'ii'],
-  junior: ['junior', 'jr.', 'jr ', 'associate', 'entry', 'intern', 'graduate'],
-};
-
-// Role family detection
-const ROLE_FAMILIES = {
-  engineering: ['engineer', 'developer', 'programmer', 'architect', 'devops', 'sre', 'platform'],
-  data: ['data scientist', 'data analyst', 'ml engineer', 'machine learning', 'ai ', 'analytics'],
-  product: ['product manager', 'product owner', 'pm ', 'program manager'],
-  design: ['designer', 'ux', 'ui', 'user experience', 'user interface'],
-  healthcare: ['nurse', 'physician', 'doctor', 'clinician', 'medical', 'healthcare', 'rn ', 'np '],
-  finance: ['analyst', 'accountant', 'finance', 'investment', 'banking', 'trader'],
-  sales: ['sales', 'account executive', 'business development', 'bd ', 'ae '],
-  marketing: ['marketing', 'growth', 'brand', 'content', 'seo', 'sem'],
-  legal: ['lawyer', 'attorney', 'legal', 'counsel', 'paralegal'],
-  hr: ['recruiter', 'hr ', 'human resources', 'talent', 'people ops'],
-};
-
-// ============================================================================
-// IN-MEMORY CACHE (Session Scope)
-// ============================================================================
-
-interface CacheEntry {
-  topics: FocusArea[];
-  timestamp: number;
-}
-
-const topicCache: Map<string, CacheEntry> = new Map();
-
-const getCacheKey = (stage: string, position: string): string => {
-  return `${stage.toLowerCase()}_${position.toLowerCase().replace(/\s+/g, '_')}`;
-};
-
-const getCachedTopics = (stage: string, position: string): FocusArea[] | null => {
-  const key = getCacheKey(stage, position);
-  const entry = topicCache.get(key);
-  
-  if (entry && Date.now() - entry.timestamp < CACHE_TTL_MS) {
-    return entry.topics;
-  }
-  
-  return null;
-};
-
-const setCachedTopics = (stage: string, position: string, topics: FocusArea[]): void => {
-  const key = getCacheKey(stage, position);
-  topicCache.set(key, {
-    topics,
-    timestamp: Date.now(),
-  });
-};
-
 // ============================================================================
 // ROLE & SENIORITY DETECTION
 // ============================================================================
 
-const detectSeniority = (position: string): string => {
+type SeniorityLevel = 'executive' | 'senior' | 'mid' | 'junior';
+type RoleFamily = 'software_engineering' | 'data_science' | 'product_management' | 'program_management' | 
+                   'design' | 'healthcare_clinical' | 'healthcare_admin' | 'aerospace' | 'finance' | 
+                   'sales' | 'marketing' | 'legal' | 'hr' | 'operations' | 'consulting' | 'general';
+
+const detectSeniority = (position: string): SeniorityLevel => {
   const lower = position.toLowerCase();
   
-  for (const [level, keywords] of Object.entries(SENIORITY_KEYWORDS)) {
-    if (keywords.some(kw => lower.includes(kw))) {
-      return level;
-    }
+  // Executive level
+  if (/\b(vp|vice president|director|head of|chief|cto|ceo|cfo|coo|principal|staff|distinguished|fellow)\b/.test(lower)) {
+    return 'executive';
   }
-  
-  return 'mid'; // Default to mid-level
+  // Senior level
+  if (/\b(senior|sr\.?|lead|manager|architect)\b/.test(lower)) {
+    return 'senior';
+  }
+  // Junior level
+  if (/\b(junior|jr\.?|associate|entry|intern|graduate|trainee|apprentice)\b/.test(lower)) {
+    return 'junior';
+  }
+  // Default to mid
+  return 'mid';
 };
 
-const detectRoleFamily = (position: string): string => {
+const detectRoleFamily = (position: string): RoleFamily => {
   const lower = position.toLowerCase();
   
-  for (const [family, keywords] of Object.entries(ROLE_FAMILIES)) {
-    if (keywords.some(kw => lower.includes(kw))) {
-      return family;
-    }
+  // Software Engineering
+  if (/\b(software|developer|programmer|engineer|swe|sde|devops|sre|platform|backend|frontend|fullstack|full-stack|mobile)\b/.test(lower) && 
+      !/\b(program|project|product)\b/.test(lower)) {
+    return 'software_engineering';
+  }
+  // Data Science / ML / AI
+  if (/\b(data scientist|machine learning|ml engineer|ai |analytics|data analyst|research scientist)\b/.test(lower)) {
+    return 'data_science';
+  }
+  // Product Management
+  if (/\b(product manager|product owner|pm\b|product lead)\b/.test(lower) && !/program/.test(lower)) {
+    return 'product_management';
+  }
+  // Program Management
+  if (/\b(program manager|project manager|technical program|tpm|pmo)\b/.test(lower)) {
+    return 'program_management';
+  }
+  // Design
+  if (/\b(designer|ux|ui|user experience|user interface|creative|visual)\b/.test(lower)) {
+    return 'design';
+  }
+  // Healthcare Clinical
+  if (/\b(nurse|rn\b|np\b|physician|doctor|surgeon|clinician|medical|therapist|pharmacist|dentist)\b/.test(lower)) {
+    return 'healthcare_clinical';
+  }
+  // Healthcare Admin
+  if (/\b(healthcare admin|hospital admin|medical director|clinical operations)\b/.test(lower)) {
+    return 'healthcare_admin';
+  }
+  // Aerospace
+  if (/\b(aerospace|avionics|flight|astronaut|rocket|propulsion|aircraft|aviation)\b/.test(lower)) {
+    return 'aerospace';
+  }
+  // Finance
+  if (/\b(financial analyst|investment|banking|trader|portfolio|accounting|accountant|controller|finance)\b/.test(lower)) {
+    return 'finance';
+  }
+  // Sales
+  if (/\b(sales|account executive|business development|ae\b|bdr|sdr)\b/.test(lower)) {
+    return 'sales';
+  }
+  // Marketing
+  if (/\b(marketing|growth|brand|content|seo|sem|digital marketing)\b/.test(lower)) {
+    return 'marketing';
+  }
+  // Legal
+  if (/\b(lawyer|attorney|legal|counsel|paralegal|compliance)\b/.test(lower)) {
+    return 'legal';
+  }
+  // HR
+  if (/\b(recruiter|hr\b|human resources|talent|people ops|hrbp)\b/.test(lower)) {
+    return 'hr';
+  }
+  // Operations
+  if (/\b(operations|supply chain|logistics|procurement|manufacturing)\b/.test(lower)) {
+    return 'operations';
+  }
+  // Consulting
+  if (/\b(consultant|consulting|advisory|strategy)\b/.test(lower)) {
+    return 'consulting';
   }
   
-  return 'engineering'; // Default to engineering
+  return 'general';
 };
 
 // ============================================================================
-// DETERMINISTIC FALLBACK HEURISTIC GENERATOR
+// COMPREHENSIVE ROLE + STAGE + SENIORITY TOPIC DATABASE
 // ============================================================================
 
-const generateFallbackTopics = (stage: string, position: string, company: string): FocusArea[] => {
-  const seniority = detectSeniority(position);
-  const roleFamily = detectRoleFamily(position);
+interface TopicDatabase {
+  [roleFamily: string]: {
+    [stage: string]: {
+      [seniority: string]: string[];
+    };
+  };
+}
+
+const TOPIC_DATABASE: TopicDatabase = {
+  software_engineering: {
+    system_design: {
+      executive: [
+        'Prepare to lead architecture discussions - practice whiteboarding complex distributed systems',
+        'Review trade-offs you\'ve made at scale: CAP theorem decisions, consistency vs availability',
+        'Prepare examples of cross-team technical decisions and their organizational impact',
+        'Study recent case studies: how Uber/Netflix/Meta handle millions of concurrent requests',
+        'Practice capacity estimation: QPS, storage, bandwidth for 100M+ users',
+        'Review your experience with service mesh, observability at scale, and incident response',
+      ],
+      senior: [
+        'Practice designing systems handling 10K+ concurrent requests with load balancing strategies',
+        'Review database sharding patterns and when to use horizontal vs vertical scaling',
+        'Prepare to explain API rate limiting implementations: token bucket, sliding window',
+        'Study caching strategies: cache invalidation, write-through vs write-behind patterns',
+        'Practice drawing clear architecture diagrams with data flow and failure points',
+        'Review microservices patterns: circuit breakers, saga patterns, event sourcing',
+      ],
+      mid: [
+        'Study basic system design components: load balancers, CDNs, reverse proxies',
+        'Practice designing a URL shortener with read/write ratio optimization',
+        'Review SQL vs NoSQL trade-offs with specific use case examples',
+        'Understand caching basics: Redis vs Memcached, TTL strategies',
+        'Practice estimating storage and bandwidth for common scenarios',
+        'Learn to ask clarifying questions: scale, latency requirements, consistency needs',
+      ],
+      junior: [
+        'Review how web requests flow: DNS → Load Balancer → Server → Database',
+        'Understand basic scaling: vertical (bigger server) vs horizontal (more servers)',
+        'Study what databases do and when to use SQL vs NoSQL',
+        'Learn about caching: why we cache, what Redis is, cache hit/miss concepts',
+        'Practice explaining simple architectures like a blog or todo app',
+        'Prepare questions about the company\'s tech stack and architecture',
+      ],
+    },
+    coding_round_1: {
+      executive: [
+        'Practice leadership-style coding: clean code, design patterns, extensibility',
+        'Review advanced algorithms you\'d expect senior engineers to implement',
+        'Prepare to discuss code review feedback and mentoring approaches',
+        'Practice explaining trade-offs in your solutions clearly',
+        'Review concurrency patterns: thread safety, locks, async patterns',
+        'Prepare to discuss your approach to technical debt and code quality',
+      ],
+      senior: [
+        'Master these patterns: sliding window, two pointers, binary search variations',
+        'Practice 5+ medium LeetCode problems in 25 minutes each',
+        'Review graph algorithms: BFS for shortest path, DFS for traversal',
+        'Prepare to optimize solutions: O(n²) to O(n log n) conversions',
+        'Practice explaining your thought process while coding aloud',
+        'Review language-specific optimizations and idioms',
+      ],
+      mid: [
+        'Focus on array and string manipulation problems - solve 3 per day',
+        'Master HashMap usage for O(1) lookups and frequency counting',
+        'Practice the two-pointer technique for sorted array problems',
+        'Review recursion basics and when to use iterative vs recursive',
+        'Get comfortable with time/space complexity analysis',
+        'Practice debugging your code with edge cases',
+      ],
+      junior: [
+        'Review fundamental data structures: arrays, strings, hashmaps, linked lists',
+        'Practice 2-3 easy LeetCode problems daily in your target language',
+        'Master basic operations: reverse string, find max/min, two sum',
+        'Learn to trace through code step by step before running',
+        'Practice explaining your approach before writing code',
+        'Review Big-O basics: constant, linear, quadratic complexity',
+      ],
+    },
+    behavioural: {
+      executive: [
+        'Prepare stories about driving org-wide technical strategy and vision',
+        'Document examples of building and scaling high-performing teams',
+        'Prepare to discuss technical investment decisions and ROI',
+        'Review examples of navigating ambiguity and setting direction',
+        'Prepare stories about cross-functional influence at exec level',
+        'Document how you\'ve handled technical crises and post-mortems',
+      ],
+      senior: [
+        'Map 3 projects to STAR format with specific metrics (latency reduced 40%, etc.)',
+        'Prepare mentoring stories: how you grew junior engineers',
+        'Document a time you pushed back on product requirements with data',
+        'Prepare a "technical disagreement resolution" story',
+        'Review examples of balancing tech debt vs feature delivery',
+        'Prepare to discuss your approach to code reviews and quality',
+      ],
+      mid: [
+        'Prepare 5 STAR stories covering: impact, collaboration, challenge, learning, initiative',
+        'Quantify your achievements: % improvement, users affected, time saved',
+        'Prepare a "learned from failure" story with concrete takeaways',
+        'Document examples of working with cross-functional teams',
+        'Prepare to discuss your development goals and growth areas',
+        'Review how your work impacted users or business metrics',
+      ],
+      junior: [
+        'Prepare stories from internships, projects, or coursework using STAR format',
+        'Highlight your learning agility - how quickly you picked up new skills',
+        'Prepare to discuss a challenging project and how you overcame obstacles',
+        'Review your technical interests and why you chose this field',
+        'Prepare questions about mentorship and growth opportunities',
+        'Document team projects: your role, contributions, and learnings',
+      ],
+    },
+    technical_screen: {
+      executive: [
+        'Prepare to discuss architectural decisions at scale and their rationale',
+        'Review your track record of technical leadership and its impact',
+        'Prepare examples of evaluating and adopting new technologies',
+        'Document your experience with technical strategy and roadmapping',
+        'Review how you\'ve balanced innovation with reliability',
+        'Prepare to discuss your technical vision for the organization',
+      ],
+      senior: [
+        'Review advanced data structures: tries, segment trees, union-find',
+        'Practice system design elements in coding problems',
+        'Prepare to discuss your most complex technical project in depth',
+        'Review concurrency, threading, and async programming patterns',
+        'Practice optimizing solutions and discussing trade-offs',
+        'Prepare technical questions about the company\'s stack',
+      ],
+      mid: [
+        'Review core data structures: arrays, hashmaps, trees, graphs',
+        'Practice explaining your technical projects in 2-3 minutes',
+        'Solve 2-3 LeetCode medium problems with focus on explanation',
+        'Review Big-O complexity for common operations',
+        'Prepare to discuss your development workflow and tools',
+        'Practice coding without IDE - syntax, imports from memory',
+      ],
+      junior: [
+        'Review fundamentals: OOP concepts, basic algorithms, data structures',
+        'Practice explaining your projects and coursework clearly',
+        'Solve 3-5 easy LeetCode problems in your target language',
+        'Review basic SQL queries: SELECT, JOIN, GROUP BY',
+        'Prepare to discuss your learning process and how you debug',
+        'Research the company\'s tech stack and prepare relevant questions',
+      ],
+    },
+  },
+  program_management: {
+    system_design: {
+      executive: [
+        'Prepare to discuss program architecture at portfolio level',
+        'Review examples of managing programs with 50+ engineers across teams',
+        'Document how you\'ve aligned technical roadmaps with business strategy',
+        'Prepare to discuss resource allocation across competing priorities',
+        'Review your experience with build vs buy decisions at scale',
+        'Prepare examples of managing vendor relationships for major systems',
+      ],
+      senior: [
+        'Prepare to discuss system dependencies and cross-team coordination',
+        'Review examples of de-risking large technical initiatives',
+        'Document how you\'ve managed technical debt conversations with eng leaders',
+        'Prepare to discuss trade-offs: scope, timeline, quality, resources',
+        'Review your approach to technical requirements gathering',
+        'Prepare examples of translating business needs to technical requirements',
+      ],
+      mid: [
+        'Study how to create technical project timelines with dependencies',
+        'Review risk management frameworks for technical projects',
+        'Prepare to discuss how you coordinate between engineering teams',
+        'Document your experience with Agile/Scrum at scale',
+        'Review common integration points and failure modes in systems',
+        'Prepare questions about the technical architecture landscape',
+      ],
+      junior: [
+        'Review basic software development lifecycle and methodologies',
+        'Study project management tools: Jira, Asana, MS Project',
+        'Understand technical dependencies and how to track them',
+        'Learn about APIs, integrations, and system boundaries',
+        'Prepare to discuss how you\'d learn the technical landscape quickly',
+        'Review basic concepts: sprints, backlogs, velocity, burndown',
+      ],
+    },
+    behavioural: {
+      executive: [
+        'Prepare stories about managing multi-million dollar programs',
+        'Document examples of executive stakeholder management',
+        'Review how you\'ve navigated organizational change during major initiatives',
+        'Prepare to discuss conflict resolution at senior leadership level',
+        'Document program turnarounds: how you rescued failing initiatives',
+        'Prepare examples of building high-performing TPM teams',
+      ],
+      senior: [
+        'Prepare STAR stories about managing complex, ambiguous programs',
+        'Document examples of influencing engineering teams without authority',
+        'Review how you\'ve handled scope creep and timeline pressures',
+        'Prepare a story about resolving cross-team conflicts',
+        'Document how you\'ve driven accountability in engineering teams',
+        'Prepare examples of risk escalation and mitigation',
+      ],
+      mid: [
+        'Prepare stories demonstrating stakeholder management skills',
+        'Document examples of keeping projects on track despite obstacles',
+        'Review how you communicate technical status to non-technical stakeholders',
+        'Prepare a story about managing competing priorities',
+        'Document your approach to running effective meetings',
+        'Prepare examples of identifying and mitigating project risks',
+      ],
+      junior: [
+        'Prepare stories from coursework or internships about coordination',
+        'Document examples of organizing team activities or projects',
+        'Review how you handle multiple deadlines and priorities',
+        'Prepare to discuss your communication and organization skills',
+        'Document any leadership experience in clubs or group projects',
+        'Prepare questions about the team structure and how TPMs operate',
+      ],
+    },
+    hiring_manager: {
+      executive: [
+        'Research the VP/Director\'s background and organizational challenges',
+        'Prepare your vision for the TPM function at scale',
+        'Document your leadership philosophy and team-building approach',
+        'Prepare to discuss program governance and portfolio management',
+        'Review organizational changes you\'ve driven and their impact',
+        'Prepare questions about strategic priorities and pain points',
+      ],
+      senior: [
+        'Research the hiring manager\'s programs and team structure',
+        'Prepare a 30-60-90 day plan for ramping on their programs',
+        'Document your approach to building relationships with eng leads',
+        'Prepare to discuss how you handle underperforming team dynamics',
+        'Review your stakeholder management approach',
+        'Prepare questions about team challenges and success metrics',
+      ],
+      mid: [
+        'Research the manager\'s background and current programs',
+        'Prepare to discuss your project management methodology',
+        'Document how you\'ve handled difficult stakeholders',
+        'Prepare questions about team structure and growth opportunities',
+        'Review how you prioritize when everything is urgent',
+        'Prepare to discuss your communication tools and style',
+      ],
+      junior: [
+        'Research the hiring manager on LinkedIn and understand their programs',
+        'Prepare to discuss why you\'re interested in program management',
+        'Document your organizational and communication strengths',
+        'Prepare questions about mentorship and training programs',
+        'Review what makes a successful TPM in their organization',
+        'Prepare to discuss how you\'d learn the technical landscape',
+      ],
+    },
+  },
+  healthcare_clinical: {
+    clinical: {
+      executive: [
+        'Prepare examples of improving clinical outcomes at department/org level',
+        'Review leadership in quality improvement initiatives with metrics',
+        'Document experience with accreditation and regulatory compliance',
+        'Prepare to discuss clinical staffing models and resource optimization',
+        'Review your approach to evidence-based practice implementation',
+        'Prepare examples of handling adverse events and system improvements',
+      ],
+      senior: [
+        'Prepare detailed patient care scenarios in your specialty',
+        'Review clinical protocols and when you\'d deviate from them',
+        'Document examples of clinical decision-making under pressure',
+        'Prepare SBAR format examples for critical communications',
+        'Review medication interactions common in your specialty',
+        'Prepare to discuss how you mentor junior clinical staff',
+      ],
+      mid: [
+        'Review clinical assessment frameworks relevant to your specialty',
+        'Prepare patient case examples demonstrating your clinical judgment',
+        'Document how you prioritize care with multiple patients',
+        'Review pharmacology relevant to your area of practice',
+        'Prepare to discuss documentation standards and EHR workflows',
+        'Review infection control and safety protocols',
+      ],
+      junior: [
+        'Review core clinical competencies for your role',
+        'Prepare examples from clinical rotations demonstrating learning',
+        'Study common diagnoses and treatments in the specialty',
+        'Review patient safety protocols and when to escalate',
+        'Prepare to discuss how you handle stressful patient situations',
+        'Document your clinical interests and growth goals',
+      ],
+    },
+    behavioural: {
+      executive: [
+        'Prepare stories about leading clinical teams through challenges',
+        'Document examples of implementing new protocols organization-wide',
+        'Review how you\'ve handled conflicts between clinical and administrative priorities',
+        'Prepare to discuss your approach to staff development and retention',
+        'Document quality improvement initiatives you\'ve led with outcomes',
+        'Prepare examples of managing during crisis situations',
+      ],
+      senior: [
+        'Prepare STAR stories about complex patient cases and outcomes',
+        'Document examples of advocating for patients or staff',
+        'Review how you\'ve handled ethical dilemmas in practice',
+        'Prepare a story about teaching or mentoring clinical staff',
+        'Document how you stay current with clinical best practices',
+        'Prepare to discuss your collaboration with interdisciplinary teams',
+      ],
+      mid: [
+        'Prepare stories demonstrating patient advocacy and communication',
+        'Document examples of handling difficult patient or family situations',
+        'Review how you manage stress and prevent burnout',
+        'Prepare to discuss your continuing education and certifications',
+        'Document examples of team collaboration and communication',
+        'Prepare a story about learning from a clinical mistake',
+      ],
+      junior: [
+        'Prepare stories from clinical training demonstrating compassion',
+        'Document examples of handling challenging patient interactions',
+        'Review why you chose this clinical specialty',
+        'Prepare to discuss your stress management strategies',
+        'Document your clinical role models and what you learned',
+        'Prepare questions about preceptorship and support systems',
+      ],
+    },
+  },
+  aerospace: {
+    technical_screen: {
+      executive: [
+        'Review your experience leading certifications (FAA, EASA, etc.)',
+        'Prepare to discuss systems engineering at program level',
+        'Document your experience with DO-178C/DO-254 compliance',
+        'Review aerospace safety management and risk assessment',
+        'Prepare examples of leading multi-disciplinary engineering teams',
+        'Document major program milestones you\'ve achieved',
+      ],
+      senior: [
+        'Review flight dynamics and control systems fundamentals',
+        'Prepare to discuss propulsion systems analysis and trade-offs',
+        'Document your experience with V&V processes in aerospace',
+        'Review avionics architecture and integration challenges',
+        'Prepare examples of solving complex aerospace engineering problems',
+        'Study recent developments in your aerospace specialty',
+      ],
+      mid: [
+        'Review core aerospace fundamentals: aerodynamics, structures, propulsion',
+        'Prepare to discuss your experience with aerospace design tools (CATIA, MATLAB)',
+        'Document your understanding of aerospace quality standards',
+        'Review materials commonly used and their properties',
+        'Prepare to discuss your experience with testing and validation',
+        'Study the company\'s products and recent aerospace programs',
+      ],
+      junior: [
+        'Review aerospace engineering fundamentals from your coursework',
+        'Prepare to discuss relevant projects and senior design experience',
+        'Study basic aerodynamics: lift, drag, thrust, weight',
+        'Review orbital mechanics basics if applicable',
+        'Prepare to discuss your CAD and analysis tool experience',
+        'Research the company\'s aerospace programs and missions',
+      ],
+    },
+    system_design: {
+      executive: [
+        'Prepare to discuss aerospace system architecture at program level',
+        'Review your experience with requirements decomposition and traceability',
+        'Document major system trade studies you\'ve led',
+        'Prepare examples of managing integration across aerospace disciplines',
+        'Review your approach to safety-critical system design',
+        'Prepare to discuss certification strategies and timelines',
+      ],
+      senior: [
+        'Review system safety analysis methods: FMEA, FTA, hazard analysis',
+        'Prepare to discuss avionics integration architecture',
+        'Document experience with redundancy and fault tolerance design',
+        'Review environmental qualification requirements',
+        'Prepare examples of interface control document development',
+        'Study recent system architectures in commercial/defense aerospace',
+      ],
+      mid: [
+        'Review basic system engineering lifecycle and processes',
+        'Study interface definition and control processes',
+        'Prepare to discuss configuration management in aerospace',
+        'Review requirements management tools and processes',
+        'Document your experience with system integration testing',
+        'Prepare questions about the system architecture landscape',
+      ],
+      junior: [
+        'Review systems engineering fundamentals: V-model, requirements',
+        'Study how aerospace systems are decomposed into subsystems',
+        'Understand the relationship between hardware and software requirements',
+        'Review basic testing hierarchies: unit, integration, system',
+        'Prepare to discuss your systems thinking approach',
+        'Research the company\'s major programs and their architectures',
+      ],
+    },
+  },
+  data_science: {
+    technical_screen: {
+      executive: [
+        'Prepare to discuss ML strategy and ROI at organizational level',
+        'Review examples of building and scaling ML teams',
+        'Document your approach to ML infrastructure decisions',
+        'Prepare to discuss ethical AI and responsible ML practices',
+        'Review your experience with ML in production at scale',
+        'Prepare examples of translating business problems to ML solutions',
+      ],
+      senior: [
+        'Review advanced ML: ensemble methods, deep learning architectures',
+        'Prepare to explain a model you built: features, evaluation, iteration',
+        'Practice SQL window functions and complex analytical queries',
+        'Review A/B testing design: power analysis, multiple comparisons',
+        'Prepare to discuss feature engineering strategies',
+        'Review ML ops and model deployment best practices',
+      ],
+      mid: [
+        'Review supervised learning: regression, classification, evaluation metrics',
+        'Practice Python pandas: groupby, merge, apply, window functions',
+        'Prepare SQL exercises: CTEs, window functions, complex joins',
+        'Review statistics: hypothesis testing, confidence intervals, p-values',
+        'Prepare to discuss your data pipeline experience',
+        'Practice explaining ML concepts to non-technical stakeholders',
+      ],
+      junior: [
+        'Review ML basics: train/test split, overfitting, cross-validation',
+        'Practice basic Python data manipulation with pandas',
+        'Review SQL fundamentals: joins, aggregations, filtering',
+        'Understand basic statistics: mean, median, variance, distributions',
+        'Prepare to discuss your data science projects from school',
+        'Review the company\'s products and potential ML applications',
+      ],
+    },
+    behavioural: {
+      executive: [
+        'Prepare stories about building data science culture in organizations',
+        'Document examples of executive-level data presentations',
+        'Review how you\'ve balanced innovation with reliability in ML',
+        'Prepare to discuss data ethics and privacy decisions',
+        'Document your approach to hiring and developing DS talent',
+        'Prepare examples of driving business value through ML',
+      ],
+      senior: [
+        'Prepare STAR stories about impactful ML projects with business metrics',
+        'Document examples of collaborating with product/engineering teams',
+        'Review how you communicate complex analysis to stakeholders',
+        'Prepare a story about a model that failed and what you learned',
+        'Document your approach to mentoring junior data scientists',
+        'Prepare examples of prioritizing among multiple analysis requests',
+      ],
+      mid: [
+        'Prepare stories about data projects with clear business impact',
+        'Document how you handle ambiguous data analysis requests',
+        'Review examples of presenting insights to non-technical audiences',
+        'Prepare to discuss how you validate and QA your analysis',
+        'Document examples of cross-functional collaboration',
+        'Prepare a story about learning a new tool or technique quickly',
+      ],
+      junior: [
+        'Prepare stories from coursework or personal projects',
+        'Document your passion for data and analytical thinking',
+        'Prepare to discuss how you approach an unfamiliar dataset',
+        'Review your experience with data visualization',
+        'Prepare questions about the team\'s tools and workflows',
+        'Document your learning goals in data science',
+      ],
+    },
+  },
+  finance: {
+    technical_screen: {
+      executive: [
+        'Prepare to discuss financial modeling at strategic level',
+        'Review your experience with M&A due diligence and valuation',
+        'Document examples of presenting to C-suite and board',
+        'Prepare to discuss risk management frameworks',
+        'Review your approach to financial forecasting and planning',
+        'Prepare examples of driving financial strategy decisions',
+      ],
+      senior: [
+        'Review advanced financial modeling: DCF, LBO, merger models',
+        'Prepare to discuss your approach to financial analysis and insights',
+        'Document experience with financial systems and ERP',
+        'Review Excel advanced functions: INDEX-MATCH, financial functions',
+        'Prepare to discuss your experience with financial reporting',
+        'Review current market conditions and their implications',
+      ],
+      mid: [
+        'Review financial statement analysis: ratios, trends, benchmarking',
+        'Practice Excel modeling: building projections, sensitivity analysis',
+        'Prepare to discuss your experience with budgeting and forecasting',
+        'Review GAAP/IFRS accounting principles relevant to your area',
+        'Prepare examples of financial analysis you\'ve conducted',
+        'Document your experience with financial tools and systems',
+      ],
+      junior: [
+        'Review core finance concepts: time value of money, NPV, IRR',
+        'Practice Excel: pivot tables, VLOOKUP, basic modeling',
+        'Understand financial statements: income statement, balance sheet, cash flow',
+        'Review basic accounting principles',
+        'Prepare to discuss your finance coursework and interests',
+        'Research the company\'s financial position and recent news',
+      ],
+    },
+    case_study: {
+      executive: [
+        'Prepare to lead executive-level financial strategy discussions',
+        'Review your framework for evaluating major investment decisions',
+        'Document examples of complex financial transactions you\'ve led',
+        'Prepare to discuss risk-return trade-offs at portfolio level',
+        'Review your approach to capital allocation decisions',
+        'Prepare examples of financial turnarounds or transformations',
+      ],
+      senior: [
+        'Practice case studies: company valuation, investment thesis',
+        'Review financial frameworks: WACC, capital structure optimization',
+        'Prepare to walk through your financial modeling approach',
+        'Practice presenting investment recommendations',
+        'Review industry metrics and benchmarks in your sector',
+        'Prepare to discuss current market opportunities and risks',
+      ],
+      mid: [
+        'Practice financial case studies with time constraints',
+        'Review valuation methods: comparable companies, precedent transactions',
+        'Prepare to structure financial analysis systematically',
+        'Practice calculating key financial metrics quickly',
+        'Review how to present financial analysis clearly',
+        'Prepare questions about the role\'s analytical responsibilities',
+      ],
+      junior: [
+        'Practice basic case study frameworks for finance',
+        'Review how to approach valuation questions systematically',
+        'Practice mental math: percentages, growth rates, ratios',
+        'Prepare to structure ambiguous financial questions',
+        'Review basic financial metrics and what they indicate',
+        'Prepare to discuss your interest in the specific finance area',
+      ],
+    },
+  },
+  consulting: {
+    case_study: {
+      executive: [
+        'Prepare to demonstrate strategic thinking at C-level',
+        'Review your frameworks for organizational transformation',
+        'Document major engagement turnarounds you\'ve led',
+        'Prepare to discuss client relationship management',
+        'Review your approach to business development',
+        'Prepare examples of thought leadership in your practice area',
+      ],
+      senior: [
+        'Master multiple frameworks: MECE, 80/20, hypothesis-driven analysis',
+        'Practice case interviews covering: market entry, profitability, M&A',
+        'Prepare to lead the case discussion rather than just respond',
+        'Review industry analyses in 2-3 sectors',
+        'Practice synthesizing recommendations under time pressure',
+        'Prepare examples of managing client relationships',
+      ],
+      mid: [
+        'Practice case study frameworks: issue trees, hypothesis testing',
+        'Review market sizing approaches with clear assumptions',
+        'Practice mental math: percentages, compound growth, unit economics',
+        'Prepare structured approaches to common case types',
+        'Practice delivering recommendations with supporting logic',
+        'Review 2-3 industries to demonstrate commercial awareness',
+      ],
+      junior: [
+        'Learn core consulting frameworks: 3C\'s, Porter\'s 5 forces, SWOT',
+        'Practice market sizing with the top-down and bottom-up approaches',
+        'Practice breaking down problems into structured components',
+        'Review basic mental math and get comfortable with estimates',
+        'Practice presenting your analysis clearly and confidently',
+        'Prepare examples demonstrating analytical thinking',
+      ],
+    },
+    behavioural: {
+      executive: [
+        'Prepare stories about winning and delivering major engagements',
+        'Document examples of building practice areas or offices',
+        'Review your approach to developing consulting talent',
+        'Prepare to discuss thought leadership and market positioning',
+        'Document examples of navigating complex client politics',
+        'Prepare examples of innovation in service delivery',
+      ],
+      senior: [
+        'Prepare STAR stories about complex client engagements',
+        'Document examples of managing client expectations',
+        'Review how you\'ve handled difficult stakeholder situations',
+        'Prepare a story about recovering a challenging project',
+        'Document your approach to mentoring consultants',
+        'Prepare examples of business development activities',
+      ],
+      mid: [
+        'Prepare stories demonstrating analytical problem-solving',
+        'Document examples of working in high-pressure, fast-paced environments',
+        'Review how you handle ambiguity and incomplete information',
+        'Prepare a story about receiving and incorporating feedback',
+        'Document examples of teamwork and collaboration',
+        'Prepare to discuss your motivation for consulting',
+      ],
+      junior: [
+        'Prepare stories from coursework, internships, or extracurriculars',
+        'Document examples of leadership and taking initiative',
+        'Prepare to discuss why you want to work in consulting',
+        'Review your analytical and problem-solving approach',
+        'Prepare examples of working effectively in teams',
+        'Document your interest areas and why this firm',
+      ],
+    },
+  },
+  general: {
+    recruiter_screening: {
+      executive: [
+        'Prepare executive summary of your career arc and impact',
+        'Research the company\'s executive team and recent board decisions',
+        'Prepare your compensation expectations based on market data',
+        'Document your leadership philosophy in 2-3 sentences',
+        'Prepare questions about strategic priorities and challenges',
+        'Review recent company news and prepare relevant observations',
+      ],
+      senior: [
+        'Prepare a 60-second career summary highlighting progression',
+        'Research the company on Glassdoor, LinkedIn, and recent news',
+        'Prepare your salary range with market data justification',
+        'Document 3 key achievements with quantified impact',
+        'Prepare questions about team structure and growth trajectory',
+        'Review the job description and align your experience',
+      ],
+      mid: [
+        'Prepare a concise overview of your experience and career goals',
+        'Research the company culture, mission, and recent developments',
+        'Understand the market rate for the role in your location',
+        'Prepare 3 reasons why you\'re interested in this specific role',
+        'Document questions about the role and team',
+        'Review your resume and be ready to discuss any point',
+      ],
+      junior: [
+        'Prepare a brief introduction covering education and relevant experience',
+        'Research the company thoroughly: products, culture, values',
+        'Understand entry-level compensation ranges in your area',
+        'Prepare your "why this role/company" answer',
+        'Document questions about training, mentorship, and growth',
+        'Review the job posting and prepare relevant examples',
+      ],
+    },
+    phone_screen: {
+      executive: [
+        'Research the interviewer\'s background and recent initiatives',
+        'Prepare to discuss your strategic vision for the role',
+        'Document your approach to building and leading organizations',
+        'Prepare examples of driving business results at scale',
+        'Review the company\'s competitive landscape and positioning',
+        'Prepare questions about culture and leadership team dynamics',
+      ],
+      senior: [
+        'Map your top 3 achievements to specific metrics and outcomes',
+        'Research the interviewer on LinkedIn and find connection points',
+        'Prepare a compelling "why this company" answer with specifics',
+        'Draft 3 STAR stories: leadership, impact, and problem-solving',
+        'Review the company\'s tech stack and recent projects',
+        'Prepare insightful questions about team challenges',
+      ],
+      mid: [
+        'Review your resume and prepare to discuss each role in detail',
+        'Research the interviewer and company recent developments',
+        'Prepare your career story and motivation for this transition',
+        'Draft 3 STAR stories covering impact and collaboration',
+        'Test your phone/video setup in a quiet environment',
+        'Prepare 3-4 thoughtful questions about the role',
+      ],
+      junior: [
+        'Review your resume and prepare to explain all experiences',
+        'Research the company and interviewer on LinkedIn',
+        'Prepare your "tell me about yourself" in 60 seconds',
+        'Draft examples from school, projects, or internships',
+        'Test your technology setup and find a quiet location',
+        'Prepare questions about the role and development opportunities',
+      ],
+    },
+    behavioural: {
+      executive: [
+        'Prepare stories about building and transforming organizations',
+        'Document examples of executive-level strategic decisions',
+        'Review how you\'ve navigated board and investor relationships',
+        'Prepare to discuss your leadership failures and learnings',
+        'Document how you build high-performing leadership teams',
+        'Prepare examples of driving culture change at scale',
+      ],
+      senior: [
+        'Prepare 5+ STAR stories with quantified business impact',
+        'Document examples of influencing without direct authority',
+        'Prepare a "disagreement with leadership" story and resolution',
+        'Review examples of developing and mentoring team members',
+        'Prepare to discuss how you handle ambiguity and prioritization',
+        'Document examples of driving cross-functional initiatives',
+      ],
+      mid: [
+        'Prepare STAR stories: achievement, challenge, collaboration, failure',
+        'Quantify all achievements: percentages, dollars, time, users',
+        'Prepare to discuss your strengths and development areas',
+        'Document examples of receiving and acting on feedback',
+        'Prepare a "conflict resolution" story with positive outcome',
+        'Review how your values align with the company culture',
+      ],
+      junior: [
+        'Prepare STAR stories from school, internships, or activities',
+        'Focus on demonstrating learning agility and growth mindset',
+        'Prepare to discuss why you\'re passionate about this field',
+        'Document examples of teamwork and taking initiative',
+        'Prepare a "challenge overcome" story with learnings',
+        'Prepare questions about culture and development programs',
+      ],
+    },
+    hiring_manager: {
+      executive: [
+        'Research the hiring executive\'s background and initiatives',
+        'Prepare your 100-day plan for organizational impact',
+        'Document your leadership philosophy and team-building approach',
+        'Prepare questions about strategic priorities and board dynamics',
+        'Review the organizational structure and reporting lines',
+        'Prepare to discuss compensation and equity expectations',
+      ],
+      senior: [
+        'Research the manager\'s background and team structure',
+        'Prepare a 30-60-90 day plan with specific milestones',
+        'Document how you\'d approach building relationships with the team',
+        'Prepare questions about success metrics and team challenges',
+        'Review the team\'s recent projects and priorities',
+        'Prepare to discuss your management and collaboration style',
+      ],
+      mid: [
+        'Research the hiring manager\'s background on LinkedIn',
+        'Prepare to discuss how you\'d ramp up in the role',
+        'Document questions about team dynamics and priorities',
+        'Prepare to discuss your working style and preferences',
+        'Review what success looks like in the first 6 months',
+        'Prepare to discuss career goals and growth interests',
+      ],
+      junior: [
+        'Research the hiring manager and understand their role',
+        'Prepare to discuss what kind of mentorship you\'re seeking',
+        'Document questions about training and development opportunities',
+        'Prepare to discuss your working style and learning approach',
+        'Review what an entry-level person does day-to-day',
+        'Prepare to discuss your career interests and goals',
+      ],
+    },
+    final_round: {
+      executive: [
+        'Research all executives you\'ll meet and their priorities',
+        'Prepare your strategic vision for the organization',
+        'Review any feedback from earlier rounds and address concerns',
+        'Prepare questions about board dynamics and strategic direction',
+        'Document your compensation requirements and negotiation points',
+        'Prepare closing statements about your commitment and vision',
+      ],
+      senior: [
+        'Review all previous interview feedback and prepare responses',
+        'Research senior leadership and company strategic direction',
+        'Prepare your high-level vision for the role\'s impact',
+        'Document questions about growth trajectory and success metrics',
+        'Review compensation benchmarks and prepare for discussion',
+        'Prepare your closing statement: why you, why now',
+      ],
+      mid: [
+        'Reflect on all previous interviews and common themes',
+        'Research any new interviewers you\'ll meet',
+        'Prepare to reinforce key strengths and address any concerns',
+        'Document questions about team direction and your growth',
+        'Prepare to discuss compensation expectations professionally',
+        'Prepare your closing: enthusiasm, fit, and next steps',
+      ],
+      junior: [
+        'Review notes from all previous interviews',
+        'Research any new interviewers on LinkedIn',
+        'Prepare to demonstrate continued enthusiasm and fit',
+        'Document any remaining questions about the role',
+        'Understand entry-level compensation and benefits',
+        'Prepare to express your excitement and commitment',
+      ],
+    },
+    offer: {
+      executive: [
+        'Research total compensation benchmarks for executive roles',
+        'Prepare negotiation strategy: base, equity, bonus, benefits',
+        'Review equity terms: vesting, acceleration, change of control',
+        'Prepare questions about board seat, budget authority, resources',
+        'Document your priorities and trade-offs for negotiation',
+        'Prepare your decision timeline and communication plan',
+      ],
+      senior: [
+        'Research compensation on Levels.fyi for comparable roles',
+        'List your negotiation priorities: base, equity, sign-on, start date',
+        'Understand equity details: grant type, vesting, refresh grants',
+        'Prepare data points to justify your counter-offer',
+        'Calculate total compensation including benefits value',
+        'Know your walk-away criteria and decision timeline',
+      ],
+      mid: [
+        'Research market rates for your role and experience level',
+        'Understand all compensation components: base, bonus, equity',
+        'Prepare questions about benefits: health, 401k, PTO',
+        'Document your priorities: what matters most to you',
+        'Prepare a professional counter-offer approach',
+        'Understand the timeline and next steps',
+      ],
+      junior: [
+        'Research entry-level compensation for your role and location',
+        'Understand the offer components: salary, benefits, start date',
+        'Prepare questions about benefits and development programs',
+        'Know that it\'s okay to ask for time to consider',
+        'Understand signing bonuses and relocation if applicable',
+        'Prepare to accept or negotiate professionally',
+      ],
+    },
+  },
+};
+
+// ============================================================================
+// TOPIC GENERATION FUNCTIONS
+// ============================================================================
+
+const getTopicsFromDatabase = (
+  roleFamily: RoleFamily,
+  stage: string,
+  seniority: SeniorityLevel
+): string[] => {
   const stageLower = stage.toLowerCase();
   
-  // More specific, actionable topics by stage
-  const stageTopics: { [key: string]: string[] } = {
-    recruiter_screening: [
-      'Research salary bands on Levels.fyi and prepare your target range with justification',
-      'List 3 recent company news items (funding, product launches, leadership changes)',
-      'Prepare a 60-second pitch: role → company → why now alignment',
-      'Identify 2-3 questions about team structure and growth trajectory',
-      'Review the job posting and match your experience to each requirement',
-      'Prepare to explain any employment gaps or transitions concisely',
-    ],
-    phone_screen: [
-      'Map your top 3 achievements to specific metrics (%, $, time saved)',
-      'Research the interviewer on LinkedIn and find common ground',
-      'Prepare a compelling "why this company specifically" answer with examples',
-      'Draft 3 STAR stories: leadership challenge, technical win, team conflict',
-      'Set up a distraction-free space with good audio and backup phone',
-      'Prepare 2 insightful questions about team challenges and priorities',
-    ],
-    technical_screen: [
-      'Review Big-O complexity for arrays, hashmaps, trees, and graphs',
-      'Solve 3 medium LeetCode problems in your target language under 25 min each',
-      'Practice explaining your approach out loud before writing code',
-      'Review language-specific APIs: string methods, sorting, data structures',
-      'Prepare to discuss a technical project you owned end-to-end',
-      'Practice asking clarifying questions about inputs, outputs, and constraints',
-    ],
-    coding_round_1: [
-      'Master these patterns: two pointers, sliding window, hashmap frequency counting',
-      'Practice 5 problems from blind75 list with 20-min time limit each',
-      'Rehearse the flow: clarify → examples → approach → code → test → optimize',
-      'Review edge cases: empty input, single element, duplicates, negative numbers',
-      'Practice debugging syntax errors quickly without IDE assistance',
-      'Prepare to discuss time/space complexity trade-offs in your solutions',
-    ],
-    coding_round_2: [
-      'Review advanced structures: tries for prefix, heaps for top-k, union-find for graphs',
-      'Practice 3 dynamic programming problems: memoization vs tabulation approaches',
-      'Study graph algorithms: BFS for shortest path, DFS for connected components',
-      'Prepare for optimization questions: "Can you do better than O(n²)?"',
-      'Review binary search variations: first/last occurrence, rotated arrays',
-      'Practice explaining recursive solutions and their space complexity',
-    ],
-    system_design: [
-      'Practice capacity estimation: QPS, storage, bandwidth for 1M/100M users',
-      'Draw a basic architecture: load balancer → app servers → cache → database',
-      'Review CAP theorem and prepare examples of CP vs AP system choices',
-      'Study caching strategies: cache-aside, write-through, TTL policies',
-      'Prepare trade-off discussions: SQL vs NoSQL, monolith vs microservices',
-      'Practice explaining database sharding and replication strategies',
-    ],
-    behavioural: [
-      'Prepare a "Tell me about yourself" that ends with why this role',
-      'Draft STAR stories for: biggest impact, handled conflict, learned from failure',
-      'Research company values and map your stories to demonstrate them',
-      'Prepare a "weakness" answer that shows self-awareness and growth',
-      'Quantify all achievements: users impacted, revenue generated, time saved',
-      'Practice delivering stories in 2-3 minutes with clear structure',
-    ],
-    hiring_manager: [
-      'Research the manager\'s background and team\'s recent projects on LinkedIn',
-      'Prepare a 30-60-90 day plan outline for ramping up in the role',
-      'Draft questions about team goals, biggest challenges, and success metrics',
-      'Prepare to discuss your management/leadership style with examples',
-      'Research the team structure and prepare questions about collaboration',
-      'Be ready to discuss how you handle feedback and disagreements',
-    ],
-    final_round: [
-      'Research the executive team and company strategy/vision',
-      'Prepare to articulate your long-term career goals and this role\'s fit',
-      'Review all previous interview feedback and address any concerns',
-      'Prepare high-level questions about company direction and culture',
-      'Know your compensation expectations and be ready to discuss',
-      'Prepare a summary of why you\'re the best candidate for the role',
-    ],
-    offer: [
-      'Research total comp benchmarks on Levels.fyi for your level and location',
-      'List your negotiation priorities: base, equity, sign-on, start date, WFH',
-      'Prepare data points to justify your counter-offer (competing offers, experience)',
-      'Understand the equity details: grant type, vesting schedule, strike price',
-      'Calculate the total annual compensation including benefits value',
-      'Prepare your decision timeline and walk-away criteria',
-    ],
-    clinical: [
-      'Review clinical scenarios relevant to the specialty and setting',
-      'Prepare examples of clinical decision-making under pressure',
-      'Review relevant protocols, guidelines, and compliance requirements',
-      'Prepare to discuss patient outcomes you\'ve improved with data',
-      'Study pharmacology relevant to the role and common interactions',
-      'Prepare ethical dilemma examples and your reasoning process',
-    ],
-    case_study: [
-      'Review problem-solving frameworks: MECE, hypothesis-driven, issue trees',
-      'Practice market sizing: TAM calculations with clear assumptions',
-      'Prepare to structure ambiguous problems with clarifying questions',
-      'Practice mental math: percentages, growth rates, unit economics',
-      'Review common case types: market entry, profitability, M&A, growth',
-      'Prepare to present recommendations with supporting data and risks',
-    ],
-  };
-  
-  // Get base topics for the stage
-  let topics = stageTopics[stageLower] || stageTopics.phone_screen;
-  
-  // Modify based on seniority for relevant stages
-  if (seniority === 'principal' || seniority === 'senior') {
-    if (stageLower === 'system_design') {
-      topics = [
-        'Prepare to lead the design discussion and drive requirements gathering',
-        'Review large-scale systems you\'ve designed with specific numbers',
-        'Prepare trade-off examples at organizational scale (cost, complexity, velocity)',
-        'Study distributed consensus, eventual consistency, and partition tolerance',
-        'Prepare to discuss cross-team dependencies and API design decisions',
-        'Review observability: metrics, logging, tracing at scale',
-      ];
-    } else if (stageLower === 'behavioural') {
-      topics = [
-        'Prepare stories demonstrating influence without authority',
-        'Draft examples of mentoring engineers and growing team capabilities',
-        'Prepare a "driving organizational change" story with measurable impact',
-        'Document technical strategy decisions and their business outcomes',
-        'Prepare examples of cross-functional collaboration with PMs/Design',
-        'Draft a story about navigating ambiguity and defining direction',
-      ];
-    }
+  // Try to get role-specific topics first
+  const roleTopics = TOPIC_DATABASE[roleFamily]?.[stageLower]?.[seniority];
+  if (roleTopics && roleTopics.length > 0) {
+    return roleTopics;
   }
   
-  // Modify based on role family
-  if (roleFamily === 'data' && (stageLower === 'technical_screen' || stageLower === 'coding_round_1')) {
-    topics = [
-      'Review SQL: window functions, CTEs, complex joins, query optimization',
-      'Practice Python pandas operations: groupby, merge, apply, vectorization',
-      'Review ML fundamentals: bias-variance, overfitting, cross-validation',
-      'Prepare to explain a model you built: features, evaluation, iteration',
-      'Practice A/B test design: sample size, significance, practical significance',
-      'Review statistics: hypothesis testing, confidence intervals, p-values',
-    ];
-  } else if (roleFamily === 'product' && stageLower === 'behavioural') {
-    topics = [
-      'Prepare a product launch story with metrics: adoption, retention, revenue',
-      'Draft examples of prioritization: frameworks used, trade-offs made',
-      'Prepare a stakeholder management story: conflicting priorities resolution',
-      'Document a "killed a feature" decision and how you communicated it',
-      'Prepare customer empathy examples: user research, feedback incorporation',
-      'Draft a story about data-driven decisions changing product direction',
-    ];
+  // Fall back to general topics for this stage
+  const generalTopics = TOPIC_DATABASE.general?.[stageLower]?.[seniority];
+  if (generalTopics && generalTopics.length > 0) {
+    return generalTopics;
   }
+  
+  // Ultimate fallback to general phone_screen mid-level
+  return TOPIC_DATABASE.general?.phone_screen?.mid || [];
+};
+
+const generateFallbackTopics = (
+  stage: string,
+  position: string,
+  company: string,
+  shuffleSeed?: number
+): FocusArea[] => {
+  const seniority = detectSeniority(position);
+  const roleFamily = detectRoleFamily(position);
+  
+  let topics = getTopicsFromDatabase(roleFamily, stage, seniority);
   
   // Add company-specific research as first item if company provided
-  if (company && company.trim()) {
-    topics = [
-      `Research ${company}: recent product launches, engineering blog posts, and Glassdoor reviews`,
-      ...topics.slice(0, 5),
-    ];
+  if (company && company.trim() && topics.length > 0) {
+    const companyTopic = `Research ${company}'s recent news, products, and culture on LinkedIn and Glassdoor`;
+    topics = [companyTopic, ...topics.slice(0, 5)];
   }
   
-  // Convert to FocusArea format with IDs
-  return topics.map((text, index) => ({
+  // If shuffleSeed provided, shuffle deterministically based on the seed
+  if (shuffleSeed !== undefined) {
+    // Simple seeded shuffle
+    const shuffled = [...topics];
+    for (let i = shuffled.length - 1; i > 0; i--) {
+      const j = Math.floor((shuffleSeed * (i + 1)) % (i + 1));
+      [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+    }
+    topics = shuffled;
+  }
+  
+  return topics.slice(0, 6).map((text, index) => ({
     id: `focus_${index + 1}`,
     text,
     category: getCategoryForTopic(text),
@@ -317,12 +1030,11 @@ const generateFallbackTopics = (stage: string, position: string, company: string
 const getCategoryForTopic = (text: string): string => {
   const lower = text.toLowerCase();
   
-  if (lower.includes('research') || lower.includes('review')) return 'research';
-  if (lower.includes('practice') || lower.includes('prepare')) return 'practice';
-  if (lower.includes('story') || lower.includes('example')) return 'stories';
+  if (lower.includes('research') || lower.includes('review') || lower.includes('study')) return 'research';
+  if (lower.includes('practice') || lower.includes('prepare') || lower.includes('draft')) return 'practice';
+  if (lower.includes('story') || lower.includes('example') || lower.includes('document')) return 'stories';
   if (lower.includes('question')) return 'questions';
-  if (lower.includes('technical') || lower.includes('data') || lower.includes('system')) return 'technical';
-  if (lower.includes('communication') || lower.includes('explain')) return 'communication';
+  if (lower.includes('technical') || lower.includes('code') || lower.includes('system')) return 'technical';
   
   return 'preparation';
 };
@@ -331,39 +1043,7 @@ const getCategoryForTopic = (text: string): string => {
 // LLM API INTEGRATION
 // ============================================================================
 
-const getStageSpecificPromptContext = (stage: string): string => {
-  const stageLower = stage.toLowerCase();
-  
-  const stageContexts: { [key: string]: string } = {
-    recruiter_screening: `This is an initial recruiter call (15-30 min). Focus on: salary expectations research, company culture fit signals, role scope clarity, and making a strong first impression. Topics should help the candidate avoid being screened out.`,
-    
-    phone_screen: `This is a phone screen with hiring team (30-45 min). Focus on: resume deep-dive preparation, motivation articulation, role fit demonstration, and thoughtful questions. Topics should help establish credibility and interest.`,
-    
-    technical_screen: `This is a technical screening call (45-60 min). Focus on: fundamental concepts review, problem-solving demonstration, technical communication clarity, and domain knowledge. Topics should be specific to passing technical evaluation.`,
-    
-    coding_round_1: `This is the first coding interview (45-60 min). Focus on: specific algorithm patterns (arrays, strings, hashmaps), time complexity optimization, edge case handling, and clear code communication. Topics must be directly actionable for coding problems.`,
-    
-    coding_round_2: `This is an advanced coding round. Focus on: complex data structures (trees, graphs, heaps), dynamic programming patterns, optimization techniques, and system-aware coding. Topics should prepare for harder problems.`,
-    
-    system_design: `This is a system design interview (45-60 min). Focus on: requirement clarification techniques, capacity estimation methods, specific system components (load balancers, caches, databases), and trade-off articulation. Topics must be architecturally specific.`,
-    
-    behavioural: `This is a behavioral interview (45-60 min). Focus on: STAR story structuring, specific competencies (leadership, conflict, failure), company values alignment, and impactful quantification. Topics should prepare concrete stories.`,
-    
-    hiring_manager: `This is a hiring manager interview (45-60 min). Focus on: team dynamics understanding, management style alignment, 30-60-90 day planning, and strategic contribution vision. Topics should demonstrate team fit and initiative.`,
-    
-    final_round: `This is a final/executive round. Focus on: executive presence, strategic vision articulation, long-term career alignment, and compensation discussion readiness. Topics should prepare for high-stakes evaluation.`,
-    
-    offer: `This is offer negotiation stage. Focus on: specific compensation components (base, equity, bonus, benefits), market rate data sources, negotiation tactics, and decision timeline management. Topics must be actionable for negotiation.`,
-    
-    clinical: `This is a clinical interview for healthcare roles. Focus on: specific patient care scenarios, clinical decision protocols, compliance requirements, and care outcome examples. Topics must be clinically relevant.`,
-    
-    case_study: `This is a case study presentation. Focus on: structured frameworks (MECE, hypothesis-driven), quantitative analysis methods, recommendation synthesis, and presentation clarity. Topics should prepare analytical delivery.`,
-  };
-  
-  return stageContexts[stageLower] || stageContexts.phone_screen;
-};
-
-const generateDynamicTopics = async (
+const generateLLMTopics = async (
   stage: string,
   position: string,
   company: string,
@@ -373,51 +1053,38 @@ const generateDynamicTopics = async (
   const timeoutId = setTimeout(() => controller.abort(), LLM_TIMEOUT_MS);
   
   const stageDisplay = STAGE_DISPLAY_NAMES[stage.toLowerCase()] || stage.replace(/_/g, ' ');
-  const stageContext = getStageSpecificPromptContext(stage);
   const seniority = detectSeniority(position);
   const roleFamily = detectRoleFamily(position);
   
-  const seniorityContext = seniority === 'senior' || seniority === 'principal' 
-    ? 'This is a senior-level candidate who should demonstrate leadership, architectural thinking, and strategic impact.'
-    : seniority === 'junior' 
-    ? 'This is an early-career candidate who should demonstrate learning agility, fundamentals mastery, and growth potential.'
-    : 'This is a mid-level candidate who should demonstrate solid execution and growth trajectory.';
+  // Get role-family specific context
+  const roleContext = getRoleSpecificContext(roleFamily, stage, seniority);
+  const variationPrompt = forceNewGeneration 
+    ? `\n\nIMPORTANT: Generate COMPLETELY DIFFERENT topics than typical suggestions. Focus on overlooked but critical preparation areas. Timestamp: ${Date.now()}`
+    : '';
 
-  const variationSeed = forceNewGeneration ? `\n[Variation seed: ${Date.now()}]` : '';
-  
-  const prompt = `You are an expert interview coach. Generate exactly 6 highly specific, actionable preparation topics for this interview:
+  const prompt = `You are an expert interview coach. Generate exactly 6 highly specific, actionable preparation topics.
 
-**Role:** ${position}
-**Interview Stage:** ${stageDisplay}
-${company ? `**Company:** ${company}` : ''}
-**Seniority Level:** ${seniority}
-**Role Type:** ${roleFamily}
+**Candidate Profile:**
+- Position: ${position}
+- Seniority Level: ${seniority.toUpperCase()}
+- Role Family: ${roleFamily.replace(/_/g, ' ')}
+- Interview Stage: ${stageDisplay}
+${company ? `- Company: ${company}` : ''}
 
-**Stage Context:** ${stageContext}
+**Role-Specific Context:**
+${roleContext}
 
-**Seniority Context:** ${seniorityContext}
+**Requirements:**
+1. Topics must be SPECIFIC to the ${seniority} ${roleFamily.replace(/_/g, ' ')} role, not generic advice
+2. Each topic must be actionable and completable in 30min-2hrs
+3. Include specific tools, frameworks, techniques, or resources relevant to ${roleFamily.replace(/_/g, ' ')}
+4. Consider what a ${seniority}-level candidate should demonstrate
+5. Focus on what will actually help pass this ${stageDisplay} stage
+${variationPrompt}
 
-**CRITICAL REQUIREMENTS:**
-1. Each topic must be a SPECIFIC, ACTIONABLE task (not generic advice)
-2. Topics must directly help succeed in THIS specific stage
-3. Include concrete details: specific techniques, frameworks, or resources
-4. For technical roles: include specific technologies, patterns, or tools to review
-5. Each topic should be completable in 30 min - 2 hours
-6. NO generic advice like "research the company" - be specific about WHAT to research
-${forceNewGeneration ? '7. Generate DIFFERENT topics than typical suggestions - focus on often-overlooked but critical preparation areas' : ''}
-${variationSeed}
+**Format:** Return ONLY a JSON array of 6 strings. No markdown, no explanation, no numbering.
 
-**Examples of GOOD specific topics:**
-- "Practice the 'Top K Elements' pattern using heap - do 3 LeetCode medium problems"
-- "Map your biggest project to STAR format with specific metrics (revenue, users, efficiency gains)"
-- "Review CAP theorem trade-offs and prepare examples of when you'd choose CP vs AP systems"
-
-**Examples of BAD generic topics:**
-- "Review data structures" (too vague)
-- "Prepare for behavioral questions" (not actionable)
-- "Research the company" (not specific)
-
-Return ONLY a JSON array of exactly 6 strings. No markdown, no explanation.`;
+Example format: ["Topic 1", "Topic 2", "Topic 3", "Topic 4", "Topic 5", "Topic 6"]`;
 
   try {
     const response = await fetch(LLM_API_URL, {
@@ -431,15 +1098,15 @@ Return ONLY a JSON array of exactly 6 strings. No markdown, no explanation.`;
         messages: [
           {
             role: 'system',
-            content: 'You are an expert interview coach specializing in technical and behavioral interview preparation. You provide highly specific, actionable advice. Return ONLY valid JSON arrays of strings with no markdown formatting.',
+            content: 'You are an expert interview coach. Return ONLY valid JSON arrays of strings. No markdown formatting.',
           },
           {
             role: 'user',
             content: prompt,
           },
         ],
-        max_tokens: 600,
-        temperature: forceNewGeneration ? 0.9 : 0.7, // Higher temperature for refresh to get more variety
+        max_tokens: 800,
+        temperature: forceNewGeneration ? 1.0 : 0.8,
       }),
       signal: controller.signal,
     });
@@ -455,6 +1122,7 @@ Return ONLY a JSON array of exactly 6 strings. No markdown, no explanation.`;
     const content = data.choices?.[0]?.message?.content?.trim();
     
     if (!content) {
+      console.log('[PrepChecklist] Empty LLM response');
       return null;
     }
     
@@ -462,10 +1130,11 @@ Return ONLY a JSON array of exactly 6 strings. No markdown, no explanation.`;
     let topics: string[];
     try {
       // Handle both raw array and markdown-wrapped responses
-      const jsonMatch = content.match(/\[[\s\S]*\]/);
+      const jsonMatch = content.match(/\[[\s\S]*?\]/);
       if (jsonMatch) {
         topics = JSON.parse(jsonMatch[0]);
       } else {
+        console.log('[PrepChecklist] No JSON array found in response');
         return null;
       }
     } catch (parseError) {
@@ -473,13 +1142,16 @@ Return ONLY a JSON array of exactly 6 strings. No markdown, no explanation.`;
       return null;
     }
     
-    // Validate and convert to FocusArea format
+    // Validate
     if (!Array.isArray(topics) || topics.length < 4) {
+      console.log('[PrepChecklist] Invalid topics array');
       return null;
     }
     
+    console.log('[PrepChecklist] Successfully generated LLM topics');
+    
     return topics.slice(0, 6).map((text, index) => ({
-      id: `ai_${index + 1}`,
+      id: `ai_${Date.now()}_${index}`,
       text: typeof text === 'string' ? text : String(text),
       category: getCategoryForTopic(typeof text === 'string' ? text : ''),
     }));
@@ -495,6 +1167,57 @@ Return ONLY a JSON array of exactly 6 strings. No markdown, no explanation.`;
     
     return null;
   }
+};
+
+const getRoleSpecificContext = (roleFamily: RoleFamily, stage: string, seniority: SeniorityLevel): string => {
+  const stageLower = stage.toLowerCase();
+  
+  const contexts: { [key: string]: { [stage: string]: string } } = {
+    software_engineering: {
+      system_design: seniority === 'senior' || seniority === 'executive'
+        ? 'Focus on: distributed systems at scale, handling millions of concurrent requests, load balancing strategies, database sharding, caching layers (Redis/Memcached), API rate limiting (token bucket, leaky bucket), microservices patterns, event-driven architecture, CAP theorem trade-offs.'
+        : 'Focus on: basic system components (load balancers, caches, databases), simple scaling strategies, understanding when to use SQL vs NoSQL, basic API design.',
+      coding_round_1: 'Focus on: data structures (arrays, hashmaps, trees), algorithms (sorting, searching, dynamic programming), Big-O analysis, code optimization, clean code practices.',
+      behavioural: 'Focus on: technical leadership, code review practices, mentoring, handling technical debt, collaboration with product/design, incident response.',
+    },
+    program_management: {
+      system_design: seniority === 'senior' || seniority === 'executive'
+        ? 'Focus on: program architecture discussions, cross-team coordination strategies, technical risk management, requirements decomposition, integration planning, trade-off decisions between scope/timeline/quality.'
+        : 'Focus on: understanding technical dependencies, project planning with engineering teams, basic system integration concepts, Agile at scale.',
+      behavioural: 'Focus on: stakeholder management, conflict resolution, driving accountability, managing ambiguity, cross-functional influence, executive communication.',
+    },
+    healthcare_clinical: {
+      clinical: seniority === 'senior' || seniority === 'executive'
+        ? 'Focus on: complex patient scenarios, clinical decision-making under pressure, quality improvement leadership, regulatory compliance, staff management, ethical dilemmas.'
+        : 'Focus on: patient assessment skills, clinical protocols, medication safety, communication with patients and families, documentation standards.',
+      behavioural: 'Focus on: patient advocacy, handling difficult situations, stress management, teamwork in clinical settings, continuous learning.',
+    },
+    aerospace: {
+      technical_screen: seniority === 'senior' || seniority === 'executive'
+        ? 'Focus on: systems engineering, certification processes (DO-178C, FAA), flight dynamics, propulsion systems, V&V processes, safety-critical design.'
+        : 'Focus on: aerospace fundamentals, design tools (CATIA, MATLAB), materials science, basic flight mechanics, testing processes.',
+      system_design: 'Focus on: requirements traceability, interface control, redundancy design, environmental qualification, integration testing, safety analysis (FMEA, FTA).',
+    },
+    data_science: {
+      technical_screen: seniority === 'senior' || seniority === 'executive'
+        ? 'Focus on: ML at scale, model deployment (MLOps), A/B testing design, feature engineering strategies, ML ethics, business impact measurement.'
+        : 'Focus on: supervised/unsupervised learning basics, Python/pandas proficiency, SQL skills, basic statistics, model evaluation metrics.',
+      behavioural: 'Focus on: translating business problems to ML solutions, communicating insights to non-technical stakeholders, handling data quality issues.',
+    },
+    finance: {
+      technical_screen: seniority === 'senior' || seniority === 'executive'
+        ? 'Focus on: financial modeling (DCF, LBO), M&A analysis, strategic financial planning, risk management frameworks, executive presentations.'
+        : 'Focus on: financial statement analysis, Excel modeling, budgeting and forecasting, basic accounting principles.',
+      case_study: 'Focus on: financial frameworks, valuation methods, industry analysis, presenting investment recommendations.',
+    },
+    consulting: {
+      case_study: 'Focus on: MECE problem structuring, hypothesis-driven analysis, market sizing, profitability analysis, M&A cases, presenting recommendations.',
+      behavioural: 'Focus on: client management, working in ambiguous situations, fast-paced delivery, teamwork, receiving feedback.',
+    },
+  };
+  
+  return contexts[roleFamily]?.[stageLower] || 
+    `Focus on demonstrating ${seniority}-level competencies appropriate for ${roleFamily.replace(/_/g, ' ')} roles.`;
 };
 
 // ============================================================================
@@ -516,6 +1239,7 @@ const InterviewChecklist: React.FC<InterviewChecklistProps> = ({
   const [loading, setLoading] = useState(true);
   const [isAiGenerated, setIsAiGenerated] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
+  const [refreshCount, setRefreshCount] = useState(0);
   const mountedRef = useRef(true);
   
   // Track component mount status
@@ -531,61 +1255,53 @@ const InterviewChecklist: React.FC<InterviewChecklistProps> = ({
     if (visible && stage) {
       loadTopics(false);
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [visible, stage, position]);
   
   const loadTopics = async (forceRefresh: boolean) => {
-    if (!forceRefresh) {
-      // Check cache first
-      const cached = getCachedTopics(stage, position);
-      if (cached) {
-        setFocusAreas(cached);
-        setIsAiGenerated(true);
-        setLoading(false);
-        return;
-      }
-    }
-    
     setLoading(true);
     
-    // Try to get AI-generated topics first for better quality
-    const aiTopics = await generateDynamicTopics(stage, position, company, forceRefresh);
+    // Try LLM generation first
+    const llmTopics = await generateLLMTopics(stage, position, company, forceRefresh);
     
-    if (mountedRef.current && aiTopics && aiTopics.length >= 4) {
-      setFocusAreas(aiTopics);
-      setIsAiGenerated(true);
-      setCachedTopics(stage, position, aiTopics);
-      setLoading(false);
-    } else if (mountedRef.current) {
-      // Fall back to deterministic topics only if AI fails
-      const fallbackTopics = generateFallbackTopics(stage, position, company);
-      setFocusAreas(fallbackTopics);
-      setIsAiGenerated(false);
+    if (mountedRef.current) {
+      if (llmTopics && llmTopics.length >= 4) {
+        setFocusAreas(llmTopics);
+        setIsAiGenerated(true);
+      } else {
+        // Use comprehensive fallback
+        const fallbackTopics = generateFallbackTopics(
+          stage, 
+          position, 
+          company, 
+          forceRefresh ? Date.now() : undefined
+        );
+        setFocusAreas(fallbackTopics);
+        setIsAiGenerated(false);
+      }
       setLoading(false);
     }
   };
   
   const handleRefresh = async () => {
     setRefreshing(true);
+    setRefreshCount(prev => prev + 1);
     
-    // Clear cache for this combination to force new generation
-    const key = getCacheKey(stage, position);
-    topicCache.delete(key);
-    
-    // Try AI generation with forceNewGeneration=true for variety
-    const aiTopics = await generateDynamicTopics(stage, position, company, true);
+    // Always try LLM with force flag for completely new topics
+    const llmTopics = await generateLLMTopics(stage, position, company, true);
     
     if (mountedRef.current) {
-      if (aiTopics && aiTopics.length >= 4) {
-        setFocusAreas(aiTopics);
+      if (llmTopics && llmTopics.length >= 4) {
+        setFocusAreas(llmTopics);
         setIsAiGenerated(true);
-        // Don't cache refresh results to ensure next refresh is also fresh
       } else {
-        // Regenerate fallback with shuffled order for some variety
-        const fallbackTopics = generateFallbackTopics(stage, position, company);
-        // Shuffle the topics to provide some variation
-        const shuffled = [...fallbackTopics].sort(() => Math.random() - 0.5);
-        setFocusAreas(shuffled);
+        // Generate fallback with different seed each time
+        const fallbackTopics = generateFallbackTopics(
+          stage, 
+          position, 
+          company, 
+          Date.now() + refreshCount
+        );
+        setFocusAreas(fallbackTopics);
         setIsAiGenerated(false);
       }
       setRefreshing(false);
@@ -607,20 +1323,8 @@ const InterviewChecklist: React.FC<InterviewChecklistProps> = ({
   };
   
   const urgency = getUrgencyLabel();
-  
-  // Category icons mapping
-  const getCategoryIcon = (category: string): string => {
-    const icons: { [key: string]: string } = {
-      research: 'search',
-      practice: 'fitness',
-      stories: 'book',
-      questions: 'help-circle',
-      technical: 'code-slash',
-      communication: 'chatbubbles',
-      preparation: 'clipboard',
-    };
-    return icons[category] || 'checkmark-circle';
-  };
+  const seniority = detectSeniority(position);
+  const roleFamily = detectRoleFamily(position);
   
   if (!visible) return null;
   
@@ -634,24 +1338,23 @@ const InterviewChecklist: React.FC<InterviewChecklistProps> = ({
       <View style={styles.overlay}>
         <TouchableOpacity style={styles.backdrop} activeOpacity={1} onPress={onClose} />
         
-        {/* Main Card */}
         <View style={[styles.card, { backgroundColor: colors.card }]}>
           {/* Header */}
           <View style={styles.header}>
             <View style={styles.headerLeft}>
               <Text style={[styles.title, { color: colors.text }]}>
-                Focus Areas for This Stage
+                Preparation Focus Areas
               </Text>
               <View style={styles.headerMeta}>
                 <Text style={[styles.stageName, { color: colors.primary }]}>
                   {formatStageName(stage)}
                 </Text>
-                {position && (
-                  <Text style={[styles.positionName, { color: colors.textSecondary }]}>
-                    • {position}
-                  </Text>
-                )}
               </View>
+              {position && (
+                <Text style={[styles.positionName, { color: colors.textSecondary }]} numberOfLines={1}>
+                  {position}
+                </Text>
+              )}
             </View>
             <TouchableOpacity 
               onPress={onClose}
@@ -662,26 +1365,36 @@ const InterviewChecklist: React.FC<InterviewChecklistProps> = ({
             </TouchableOpacity>
           </View>
           
-          {/* Company & Urgency Bar */}
-          {(company || urgency) && (
-            <View style={[styles.metaBar, { borderBottomColor: colors.border }]}>
+          {/* Context badges */}
+          <View style={[styles.metaBar, { borderBottomColor: colors.border }]}>
+            <View style={styles.badgeRow}>
+              <View style={[styles.badge, { backgroundColor: colors.primary + '15' }]}>
+                <Text style={[styles.badgeText, { color: colors.primary }]}>
+                  {seniority.charAt(0).toUpperCase() + seniority.slice(1)}
+                </Text>
+              </View>
+              <View style={[styles.badge, { backgroundColor: colors.textSecondary + '15' }]}>
+                <Text style={[styles.badgeText, { color: colors.textSecondary }]}>
+                  {roleFamily.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                </Text>
+              </View>
               {company && (
-                <View style={styles.companyTag}>
-                  <Ionicons name="business-outline" size={14} color={colors.textSecondary} />
-                  <Text style={[styles.companyText, { color: colors.textSecondary }]}>
+                <View style={[styles.badge, { backgroundColor: colors.textSecondary + '15' }]}>
+                  <Ionicons name="business-outline" size={12} color={colors.textSecondary} />
+                  <Text style={[styles.badgeText, { color: colors.textSecondary, marginLeft: 4 }]}>
                     {company}
                   </Text>
                 </View>
               )}
-              {urgency && (
-                <View style={[styles.urgencyBadge, { backgroundColor: urgency.color + '20' }]}>
-                  <Text style={[styles.urgencyText, { color: urgency.color }]}>
-                    {urgency.text}
-                  </Text>
-                </View>
-              )}
             </View>
-          )}
+            {urgency && (
+              <View style={[styles.urgencyBadge, { backgroundColor: urgency.color + '20' }]}>
+                <Text style={[styles.urgencyText, { color: urgency.color }]}>
+                  {urgency.text}
+                </Text>
+              </View>
+            )}
+          </View>
           
           {/* Topics List */}
           <ScrollView style={styles.topicsList} showsVerticalScrollIndicator={false}>
@@ -689,7 +1402,7 @@ const InterviewChecklist: React.FC<InterviewChecklistProps> = ({
               <View style={styles.loadingContainer}>
                 <ActivityIndicator size="large" color={colors.primary} />
                 <Text style={[styles.loadingText, { color: colors.textSecondary }]}>
-                  Generating focus areas...
+                  Generating personalized topics...
                 </Text>
               </View>
             ) : (
@@ -720,7 +1433,7 @@ const InterviewChecklist: React.FC<InterviewChecklistProps> = ({
             <TouchableOpacity 
               style={[styles.refreshButton, { borderColor: colors.border }]}
               onPress={handleRefresh}
-              disabled={refreshing}
+              disabled={refreshing || loading}
             >
               {refreshing ? (
                 <ActivityIndicator size="small" color={colors.primary} />
@@ -728,7 +1441,7 @@ const InterviewChecklist: React.FC<InterviewChecklistProps> = ({
                 <>
                   <Ionicons name="refresh" size={18} color={colors.primary} />
                   <Text style={[styles.refreshText, { color: colors.primary }]}>
-                    Refresh
+                    New Topics
                   </Text>
                 </>
               )}
@@ -751,7 +1464,7 @@ const InterviewChecklist: React.FC<InterviewChecklistProps> = ({
                 color={colors.textSecondary} 
               />
               <Text style={[styles.aiIndicatorText, { color: colors.textSecondary }]}>
-                {isAiGenerated ? 'AI-personalized' : 'Standard tips'}
+                {isAiGenerated ? 'AI-personalized for your profile' : 'Role-specific preparation tips'}
               </Text>
             </View>
           )}
@@ -782,7 +1495,7 @@ const styles = StyleSheet.create({
   card: {
     width: '90%',
     maxWidth: 400,
-    maxHeight: '80%',
+    maxHeight: '85%',
     borderRadius: 16,
     overflow: 'hidden',
     ...Platform.select({
@@ -816,7 +1529,6 @@ const styles = StyleSheet.create({
   headerMeta: {
     flexDirection: 'row',
     alignItems: 'center',
-    flexWrap: 'wrap',
   },
   stageName: {
     fontSize: 14,
@@ -824,29 +1536,35 @@ const styles = StyleSheet.create({
   },
   positionName: {
     fontSize: 13,
-    marginLeft: 4,
+    marginTop: 2,
   },
   closeButton: {
     padding: 4,
   },
   metaBar: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
     paddingHorizontal: 16,
     paddingVertical: 10,
     borderBottomWidth: 1,
   },
-  companyTag: {
+  badgeRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 6,
+    marginBottom: 8,
+  },
+  badge: {
     flexDirection: 'row',
     alignItems: 'center',
-    flex: 1,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 6,
   },
-  companyText: {
-    fontSize: 13,
-    marginLeft: 6,
+  badgeText: {
+    fontSize: 11,
+    fontWeight: '600',
   },
   urgencyBadge: {
+    alignSelf: 'flex-start',
     paddingHorizontal: 10,
     paddingVertical: 4,
     borderRadius: 12,
