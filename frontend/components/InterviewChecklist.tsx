@@ -1280,26 +1280,63 @@ const getTopicsForProfile = (
 ): string[] => {
   const stageLower = stage.toLowerCase().replace(/\s+/g, '_');
   
-  // Try exact role + stage match
-  let pool = TOPIC_POOLS[role]?.[stageLower]?.[seniority];
+  // Stage mapping - map various stage names to our topic pool keys
+  const stageMapping: Record<string, string[]> = {
+    // Clinical variations
+    'clinical': ['clinical'],
+    'clinical_case_review': ['clinical'],
+    'clinical_interview': ['clinical'],
+    'clinical_round': ['clinical'],
+    'case_presentation': ['clinical', 'case_study'],
+    'patient_case': ['clinical'],
+    // Technical variations
+    'technical_screen': ['technical_screen', 'technical_round'],
+    'technical_round': ['technical_round', 'technical_screen'],
+    'technical_interview': ['technical_screen', 'technical_round'],
+    'tech_screen': ['technical_screen'],
+    // Coding variations
+    'coding_round_1': ['coding_round_1'],
+    'coding_round_2': ['coding_round_1'],
+    'coding_interview': ['coding_round_1'],
+    'coding': ['coding_round_1'],
+    // Behavioral variations
+    'behavioural': ['behavioural'],
+    'behavioral': ['behavioural'],
+    'behavioral_interview': ['behavioural'],
+    'culture_fit': ['behavioural'],
+    // System design variations
+    'system_design': ['system_design'],
+    'architecture': ['system_design'],
+    'design_round': ['system_design'],
+    // Case study variations
+    'case_study': ['case_study'],
+    'case_interview': ['case_study'],
+    'business_case': ['case_study'],
+  };
   
-  // Try technical_screen for technical_round and vice versa
+  // Get potential stage keys to try
+  const stageKeys = stageMapping[stageLower] || [stageLower];
+  
+  // Try each stage key for the specific role
+  let pool: string[] | undefined;
+  
+  for (const stageKey of stageKeys) {
+    pool = TOPIC_POOLS[role]?.[stageKey]?.[seniority];
+    if (pool && pool.length > 0) break;
+  }
+  
+  // If no role-specific topics, try general topics for these stages
   if (!pool || pool.length === 0) {
-    if (stageLower === 'technical_round') {
-      pool = TOPIC_POOLS[role]?.technical_screen?.[seniority];
-    } else if (stageLower === 'technical_screen') {
-      pool = TOPIC_POOLS[role]?.technical_round?.[seniority];
+    for (const stageKey of stageKeys) {
+      pool = TOPIC_POOLS.general?.[stageKey]?.[seniority];
+      if (pool && pool.length > 0) break;
     }
   }
   
-  // Fall back to general for this stage
+  // Fall back to phone_screen if nothing found
   if (!pool || pool.length === 0) {
-    pool = TOPIC_POOLS.general?.[stageLower]?.[seniority];
-  }
-  
-  // Fall back to phone_screen if stage not found
-  if (!pool || pool.length === 0) {
-    pool = TOPIC_POOLS.general?.phone_screen?.[seniority];
+    pool = TOPIC_POOLS[role]?.phone_screen?.[seniority] || 
+           TOPIC_POOLS.general?.phone_screen?.[seniority];
   }
   
   // Ultimate fallback
