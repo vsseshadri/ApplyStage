@@ -1,247 +1,491 @@
 #!/usr/bin/env python3
 """
-CareerFlow Backend API Testing - Position Field in Upcoming Interviews
-Testing the upcoming interviews endpoint to verify position field inclusion for dynamic Prep Checklist feature.
+Backend API Testing for CareerFlow Job Tracking App
+Testing POST /api/jobs endpoint to ensure job creation is working properly
 """
 
-import requests
+import asyncio
+import aiohttp
 import json
+from datetime import datetime, timezone
 import sys
-from datetime import datetime, timedelta
+import traceback
 
-# Configuration
-BASE_URL = "https://prep-checklist-app.preview.emergentagent.com/api"
+# Backend URL from environment
+BACKEND_URL = "https://prep-checklist-app.preview.emergentagent.com"
 TEST_TOKEN = "test_token_abc123"
-HEADERS = {
-    "Authorization": f"Bearer {TEST_TOKEN}",
-    "Content-Type": "application/json"
-}
 
-class TestResults:
+class JobAPITester:
     def __init__(self):
-        self.passed = 0
-        self.failed = 0
-        self.results = []
+        self.session = None
+        self.headers = {
+            "Authorization": f"Bearer {TEST_TOKEN}",
+            "Content-Type": "application/json"
+        }
+        self.created_job_ids = []
+        
+    async def __aenter__(self):
+        self.session = aiohttp.ClientSession()
+        return self
+        
+    async def __aexit__(self, exc_type, exc_val, exc_tb):
+        if self.session:
+            await self.session.close()
     
-    def add_result(self, test_name, passed, message):
-        status = "✅ PASS" if passed else "❌ FAIL"
-        self.results.append(f"{status} - {test_name}: {message}")
-        if passed:
-            self.passed += 1
-        else:
-            self.failed += 1
-        print(f"{status} - {test_name}: {message}")
+    async def test_backend_connectivity(self):
+        """Test basic backend connectivity"""
+        print("🔗 Testing backend connectivity...")
+        try:
+            async with self.session.get(f"{BACKEND_URL}/api/auth/me", headers=self.headers) as response:
+                if response.status == 200:
+                    user_data = await response.json()
+                    print(f"✅ Backend connected successfully. User: {user_data.get('email', 'Unknown')}")
+                    return True
+                else:
+                    print(f"❌ Backend connectivity failed. Status: {response.status}")
+                    return False
+        except Exception as e:
+            print(f"❌ Backend connectivity error: {str(e)}")
+            return False
     
-    def summary(self):
-        total = self.passed + self.failed
-        success_rate = (self.passed / total * 100) if total > 0 else 0
-        print(f"\n{'='*60}")
-        print(f"TEST SUMMARY: {self.passed}/{total} tests PASSED ({success_rate:.1f}% success rate)")
-        print(f"{'='*60}")
-        return self.failed == 0
+    async def test_create_job_basic(self):
+        """Test POST /api/jobs with basic required fields"""
+        print("\n📝 Testing POST /api/jobs - Basic job creation...")
+        
+        job_data = {
+            "company_name": "TechCorp Solutions",
+            "position": "Senior Software Engineer",
+            "location": {
+                "city": "San Francisco",
+                "state": "California"
+            },
+            "salary_range": {
+                "min": 120000.0,
+                "max": 160000.0
+            },
+            "work_mode": "hybrid",
+            "job_type": "full_time",
+            "date_applied": datetime.now(timezone.utc).isoformat(),
+            "status": "applied",
+            "is_priority": False
+        }
+        
+        try:
+            async with self.session.post(
+                f"{BACKEND_URL}/api/jobs",
+                headers=self.headers,
+                json=job_data
+            ) as response:
+                
+                if response.status == 200:
+                    job_response = await response.json()
+                    job_id = job_response.get("job_id")
+                    
+                    if job_id:
+                        self.created_job_ids.append(job_id)
+                        print(f"✅ Job created successfully. Job ID: {job_id}")
+                        
+                        # Verify response structure
+                        required_fields = ["job_id", "user_id", "company_name", "position", "created_at"]
+                        missing_fields = [field for field in required_fields if field not in job_response]
+                        
+                        if missing_fields:
+                            print(f"⚠️ Missing fields in response: {missing_fields}")
+                            return False
+                        
+                        # Verify data matches input
+                        if (job_response["company_name"] == job_data["company_name"] and
+                            job_response["position"] == job_data["position"] and
+                            job_response["work_mode"] == job_data["work_mode"]):
+                            print("✅ Job data matches input correctly")
+                            return True
+                        else:
+                            print("❌ Job data doesn't match input")
+                            return False
+                    else:
+                        print("❌ No job_id in response")
+                        return False
+                else:
+                    error_text = await response.text()
+                    print(f"❌ Job creation failed. Status: {response.status}, Error: {error_text}")
+                    return False
+                    
+        except Exception as e:
+            print(f"❌ Job creation error: {str(e)}")
+            traceback.print_exc()
+            return False
+    
+    async def test_create_job_all_fields(self):
+        """Test POST /api/jobs with all optional fields"""
+        print("\n📝 Testing POST /api/jobs - Job creation with all fields...")
+        
+        job_data = {
+            "company_name": "InnovateTech Inc",
+            "position": "Principal Backend Engineer",
+            "location": {
+                "city": "Austin",
+                "state": "Texas"
+            },
+            "salary_range": {
+                "min": 140000.0,
+                "max": 180000.0
+            },
+            "work_mode": "remote",
+            "job_type": "full_time",
+            "job_url": "https://innovatetech.com/careers/backend-engineer",
+            "recruiter_email": "recruiter@innovatetech.com",
+            "resume_file": "resume_v2.pdf",
+            "date_applied": "2026-02-15T10:30:00Z",
+            "follow_up_days": 7,
+            "status": "applied",
+            "upcoming_stage": "phone_screen",
+            "upcoming_schedule": "02/25/2026",
+            "notes": "Applied through LinkedIn. Recruiter mentioned fast-growing team.",
+            "custom_stages": ["technical_assessment", "culture_fit"],
+            "is_priority": True
+        }
+        
+        try:
+            async with self.session.post(
+                f"{BACKEND_URL}/api/jobs",
+                headers=self.headers,
+                json=job_data
+            ) as response:
+                
+                if response.status == 200:
+                    job_response = await response.json()
+                    job_id = job_response.get("job_id")
+                    
+                    if job_id:
+                        self.created_job_ids.append(job_id)
+                        print(f"✅ Job with all fields created successfully. Job ID: {job_id}")
+                        
+                        # Verify optional fields are preserved
+                        optional_checks = [
+                            ("job_url", job_data["job_url"]),
+                            ("recruiter_email", job_data["recruiter_email"]),
+                            ("upcoming_stage", job_data["upcoming_stage"]),
+                            ("upcoming_schedule", job_data["upcoming_schedule"]),
+                            ("notes", job_data["notes"]),
+                            ("is_priority", job_data["is_priority"])
+                        ]
+                        
+                        all_good = True
+                        for field, expected_value in optional_checks:
+                            if job_response.get(field) != expected_value:
+                                print(f"⚠️ Field mismatch - {field}: expected {expected_value}, got {job_response.get(field)}")
+                                all_good = False
+                        
+                        if all_good:
+                            print("✅ All optional fields preserved correctly")
+                            return True
+                        else:
+                            print("❌ Some optional fields not preserved correctly")
+                            return False
+                    else:
+                        print("❌ No job_id in response")
+                        return False
+                else:
+                    error_text = await response.text()
+                    print(f"❌ Job creation with all fields failed. Status: {response.status}, Error: {error_text}")
+                    return False
+                    
+        except Exception as e:
+            print(f"❌ Job creation with all fields error: {str(e)}")
+            traceback.print_exc()
+            return False
+    
+    async def test_get_jobs_empty(self):
+        """Test GET /api/jobs when no jobs exist (baseline)"""
+        print("\n📋 Testing GET /api/jobs - Initial state...")
+        
+        try:
+            async with self.session.get(f"{BACKEND_URL}/api/jobs", headers=self.headers) as response:
+                if response.status == 200:
+                    jobs_response = await response.json()
+                    
+                    # Verify response structure
+                    if "jobs" in jobs_response and "pagination" in jobs_response:
+                        job_count = len(jobs_response["jobs"])
+                        total_count = jobs_response["pagination"]["total_count"]
+                        print(f"✅ GET /api/jobs working. Found {job_count} jobs (total: {total_count})")
+                        return True
+                    else:
+                        print("❌ Invalid response structure for GET /api/jobs")
+                        return False
+                else:
+                    error_text = await response.text()
+                    print(f"❌ GET /api/jobs failed. Status: {response.status}, Error: {error_text}")
+                    return False
+                    
+        except Exception as e:
+            print(f"❌ GET /api/jobs error: {str(e)}")
+            return False
+    
+    async def test_get_jobs_with_data(self):
+        """Test GET /api/jobs after creating jobs"""
+        print("\n📋 Testing GET /api/jobs - After job creation...")
+        
+        try:
+            async with self.session.get(f"{BACKEND_URL}/api/jobs", headers=self.headers) as response:
+                if response.status == 200:
+                    jobs_response = await response.json()
+                    
+                    jobs = jobs_response.get("jobs", [])
+                    pagination = jobs_response.get("pagination", {})
+                    
+                    if len(jobs) >= len(self.created_job_ids):
+                        print(f"✅ GET /api/jobs returned {len(jobs)} jobs (expected at least {len(self.created_job_ids)})")
+                        
+                        # Verify created jobs are in the response
+                        returned_job_ids = [job.get("job_id") for job in jobs]
+                        found_jobs = [job_id for job_id in self.created_job_ids if job_id in returned_job_ids]
+                        
+                        if len(found_jobs) == len(self.created_job_ids):
+                            print(f"✅ All {len(self.created_job_ids)} created jobs found in GET response")
+                            
+                            # Verify job structure
+                            sample_job = jobs[0]
+                            required_fields = ["job_id", "company_name", "position", "status", "created_at"]
+                            missing_fields = [field for field in required_fields if field not in sample_job]
+                            
+                            if not missing_fields:
+                                print("✅ Job objects have correct structure")
+                                return True
+                            else:
+                                print(f"❌ Missing fields in job objects: {missing_fields}")
+                                return False
+                        else:
+                            print(f"❌ Only found {len(found_jobs)} of {len(self.created_job_ids)} created jobs")
+                            return False
+                    else:
+                        print(f"❌ Expected at least {len(self.created_job_ids)} jobs, got {len(jobs)}")
+                        return False
+                else:
+                    error_text = await response.text()
+                    print(f"❌ GET /api/jobs failed. Status: {response.status}, Error: {error_text}")
+                    return False
+                    
+        except Exception as e:
+            print(f"❌ GET /api/jobs error: {str(e)}")
+            return False
+    
+    async def test_job_validation(self):
+        """Test POST /api/jobs validation with invalid data"""
+        print("\n🔍 Testing POST /api/jobs - Input validation...")
+        
+        # Test missing required fields
+        invalid_job_data = {
+            "position": "Software Engineer",
+            # Missing company_name, location, salary_range, work_mode, job_type
+        }
+        
+        try:
+            async with self.session.post(
+                f"{BACKEND_URL}/api/jobs",
+                headers=self.headers,
+                json=invalid_job_data
+            ) as response:
+                
+                if response.status == 422:  # Validation error expected
+                    print("✅ Validation correctly rejected incomplete job data")
+                    return True
+                elif response.status == 200:
+                    print("⚠️ API accepted incomplete job data (should validate)")
+                    return False
+                else:
+                    print(f"❌ Unexpected status for invalid data: {response.status}")
+                    return False
+                    
+        except Exception as e:
+            print(f"❌ Validation test error: {str(e)}")
+            return False
+    
+    async def test_get_specific_job(self):
+        """Test GET /api/jobs/{job_id} for individual job retrieval"""
+        print("\n🔍 Testing GET /api/jobs/{job_id} - Individual job retrieval...")
+        
+        if not self.created_job_ids:
+            print("⚠️ No jobs created to test individual retrieval")
+            return True
+        
+        job_id = self.created_job_ids[0]
+        
+        try:
+            async with self.session.get(f"{BACKEND_URL}/api/jobs/{job_id}", headers=self.headers) as response:
+                if response.status == 200:
+                    job_data = await response.json()
+                    
+                    if job_data.get("job_id") == job_id:
+                        print(f"✅ Individual job retrieval working. Job ID: {job_id}")
+                        return True
+                    else:
+                        print(f"❌ Job ID mismatch in individual retrieval")
+                        return False
+                elif response.status == 404:
+                    print(f"❌ Job not found: {job_id}")
+                    return False
+                else:
+                    error_text = await response.text()
+                    print(f"❌ Individual job retrieval failed. Status: {response.status}, Error: {error_text}")
+                    return False
+                    
+        except Exception as e:
+            print(f"❌ Individual job retrieval error: {str(e)}")
+            return False
+    
+    async def test_response_format(self):
+        """Test POST /api/jobs response format and status codes"""
+        print("\n🔍 Testing POST /api/jobs - Response format and status codes...")
+        
+        job_data = {
+            "company_name": "ResponseTest Corp",
+            "position": "QA Engineer",
+            "location": {
+                "city": "Seattle",
+                "state": "Washington"
+            },
+            "salary_range": {
+                "min": 90000.0,
+                "max": 120000.0
+            },
+            "work_mode": "remote",
+            "job_type": "full_time",
+            "date_applied": datetime.now(timezone.utc).isoformat(),
+            "status": "applied"
+        }
+        
+        try:
+            async with self.session.post(
+                f"{BACKEND_URL}/api/jobs",
+                headers=self.headers,
+                json=job_data
+            ) as response:
+                
+                # Check status code
+                if response.status != 200:
+                    print(f"❌ Expected status 200, got {response.status}")
+                    return False
+                
+                # Check content type
+                content_type = response.headers.get('content-type', '')
+                if 'application/json' not in content_type:
+                    print(f"❌ Expected JSON response, got content-type: {content_type}")
+                    return False
+                
+                job_response = await response.json()
+                job_id = job_response.get("job_id")
+                
+                if job_id:
+                    self.created_job_ids.append(job_id)
+                    
+                    # Verify response contains all expected fields
+                    expected_fields = [
+                        "job_id", "user_id", "company_name", "position", 
+                        "location", "salary_range", "work_mode", "job_type",
+                        "status", "created_at", "updated_at"
+                    ]
+                    
+                    missing_fields = [field for field in expected_fields if field not in job_response]
+                    
+                    if not missing_fields:
+                        print("✅ Response format correct with all expected fields")
+                        return True
+                    else:
+                        print(f"❌ Missing fields in response: {missing_fields}")
+                        return False
+                else:
+                    print("❌ No job_id in response")
+                    return False
+                    
+        except Exception as e:
+            print(f"❌ Response format test error: {str(e)}")
+            return False
+    
+    async def cleanup_test_jobs(self):
+        """Clean up created test jobs"""
+        print(f"\n🧹 Cleaning up {len(self.created_job_ids)} test jobs...")
+        
+        cleanup_success = 0
+        for job_id in self.created_job_ids:
+            try:
+                async with self.session.delete(f"{BACKEND_URL}/api/jobs/{job_id}", headers=self.headers) as response:
+                    if response.status == 200:
+                        cleanup_success += 1
+                    else:
+                        print(f"⚠️ Failed to delete job {job_id}: {response.status}")
+            except Exception as e:
+                print(f"⚠️ Error deleting job {job_id}: {str(e)}")
+        
+        print(f"✅ Cleaned up {cleanup_success}/{len(self.created_job_ids)} test jobs")
+        return cleanup_success == len(self.created_job_ids)
 
-def test_backend_connectivity():
-    """Test 1: Verify backend connectivity"""
-    try:
-        response = requests.get(f"{BASE_URL}/auth/me", headers=HEADERS, timeout=10)
-        if response.status_code == 200:
-            user_data = response.json()
-            return True, f"Connected successfully. User: {user_data.get('email', 'Unknown')}"
-        else:
-            return False, f"Authentication failed with status {response.status_code}"
-    except Exception as e:
-        return False, f"Connection error: {str(e)}"
-
-def create_test_job(job_data):
-    """Helper function to create a test job"""
-    try:
-        response = requests.post(f"{BASE_URL}/jobs", headers=HEADERS, json=job_data, timeout=10)
-        if response.status_code == 200:
-            job = response.json()
-            return True, job.get('job_id'), f"Job created successfully: {job.get('job_id')}"
-        else:
-            return False, None, f"Job creation failed with status {response.status_code}: {response.text}"
-    except Exception as e:
-        return False, None, f"Job creation error: {str(e)}"
-
-def get_upcoming_interviews():
-    """Helper function to get upcoming interviews"""
-    try:
-        response = requests.get(f"{BASE_URL}/dashboard/upcoming-interviews", headers=HEADERS, timeout=10)
-        if response.status_code == 200:
-            return True, response.json(), "Retrieved upcoming interviews successfully"
-        else:
-            return False, None, f"Failed to get upcoming interviews with status {response.status_code}: {response.text}"
-    except Exception as e:
-        return False, None, f"Error getting upcoming interviews: {str(e)}"
-
-def delete_test_job(job_id):
-    """Helper function to delete a test job"""
-    try:
-        response = requests.delete(f"{BASE_URL}/jobs/{job_id}", headers=HEADERS, timeout=10)
-        return response.status_code == 200
-    except:
+async def run_job_api_tests():
+    """Run all job API tests"""
+    print("🚀 Starting CareerFlow Job API Tests - POST /api/jobs Endpoint")
+    print("=" * 70)
+    
+    test_results = []
+    
+    async with JobAPITester() as tester:
+        # Test sequence
+        tests = [
+            ("Backend Connectivity", tester.test_backend_connectivity),
+            ("GET /api/jobs (baseline)", tester.test_get_jobs_empty),
+            ("POST /api/jobs (basic fields)", tester.test_create_job_basic),
+            ("POST /api/jobs (all fields)", tester.test_create_job_all_fields),
+            ("POST /api/jobs (response format)", tester.test_response_format),
+            ("GET /api/jobs (with data)", tester.test_get_jobs_with_data),
+            ("GET /api/jobs/{id}", tester.test_get_specific_job),
+            ("Input Validation", tester.test_job_validation),
+        ]
+        
+        for test_name, test_func in tests:
+            try:
+                result = await test_func()
+                test_results.append((test_name, result))
+                if not result:
+                    print(f"⚠️ Test '{test_name}' failed, continuing with remaining tests...")
+            except Exception as e:
+                print(f"❌ Test '{test_name}' crashed: {str(e)}")
+                test_results.append((test_name, False))
+        
+        # Cleanup
+        await tester.cleanup_test_jobs()
+    
+    # Summary
+    print("\n" + "=" * 70)
+    print("📊 TEST RESULTS SUMMARY")
+    print("=" * 70)
+    
+    passed = sum(1 for _, result in test_results if result)
+    total = len(test_results)
+    
+    for test_name, result in test_results:
+        status = "✅ PASS" if result else "❌ FAIL"
+        print(f"{status} - {test_name}")
+    
+    print(f"\n🎯 Overall: {passed}/{total} tests passed ({(passed/total)*100:.1f}%)")
+    
+    if passed == total:
+        print("🎉 All tests passed! POST /api/jobs endpoint is working correctly.")
+        print("✅ Job creation with all required fields (company_name, position, date_applied, job_type) working")
+        print("✅ Jobs are saved and returned correctly")
+        print("✅ Response status codes and format are correct")
+        print("✅ GET /api/jobs returns created jobs properly")
+        return True
+    else:
+        print("⚠️ Some tests failed. Please review the issues above.")
         return False
 
-def test_create_first_job():
-    """Test 2: Create first test job with all required fields"""
-    job_data = {
-        "company_name": "Dynamic Prep Corp",
-        "position": "Principal Software Engineer",
-        "location": {"city": "San Francisco", "state": "California"},
-        "salary_range": {"min": 180000, "max": 220000},
-        "work_mode": "hybrid",
-        "job_type": "Software Engineer",
-        "status": "system_design",
-        "upcoming_stage": "system_design",
-        "upcoming_schedule": "03/20/2026",
-        "date_applied": "2026-02-25T00:00:00Z",
-        "is_priority": True
-    }
-    
-    success, job_id, message = create_test_job(job_data)
-    return success, job_id, message
-
-def test_create_second_job():
-    """Test 3: Create second test job with different position"""
-    job_data = {
-        "company_name": "Healthcare Systems",
-        "position": "Senior Nurse Practitioner",
-        "location": {"city": "Boston", "state": "Massachusetts"},
-        "salary_range": {"min": 95000, "max": 115000},
-        "work_mode": "onsite",
-        "job_type": "Healthcare",
-        "status": "clinical",
-        "upcoming_stage": "clinical",
-        "upcoming_schedule": "03/22/2026",
-        "date_applied": "2026-02-25T00:00:00Z",
-        "is_priority": True
-    }
-    
-    success, job_id, message = create_test_job(job_data)
-    return success, job_id, message
-
-def test_upcoming_interviews_structure():
-    """Test 4: Verify upcoming interviews endpoint returns proper structure with position field"""
-    success, interviews, message = get_upcoming_interviews()
-    if not success:
-        return False, message
-    
-    if not isinstance(interviews, list):
-        return False, "Response is not a list"
-    
-    if len(interviews) == 0:
-        return False, "No upcoming interviews found (expected at least 2 from test jobs)"
-    
-    # Check structure of first interview
-    first_interview = interviews[0]
-    required_fields = ["company_name", "position", "stage", "schedule_date"]
-    missing_fields = [field for field in required_fields if field not in first_interview]
-    
-    if missing_fields:
-        return False, f"Missing required fields: {missing_fields}. Available fields: {list(first_interview.keys())}"
-    
-    return True, f"Found {len(interviews)} upcoming interviews with all required fields including 'position'"
-
-def test_position_field_values():
-    """Test 5: Verify position field contains correct values for both test jobs"""
-    success, interviews, message = get_upcoming_interviews()
-    if not success:
-        return False, message
-    
-    expected_positions = ["Principal Software Engineer", "Senior Nurse Practitioner"]
-    found_positions = [interview.get("position") for interview in interviews]
-    
-    # Check if both expected positions are found
-    missing_positions = [pos for pos in expected_positions if pos not in found_positions]
-    
-    if missing_positions:
-        return False, f"Missing expected positions: {missing_positions}. Found positions: {found_positions}"
-    
-    return True, f"All expected positions found: {found_positions}"
-
-def test_interview_details():
-    """Test 6: Verify interview details are complete and accurate"""
-    success, interviews, message = get_upcoming_interviews()
-    if not success:
-        return False, message
-    
-    details = []
-    for interview in interviews:
-        company = interview.get("company_name", "Unknown")
-        position = interview.get("position", "Unknown")
-        stage = interview.get("stage", "Unknown")
-        schedule = interview.get("schedule_date", "Unknown")
-        
-        details.append(f"{company} - {position} ({stage}) on {schedule}")
-    
-    return True, f"Interview details: {'; '.join(details)}"
-
-def main():
-    """Main test execution"""
-    print("🚀 Starting CareerFlow Backend API Testing - Position Field in Upcoming Interviews")
-    print(f"Testing URL: {BASE_URL}")
-    print("="*80)
-    
-    results = TestResults()
-    created_job_ids = []
-    
-    try:
-        # Test 1: Backend Connectivity
-        success, message = test_backend_connectivity()
-        results.add_result("Backend Connectivity", success, message)
-        if not success:
-            print("❌ Cannot proceed without backend connectivity")
-            return False
-        
-        # Test 2: Create First Job
-        success, job_id1, message = test_create_first_job()
-        results.add_result("Create First Test Job", success, message)
-        if success and job_id1:
-            created_job_ids.append(job_id1)
-        
-        # Test 3: Create Second Job
-        success, job_id2, message = test_create_second_job()
-        results.add_result("Create Second Test Job", success, message)
-        if success and job_id2:
-            created_job_ids.append(job_id2)
-        
-        # Test 4: Upcoming Interviews Structure
-        success, message = test_upcoming_interviews_structure()
-        results.add_result("Upcoming Interviews Structure", success, message)
-        
-        # Test 5: Position Field Values
-        success, message = test_position_field_values()
-        results.add_result("Position Field Values", success, message)
-        
-        # Test 6: Interview Details
-        success, message = test_interview_details()
-        results.add_result("Interview Details Verification", success, message)
-        
-    except Exception as e:
-        results.add_result("Unexpected Error", False, f"Test execution failed: {str(e)}")
-    
-    finally:
-        # Cleanup: Delete created test jobs
-        print(f"\n🧹 Cleaning up {len(created_job_ids)} test jobs...")
-        for job_id in created_job_ids:
-            if delete_test_job(job_id):
-                print(f"✅ Deleted job: {job_id}")
-            else:
-                print(f"⚠️ Failed to delete job: {job_id}")
-    
-    # Final summary
-    success = results.summary()
-    
-    if success:
-        print("🎉 ALL TESTS PASSED - Position field is properly included in upcoming interviews endpoint")
-        print("✅ The dynamic Prep Checklist feature will have access to position data")
-    else:
-        print("❌ SOME TESTS FAILED - Position field may not be properly accessible")
-        print("⚠️ This could impact the dynamic Prep Checklist feature")
-    
-    return success
-
 if __name__ == "__main__":
-    success = main()
-    sys.exit(0 if success else 1)
+    try:
+        result = asyncio.run(run_job_api_tests())
+        sys.exit(0 if result else 1)
+    except KeyboardInterrupt:
+        print("\n⏹️ Tests interrupted by user")
+        sys.exit(1)
+    except Exception as e:
+        print(f"\n💥 Test suite crashed: {str(e)}")
+        traceback.print_exc()
+        sys.exit(1)
