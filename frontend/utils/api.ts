@@ -25,12 +25,9 @@ const getBackendUrl = (): string => {
     return envUrl;
   }
   
-  // Priority 3: For development only - use fallback
-  if (__DEV__) {
-    return 'https://repo-preview-43.emergent.host';
-  }
-  
-  // For production builds without a configured URL, return empty string
+  // Priority 3: For development/production - require env configuration
+  // No hardcoded fallback URLs for deployment compatibility
+  console.warn('BACKEND_URL not configured. Please set EXPO_PUBLIC_BACKEND_URL in .env');
   return '';
 };
 
