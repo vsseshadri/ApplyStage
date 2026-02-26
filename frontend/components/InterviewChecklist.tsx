@@ -151,103 +151,103 @@ const generateFallbackTopics = (stage: string, position: string, company: string
   const roleFamily = detectRoleFamily(position);
   const stageLower = stage.toLowerCase();
   
-  // Base topics by stage
+  // More specific, actionable topics by stage
   const stageTopics: { [key: string]: string[] } = {
     recruiter_screening: [
-      'Prepare concise career summary (60 seconds)',
-      'Research company mission and recent news',
-      'Clarify salary expectations with market data',
-      'Prepare questions about role and team structure',
-      'Review job description for key requirements',
-      'Practice explaining your motivation for this role',
+      'Research salary bands on Levels.fyi and prepare your target range with justification',
+      'List 3 recent company news items (funding, product launches, leadership changes)',
+      'Prepare a 60-second pitch: role → company → why now alignment',
+      'Identify 2-3 questions about team structure and growth trajectory',
+      'Review the job posting and match your experience to each requirement',
+      'Prepare to explain any employment gaps or transitions concisely',
     ],
     phone_screen: [
-      'Review your resume and be ready to discuss any point',
-      'Prepare "Why this company?" answer',
-      'Research interviewer on LinkedIn',
-      'Have 3-4 STAR stories ready',
-      'Test your phone/video setup in a quiet space',
-      'Prepare thoughtful questions about the role',
+      'Map your top 3 achievements to specific metrics (%, $, time saved)',
+      'Research the interviewer on LinkedIn and find common ground',
+      'Prepare a compelling "why this company specifically" answer with examples',
+      'Draft 3 STAR stories: leadership challenge, technical win, team conflict',
+      'Set up a distraction-free space with good audio and backup phone',
+      'Prepare 2 insightful questions about team challenges and priorities',
     ],
     technical_screen: [
-      'Review core data structures and algorithms',
-      'Practice 2-3 medium problems with time limit',
-      'Be ready to explain your thought process aloud',
-      'Review Big O complexity analysis',
-      'Test your coding environment setup',
-      'Prepare to ask clarifying questions first',
+      'Review Big-O complexity for arrays, hashmaps, trees, and graphs',
+      'Solve 3 medium LeetCode problems in your target language under 25 min each',
+      'Practice explaining your approach out loud before writing code',
+      'Review language-specific APIs: string methods, sorting, data structures',
+      'Prepare to discuss a technical project you owned end-to-end',
+      'Practice asking clarifying questions about inputs, outputs, and constraints',
     ],
     coding_round_1: [
-      'Practice problem solving with time constraints',
-      'Review common patterns: two pointers, sliding window',
-      'Practice debugging and edge case handling',
-      'Communicate your approach before coding',
-      'Test with multiple inputs including edge cases',
-      'Review language-specific syntax and APIs',
+      'Master these patterns: two pointers, sliding window, hashmap frequency counting',
+      'Practice 5 problems from blind75 list with 20-min time limit each',
+      'Rehearse the flow: clarify → examples → approach → code → test → optimize',
+      'Review edge cases: empty input, single element, duplicates, negative numbers',
+      'Practice debugging syntax errors quickly without IDE assistance',
+      'Prepare to discuss time/space complexity trade-offs in your solutions',
     ],
     coding_round_2: [
-      'Focus on optimization and efficiency',
-      'Review advanced data structures: heaps, tries, graphs',
-      'Practice follow-up questions on solutions',
-      'Prepare for system design elements in coding',
-      'Review recursion and dynamic programming',
-      'Practice clean, readable code style',
+      'Review advanced structures: tries for prefix, heaps for top-k, union-find for graphs',
+      'Practice 3 dynamic programming problems: memoization vs tabulation approaches',
+      'Study graph algorithms: BFS for shortest path, DFS for connected components',
+      'Prepare for optimization questions: "Can you do better than O(n²)?"',
+      'Review binary search variations: first/last occurrence, rotated arrays',
+      'Practice explaining recursive solutions and their space complexity',
     ],
     system_design: [
-      'Review distributed systems fundamentals',
-      'Practice capacity estimation calculations',
-      'Know trade-offs: SQL vs NoSQL, caching strategies',
-      'Prepare to discuss scalability patterns',
-      'Review load balancing and database sharding',
-      'Practice drawing clear system diagrams',
+      'Practice capacity estimation: QPS, storage, bandwidth for 1M/100M users',
+      'Draw a basic architecture: load balancer → app servers → cache → database',
+      'Review CAP theorem and prepare examples of CP vs AP system choices',
+      'Study caching strategies: cache-aside, write-through, TTL policies',
+      'Prepare trade-off discussions: SQL vs NoSQL, monolith vs microservices',
+      'Practice explaining database sharding and replication strategies',
     ],
     behavioural: [
-      'Prepare 5+ STAR stories covering different themes',
-      'Include stories about conflict resolution',
-      'Have examples of leadership and initiative',
-      'Prepare a story about learning from failure',
-      'Align stories with company values',
-      'Practice timing (2-3 minutes per story)',
+      'Prepare a "Tell me about yourself" that ends with why this role',
+      'Draft STAR stories for: biggest impact, handled conflict, learned from failure',
+      'Research company values and map your stories to demonstrate them',
+      'Prepare a "weakness" answer that shows self-awareness and growth',
+      'Quantify all achievements: users impacted, revenue generated, time saved',
+      'Practice delivering stories in 2-3 minutes with clear structure',
     ],
     hiring_manager: [
-      'Research the hiring manager background',
-      'Prepare questions about team goals and challenges',
-      'Have a 30-60-90 day plan outline',
-      'Be ready to discuss management style',
-      'Prepare examples of cross-team collaboration',
-      'Show understanding of business context',
+      'Research the manager\'s background and team\'s recent projects on LinkedIn',
+      'Prepare a 30-60-90 day plan outline for ramping up in the role',
+      'Draft questions about team goals, biggest challenges, and success metrics',
+      'Prepare to discuss your management/leadership style with examples',
+      'Research the team structure and prepare questions about collaboration',
+      'Be ready to discuss how you handle feedback and disagreements',
     ],
     final_round: [
-      'Review all previous round feedback if available',
-      'Research executive team and company strategy',
-      'Prepare high-level vision for your contribution',
-      'Have strategic questions ready',
-      'Be ready to discuss compensation expectations',
-      'Show long-term commitment and growth mindset',
+      'Research the executive team and company strategy/vision',
+      'Prepare to articulate your long-term career goals and this role\'s fit',
+      'Review all previous interview feedback and address any concerns',
+      'Prepare high-level questions about company direction and culture',
+      'Know your compensation expectations and be ready to discuss',
+      'Prepare a summary of why you\'re the best candidate for the role',
     ],
     offer: [
-      'Research market rates (Levels.fyi, Glassdoor)',
-      'Understand total compensation components',
-      'Clarify equity details and vesting schedule',
-      'Ask about benefits and PTO policies',
-      'Prepare negotiation points with justification',
-      'Know your walk-away number',
+      'Research total comp benchmarks on Levels.fyi for your level and location',
+      'List your negotiation priorities: base, equity, sign-on, start date, WFH',
+      'Prepare data points to justify your counter-offer (competing offers, experience)',
+      'Understand the equity details: grant type, vesting schedule, strike price',
+      'Calculate the total annual compensation including benefits value',
+      'Prepare your decision timeline and walk-away criteria',
     ],
     clinical: [
-      'Review patient care protocols and standards',
-      'Prepare clinical scenario responses',
-      'Know relevant compliance and safety guidelines',
-      'Review pharmacology and treatment protocols',
-      'Prepare examples of patient outcomes',
-      'Be ready to discuss ethical decision-making',
+      'Review clinical scenarios relevant to the specialty and setting',
+      'Prepare examples of clinical decision-making under pressure',
+      'Review relevant protocols, guidelines, and compliance requirements',
+      'Prepare to discuss patient outcomes you\'ve improved with data',
+      'Study pharmacology relevant to the role and common interactions',
+      'Prepare ethical dilemma examples and your reasoning process',
     ],
     case_study: [
-      'Review framework for case analysis',
-      'Practice market sizing and estimation',
-      'Prepare structured problem-solving approach',
-      'Be ready to make recommendations with data',
-      'Practice presenting findings clearly',
-      'Prepare follow-up questions on your analysis',
+      'Review problem-solving frameworks: MECE, hypothesis-driven, issue trees',
+      'Practice market sizing: TAM calculations with clear assumptions',
+      'Prepare to structure ambiguous problems with clarifying questions',
+      'Practice mental math: percentages, growth rates, unit economics',
+      'Review common case types: market entry, profitability, M&A, growth',
+      'Prepare to present recommendations with supporting data and risks',
     ],
   };
   
@@ -258,56 +258,50 @@ const generateFallbackTopics = (stage: string, position: string, company: string
   if (seniority === 'principal' || seniority === 'senior') {
     if (stageLower === 'system_design') {
       topics = [
-        'Focus on architecture trade-offs at scale',
-        'Prepare examples of system design decisions you\'ve made',
-        'Review cross-functional system dependencies',
-        'Be ready to discuss organizational impact of design',
-        'Prepare to lead the design discussion',
-        'Show depth in specific technical domains',
+        'Prepare to lead the design discussion and drive requirements gathering',
+        'Review large-scale systems you\'ve designed with specific numbers',
+        'Prepare trade-off examples at organizational scale (cost, complexity, velocity)',
+        'Study distributed consensus, eventual consistency, and partition tolerance',
+        'Prepare to discuss cross-team dependencies and API design decisions',
+        'Review observability: metrics, logging, tracing at scale',
       ];
     } else if (stageLower === 'behavioural') {
       topics = [
-        'Prepare stories demonstrating technical leadership',
-        'Include examples of mentoring and team growth',
-        'Have a story about driving organizational change',
-        'Prepare examples of strategic decision-making',
-        'Show cross-team influence and collaboration',
-        'Demonstrate business impact of your work',
+        'Prepare stories demonstrating influence without authority',
+        'Draft examples of mentoring engineers and growing team capabilities',
+        'Prepare a "driving organizational change" story with measurable impact',
+        'Document technical strategy decisions and their business outcomes',
+        'Prepare examples of cross-functional collaboration with PMs/Design',
+        'Draft a story about navigating ambiguity and defining direction',
       ];
     }
   }
   
   // Modify based on role family
-  if (roleFamily === 'healthcare' && stageLower !== 'clinical') {
-    topics = topics.map((t, i) => {
-      if (i === 0) return 'Review patient care scenarios relevant to the role';
-      if (i === 1) return 'Prepare examples of clinical decision-making';
-      return t;
-    });
-  } else if (roleFamily === 'data' && stageLower === 'technical_screen') {
+  if (roleFamily === 'data' && (stageLower === 'technical_screen' || stageLower === 'coding_round_1')) {
     topics = [
-      'Review SQL and data manipulation techniques',
-      'Prepare to discuss ML models and evaluation metrics',
-      'Review statistics fundamentals and A/B testing',
-      'Practice data analysis case studies',
-      'Be ready to discuss your data pipeline experience',
-      'Prepare visualization and storytelling examples',
+      'Review SQL: window functions, CTEs, complex joins, query optimization',
+      'Practice Python pandas operations: groupby, merge, apply, vectorization',
+      'Review ML fundamentals: bias-variance, overfitting, cross-validation',
+      'Prepare to explain a model you built: features, evaluation, iteration',
+      'Practice A/B test design: sample size, significance, practical significance',
+      'Review statistics: hypothesis testing, confidence intervals, p-values',
     ];
   } else if (roleFamily === 'product' && stageLower === 'behavioural') {
     topics = [
-      'Prepare product launches and impact stories',
-      'Have examples of stakeholder management',
-      'Show data-driven decision making examples',
-      'Prepare stories about prioritization trade-offs',
-      'Include cross-functional collaboration examples',
-      'Demonstrate customer empathy in your stories',
+      'Prepare a product launch story with metrics: adoption, retention, revenue',
+      'Draft examples of prioritization: frameworks used, trade-offs made',
+      'Prepare a stakeholder management story: conflicting priorities resolution',
+      'Document a "killed a feature" decision and how you communicated it',
+      'Prepare customer empathy examples: user research, feedback incorporation',
+      'Draft a story about data-driven decisions changing product direction',
     ];
   }
   
   // Add company-specific research as first item if company provided
   if (company && company.trim()) {
     topics = [
-      `Research ${company}'s products, culture, and recent news`,
+      `Research ${company}: recent product launches, engineering blog posts, and Glassdoor reviews`,
       ...topics.slice(0, 5),
     ];
   }
