@@ -281,6 +281,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       console.log('Starting Apple Sign-In...');
       console.log('BACKEND_URL:', BACKEND_URL);
       
+      // Check if backend URL is configured
+      if (!BACKEND_URL) {
+        Alert.alert('Configuration Error', 'Backend URL is not configured. Please contact support.');
+        return;
+      }
+      
       const credential = await AppleAuthentication.signInAsync({
         requestedScopes: [
           AppleAuthentication.AppleAuthenticationScope.FULL_NAME,
