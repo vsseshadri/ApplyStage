@@ -574,22 +574,24 @@ const InterviewChecklist: React.FC<InterviewChecklistProps> = ({
   const handleRefresh = async () => {
     setRefreshing(true);
     
-    // Clear cache for this combination
+    // Clear cache for this combination to force new generation
     const key = getCacheKey(stage, position);
     topicCache.delete(key);
     
-    // Try AI generation first
-    const aiTopics = await generateDynamicTopics(stage, position, company);
+    // Try AI generation with forceNewGeneration=true for variety
+    const aiTopics = await generateDynamicTopics(stage, position, company, true);
     
     if (mountedRef.current) {
       if (aiTopics && aiTopics.length >= 4) {
         setFocusAreas(aiTopics);
         setIsAiGenerated(true);
-        setCachedTopics(stage, position, aiTopics);
+        // Don't cache refresh results to ensure next refresh is also fresh
       } else {
-        // Regenerate fallback with slight randomization
+        // Regenerate fallback with shuffled order for some variety
         const fallbackTopics = generateFallbackTopics(stage, position, company);
-        setFocusAreas(fallbackTopics);
+        // Shuffle the topics to provide some variation
+        const shuffled = [...fallbackTopics].sort(() => Math.random() - 0.5);
+        setFocusAreas(shuffled);
         setIsAiGenerated(false);
       }
       setRefreshing(false);
