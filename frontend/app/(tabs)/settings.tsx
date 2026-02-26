@@ -12,9 +12,8 @@ import { COUNTRIES } from '../../utils/countries';
 
 // Get backend URL from configuration
 const getBackendUrl = (): string => {
-  const configUrl = Constants.expoConfig?.extra?.EXPO_PUBLIC_BACKEND_URL;
-  const envUrl = process.env.EXPO_PUBLIC_BACKEND_URL;
-  return configUrl || envUrl || '';
+  // TEMPORARY: Force dev server URL for testing until production is fixed
+  return 'https://career-topics.preview.emergentagent.com';
 };
 const BACKEND_URL = getBackendUrl();
 
