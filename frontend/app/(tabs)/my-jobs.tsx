@@ -1377,12 +1377,12 @@ export default function MyJobsScreen() {
     // Location (State & City) is only mandatory if Work Mode is NOT Remote
     if (!formData.company_name.trim()) {
       console.log('Validation failed: Company Name empty');
-      Alert.alert('Error', 'Company Name is required');
+      showAlert('Error', 'Company Name is required');
       return;
     }
     if (!formData.position || !formData.position.trim()) {
       console.log('Validation failed: Position empty');
-      Alert.alert('Error', 'Position is required');
+      showAlert('Error', 'Position is required');
       return;
     }
     
