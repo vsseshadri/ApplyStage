@@ -100,7 +100,8 @@
       "typedRoutes": false
     },
     "extra": {
-      "appName": "CareerFlow"
+      "appName": "CareerFlow",
+      "EXPO_PUBLIC_BACKEND_URL": "https://repo-preview-43.emergent.host"
     }
   }
 }
