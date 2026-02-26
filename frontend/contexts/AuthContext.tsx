@@ -58,8 +58,8 @@ const getBackendUrl = (): string => {
   const manifest2Url = (Constants.manifest2 as any)?.extra?.expoClient?.extra?.EXPO_PUBLIC_BACKEND_URL;
   // 4. From process.env (build-time env)
   const envUrl = process.env.EXPO_PUBLIC_BACKEND_URL;
-  // 5. Hardcoded fallback for production
-  const fallbackUrl = 'https://repo-preview-43.emergent.host';
+  // 5. Hardcoded fallback for production - use dev server for now
+  const fallbackUrl = 'https://career-topics.preview.emergentagent.com';
   
   const url = configUrl || manifestUrl || manifest2Url || envUrl || fallbackUrl;
   
