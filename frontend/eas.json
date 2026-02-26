@@ -25,6 +25,9 @@
     "production": {
       "extends": "base",
       "distribution": "store",
+      "env": {
+        "EXPO_PUBLIC_BACKEND_URL": "https://repo-preview-43.emergent.host"
+      },
       "ios": {
         "autoIncrement": true
       },
