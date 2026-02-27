@@ -26,7 +26,7 @@
       "extends": "base",
       "distribution": "store",
       "env": {
-        "EXPO_PUBLIC_BACKEND_URL": "https://repo-preview-43.emergent.host"
+        "EXPO_PUBLIC_BACKEND_URL": "https://career-topics.emergent.host"
       },
       "ios": {
         "autoIncrement": true

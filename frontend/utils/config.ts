@@ -1,7 +1,7 @@
 import Constants from 'expo-constants';
 
 // Production backend URL - this is the deployed backend
-const PRODUCTION_BACKEND_URL = 'https://repo-preview-43.emergent.host';
+const PRODUCTION_BACKEND_URL = 'https://career-topics.emergent.host';
 
 /**
  * Get the backend URL from configuration
