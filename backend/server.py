@@ -6,7 +6,7 @@ from motor.motor_asyncio import AsyncIOMotorClient
 import os
 import logging
 from pathlib import Path
-from pydantic import BaseModel, Field, EmailStr
+from pydantic import BaseModel, Field, EmailStr, ConfigDict
 from typing import List, Optional, Dict, Any
 import uuid
 from datetime import datetime, timezone, timedelta
@@ -150,6 +150,8 @@ async def create_indexes():
         logging.warning(f"Index creation warning (may already exist): {e}")
 
 class User(BaseModel):
+    model_config = ConfigDict(extra='ignore')
+    
     user_id: str
     email: str
     name: Optional[str] = None
@@ -330,10 +332,8 @@ async def get_current_user(authorization: Optional[str] = Header(None)) -> User:
 @api_router.post("/auth/exchange-session")
 async def exchange_session(session_id: str):
     try:
-        auth_service_url = os.environ.get('AUTH_SERVICE_URL')
-        if not auth_service_url:
-            raise HTTPException(status_code=500, detail="AUTH_SERVICE_URL not configured")
-        async with httpx.AsyncClient() as client:
+        auth_service_url = os.environ.get('AUTH_SERVICE_URL', 'https://demobackend.emergentagent.com/auth/v1/env/oauth/session-data')
+        async with httpx.AsyncClient(follow_redirects=True) as client:
             response = await client.get(
                 auth_service_url,
                 headers={"X-Session-ID": session_id},

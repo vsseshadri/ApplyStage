@@ -49,16 +49,26 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 // Get backend URL with proper fallbacks
 const getBackendUrl = (): string => {
-  const configUrl = Constants.expoConfig?.extra?.EXPO_PUBLIC_BACKEND_URL;
+  // From EAS build environment
   const envUrl = process.env.EXPO_PUBLIC_BACKEND_URL;
-  return configUrl || envUrl || '';
+  if (envUrl) return envUrl;
+  
+  // From app.json extra via Constants
+  const configUrl = Constants.expoConfig?.extra?.EXPO_PUBLIC_BACKEND_URL;
+  if (configUrl) return configUrl;
+  
+  // From manifest (older Expo versions)
+  const manifestUrl = (Constants.manifest as any)?.extra?.EXPO_PUBLIC_BACKEND_URL;
+  if (manifestUrl) return manifestUrl;
+  
+  // Production fallback
+  return 'https://career-topics.emergent.host';
 };
 
 const BACKEND_URL = getBackendUrl();
 
-if (__DEV__) {
-  console.log('AuthContext BACKEND_URL:', BACKEND_URL);
-}
+// Log on startup regardless of __DEV__
+console.log('AuthContext BACKEND_URL:', BACKEND_URL);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
@@ -214,6 +224,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       console.log('Starting Google Sign-In...');
       console.log('BACKEND_URL:', BACKEND_URL);
       
+      // Check if backend URL is configured
+      if (!BACKEND_URL) {
+        Alert.alert('Configuration Error', 'Backend URL is not configured. Please contact support.');
+        return;
+      }
+      
       let redirectUrl: string;
       if (Platform.OS === 'web' && typeof window !== 'undefined') {
         redirectUrl = `${window.location.origin}/`;
@@ -237,8 +253,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           await handleAuthRedirect(result.url);
         } else if (result.type === 'cancel') {
           console.log('Auth cancelled by user');
+        } else if (result.type === 'dismiss') {
+          console.log('Auth dismissed');
         } else {
-          console.log('Auth result:', result);
+          console.log('Auth result:', JSON.stringify(result));
         }
       }
     } catch (error: any) {
@@ -251,6 +269,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       console.log('Starting Apple Sign-In...');
       console.log('BACKEND_URL:', BACKEND_URL);
+      
+      // Check if backend URL is configured
+      if (!BACKEND_URL) {
+        Alert.alert('Configuration Error', 'Backend URL is not configured. Please contact support.');
+        return;
+      }
       
       const credential = await AppleAuthentication.signInAsync({
         requestedScopes: [

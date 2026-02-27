@@ -8,9 +8,11 @@ import Constants from 'expo-constants';
 
 // Get backend URL from configuration
 const getBackendUrl = (): string => {
-  const configUrl = Constants.expoConfig?.extra?.EXPO_PUBLIC_BACKEND_URL;
   const envUrl = process.env.EXPO_PUBLIC_BACKEND_URL;
-  return configUrl || envUrl || '';
+  if (envUrl) return envUrl;
+  const configUrl = Constants.expoConfig?.extra?.EXPO_PUBLIC_BACKEND_URL;
+  if (configUrl) return configUrl;
+  return 'https://career-topics.emergent.host';
 };
 const BACKEND_URL = getBackendUrl();
 

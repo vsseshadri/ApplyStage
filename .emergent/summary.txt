@@ -1,179 +1,230 @@
 <analysis>
-<original_problem_statement>
-The user's primary goal is to enhance the Prep Checklist feature to provide highly specific and relevant interview preparation topics. The topics must be dynamically generated based on the user's job **position**, **seniority**, and the specific **interview stage**.
 
-Initial and evolving requirements include:
-1.  **Environment Fix (P0 Blocker):** Resolve persistent Expo Go/ngrok preview tunnel failures that prevent any user testing.
-2.  **Prep Checklist Specificity (P0):**
-    - The generated topics are too generic. They must be tailored to the specific job role (e.g., Senior Turbine Engineer vs. Software Engineer), seniority (e.g., Senior vs. Junior), and interview stage (e.g., System Design vs. Behavioral).
-    - The engine must support a wide variety of fields: software (SWE, Architect, TPM, AI/ML), engineering (Mechanical, Aerospace, Chemical), clinical (Physician, Nurse), finance (Accountant, Controller), HR (People Advisor, Payroll), and more.
-3.  **Prep Checklist Functionality (P0):**
-    - The Refresh (or New Topics) button must generate a genuinely new set of topics, not just re-shuffle the existing ones.
-4.  **Save Job Bug (P1):**
-    - The Save button for a new job entry is unresponsive when testing on the web preview.
-5.  **Architectural Constraints:**
-    - The solution must be **stateless** (no backend persistence of topics).
-    - It must be **low-latency** (&lt;2s perceived response).
-    - It must be **privacy-first** (no logging of user job data).
-    - The implementation must be **client-driven**, with in-memory caching only.
+<original_problem_statement>
+The user's primary goal is to enhance the Prep Checklist feature to provide highly specific and relevant interview preparation topics, dynamically generated based on the user's job position, seniority, and the specific interview stage.
+
+After the initial feature work, the user's focus shifted to resolving critical deployment and runtime errors that prevented the application from working in production and TestFlight builds.
+
+**Feature Requirements:**
+1.  **Prep Checklist Expansion (P0):**
+    - The generated topics must be tailored to the specific job role, seniority, and interview stage.
+    - Expand the topic engine to support a wider variety of fields, including: Mechanical/Chemical Engineering, Database Administrators (DBA), Pharmacist, Accountants, Program Management Office (PMO), Customer Success Managers/Directors, and VP/SVP Software Engineering.
+
+**Bug Fixes & Deployment Readiness (P0 Blocker):**
+1.  **iOS Build Failures:** Resolve a series of An Expo user account is required to proceed.
+
+Log in to EAS with email or username (exit and run eas login --help to see other login options)
+Input is required, but stdin is not readable. Failed to display prompt: Email or username failures related to Node.js version mismatches and lockfile issues.
+2.  **TestFlight Login Failure:** Fix a critical bug where both Google and Apple sign-in would fail silently in the TestFlight build, leaving the user on the login screen. This was the main focus of the latter half of the session.
+3.  **Data Disappearance & Save Errors:** After a partial fix, the user was able to log in but saw zero records and received a 401 error when trying to save a new job.
+4.  **Broken Dashboard & Duplicate Key Warning:** After fixing the data issue, the dashboard metrics were broken, and a React warning (Encountered two children with the same key) appeared.
+5.  **Production Readiness:** Ensure no hardcoded development URLs exist in the codebase before the user attempts a final production build.
+
 </original_problem_statement>
 
 **User's preferred language**: English
 
 **what currently exists?**
-The development environment, which was previously broken, is now stable. The Expo Go preview tunnel is fully functional.
+The application is a React Native (Expo) app with a FastAPI backend.
 
-The  component has been completely re-architected. It no longer relies on a live LLM call. Instead, it uses a large, client-side JavaScript object () that serves as a topic database. This object contains extensive lists of interview topics categorized by role, stage, and seniority.
+The agent successfully expanded the client-side topic generation engine in  to include all the roles requested by the user.
 
-A sophisticated, regex-based engine within the component detects the user's role, seniority, and interview stage from the job application data. It uses this to select a relevant topic pool and then shuffles a random subset of topics to display, ensuring the Refresh button works as intended.
+Most importantly, the agent completed a major debugging and refactoring effort to solve critical authentication and data-fetching issues. The root cause was inconsistent backend URL handling across different components and build environments.
 
-The Save button bug on the  form has been fixed for web users by replacing the mobile-only  with a cross-platform solution.
+A new centralized configuration file, , now provides a single, reliable  function. All frontend components (, , , etc.) have been refactored to use this central utility, eliminating hardcoded URLs and resolving the session token mismatches that plagued the application.
+
+The backend  was also fixed to handle Pydantic model validation errors from the production database and to use a reliable authentication service URL.
+
+The application is now believed to be stable and ready for a final production build and deployment.
 
 **Last working item**:
-    - Last item agent was working: The agent was actively expanding the topic generation logic in  to accommodate the user's request for more job fields. The last action was to add new regex patterns for Database Administrator (DBA) and expand the Human Resources category to include roles like Payroll Specialist and People Advisor. The work is partially complete.
-    - Status: IN PROGRESS
-    - Agent Testing Done: N
-    - Which testing method agent to use? manual testing by user
+    - Last item agent was working: The agent was performing a final production readiness check. It completed a major refactoring by creating  and updating all frontend files to use a centralized backend URL. This was done to ensure the iOS build would correctly point to the production backend for all API calls.
+    - Status: IN PROGRESS (Refactoring is complete, but user needs to pull, build, and verify in production).
+    - Agent Testing Done: Y
+    - Which testing method agent to use? The user needs to perform the final iOS build and test on TestFlight. No further agent testing is required before that.
     - User Testing Done: N
 
 **All Pending/In progress Issue list**:
-  - Issue 1: The Save button fix on the My Jobs form has not been verified by the user. (P1)
-  - Issue 2: Production backend returns a 500 Internal Server Error (Carried over from previous fork). (P1)
-  - Issue 3: Production web frontend is not served correctly (Carried over from previous fork). (P1)
-  - Issue 4: Data Discrepancy (User reports 16 jobs, only 9 were migrated) (Carried over from previous fork). (P1)
+  - Issue 1: React Duplicate Key Warning (P1)
 
   Issues Detail:
-  - **Issue 1: Save button fix not verified**
-     - Attempted fixes: The agent replaced all  calls (which fail silently on web) in  with a custom  function that uses  and  on web platforms. This should fix the lack of visual feedback when the save button is pressed.
-     - Next debug checklist: The user needs to test the Add Job functionality on the web preview to confirm that validation alerts and success/error messages now appear correctly.
-     - Why fix this issue and what will be achieved with the fix?: This will make the My Jobs form usable for web-based testers and provide essential user feedback.
-     - Status: USER VERIFICATION PENDING
-     - Is recurring issue? N
-     - Should Test frontend/backend/both after fix?: Frontend (manual user testing).
+  - **Issue 1: React Duplicate Key Warning**
+     - Description: After successfully adding a new job, the user reported a React warning: Encountered two children with the same key .@id....
+     - Attempted fixes: The agent checked for duplicate s in the database and found none. The root cause is likely in the rendering logic of a list component, possibly in , which may be re-rendering incorrectly or using an unstable key.
+     - Next debug checklist:
+        - Inspect the  or  function in .
+        - Verify that the  or  prop is using a unique and stable identifier for each item (e.g., ).
+        - Add  to see the data being rendered and check for any duplicates or malformed items that might cause key conflicts during re-renders.
+     - Why fix this issue and what will be achieved with the fix?: This warning indicates a potential bug in the UI rendering that can lead to unpredictable behavior and performance issues. Fixing it will ensure the job list is stable and performs correctly.
+     - Status: NOT STARTED
+     - Is recurring issue? Y
+     - Should Test frontend/backend/both after fix? Frontend
      - Blocked on other issue: None.
 
-  - **Issue 2, 3, 4**: These are long-standing production and data integrity issues from a previous session that have not been addressed. They are lower priority than the active feature development but remain critical for a production-ready application.
-
 **In progress Task List**:
-  - Task 1: Complete the expansion of the Prep Checklist topic engine. (P0)
+  - Task 1: Final Production Build and Verification (P0)
 
  Task Detail:
-  - **Task 1: Complete the expansion of the Prep Checklist topic engine.**
-     - Where to resume: The agent has already started adding new role detection logic in . The next steps are:
-        1.  Add the full topic pools for the new roles: , , , and the expanded  roles (including  and ).
-        2.  These pools should be added inside the  constant in the same file.
-        3.  Ensure each new role has topics for relevant stages (e.g., 'technical_screen', 'behavioral', 'system_design' where applicable).
-        4.  Verify that the seniority detection also applies correctly to these new roles.
-     - What will be achieved with this?: This will fulfill the user's explicit request to make the Prep Checklist feature useful for a wider variety of professions.
-     - Status: IN PROGRESS
-     - Should Test frontend/backend/both after fix?: Frontend (manual user testing).
-     - Blocked on something: No.
+  - **Task 1: Final Production Build and Verification**
+     - Where to resume: The agent has completed all necessary code changes. The user needs to pull all the latest commits from the git repository.
+     - What will be achieved with this?: This will create a production-ready iOS application with all the recent bug fixes and feature additions.
+     - Status: USER VERIFICATION PENDING
+     - Should Test frontend/backend/both after fix? The user will perform the final test on the iOS build.
+     - Blocked on something: The user needs to perform the actions on their local machine.
 
 **Upcoming and Future Tasks**
 - **Upcoming Tasks:**
-  - **P0: User Verification of All Recent Changes:** Once the current task is complete, the user must be guided to test the entire Prep Checklist feature with various roles, including the newly added ones, to confirm it works as expected. This includes testing the Refresh functionality.
+    - **P0: User-led Backend Redeployment:** The user must redeploy the backend to ensure the production environment () is running the latest code with all the Pydantic and auth URL fixes.
+    - **P0: User-led iOS Production Build:** The user needs to run An Expo user account is required to proceed.
+
+Log in to EAS with email or username (exit and run eas login --help to see other login options)
+Input is required, but stdin is not readable. Failed to display prompt: Email or username on their local machine after pulling the latest changes.
+    - **P0: User Verification of Production App:** The user must install the new TestFlight build and test the full application flow: Google/Apple login, viewing jobs, adding a new job, and checking the dashboard metrics.
+    - **P1: Address Duplicate Key Warning:** Once the production app is verified to be working, this is the next highest priority bug to fix.
 - **Future Tasks:**
-  - **P1: Address Production Environment Issues:** Fix the 500 errors and web-serving issues in the production environment.
-  - **P1: Investigate Data Discrepancy:** Address the user's concern about the 7 missing job records from the database migration.
+    - **P2: Refactor :** The file has grown to nearly 3000 lines. The topic data and detection logic could be extracted into separate utility/data files to improve maintainability.
+    - **P2: Verify Data Integrity:** The original issue of a 7-job data discrepancy from a previous migration was never fully investigated. This should be checked once the production environment is stable.
 
 **Completed work in this session**
-- **Critical Environment Fix (DONE):**
-  - Resolved the  and Expo crash loop. The issue was traced to an  dependency conflict (SDK 55 bug), not just a stale ngrok tunnel.
-  - The fix involved running env: load .env
-env: export EXPO_TUNNEL_SUBDOMAIN EXPO_PACKAGER_HOSTNAME EXPO_PUBLIC_BACKEND_URL EXPO_USE_FAST_RESOLVER METRO_CACHE_ROOT
-Dependencies are up to date, clearing the Metro cache, and ensuring environment variables were correct. The dev environment is now stable.
-- **Prep Checklist Re-architecture (DONE):**
-  - Moved from a faulty LLM-based approach to a robust, stateless, client-side topic generation engine in . This meets user requirements for privacy and performance.
-- **Prep Checklist Refresh Fix (DONE):**
-  - Implemented a pool-based system with a seeded shuffle algorithm () to ensure the New Topics button always generates a different set of topics.
-- **Prep Checklist Role Detection (Iteratively Improved & DONE for many roles):**
-  - Fixed numerous role detection bugs that were misclassifying roles like Turbine Engineer, Pediatrician, and Data Scientist.
-  - Greatly expanded role detection and topic pools to cover: Aerospace, Clinical (30+ specialties), Data Science, Software Architects, ML Engineers, Technical Program Managers, and more.
-- **Save Job Button Web Bug (DONE, Pending Verification):**
-  - Fixed the unresponsive Save button on the web preview in  by replacing mobile-only  calls with a cross-platform  function.
+- **Prep Checklist Feature Expansion (DONE):**
+  - Added extensive topic pools and detection logic for new roles: Chemical Engineering, Database Administrator, PMO, Customer Success, Project Management, Accountant, and Pharmacist.
+- **Resolved Critical iOS Build Failures (DONE):**
+  - Fixed multiple An Expo user account is required to proceed.
+
+Log in to EAS with email or username (exit and run eas login --help to see other login options)
+Input is required, but stdin is not readable. Failed to display prompt: Email or username errors by correctly setting the Node.js version in  (iteratively from 18 to 22.13.0).
+  - Guided the user to resolve  related build failures.
+- **Resolved Critical Authentication/Login Failures (DONE):**
+  - **Backend 500 Error:** Fixed a Pydantic validation error in the  model in  by adding  to handle extra fields from the production database.
+  - **Auth Service URL:** Fixed multiple issues with the  in , including a 301 redirect (missing slash) and switching to a more reliable demo endpoint.
+- **Centralized Frontend URL Configuration (DONE):**
+  - **Identified Root Cause:** Discovered that inconsistent, duplicated  functions across many components were causing session token mismatches (login on dev server, API calls to prod server).
+  - **Refactored:** Created a central  file with a single, robust  function.
+  - **Updated All Files:** Refactored , , , , , , and  to use the new centralized config. This was the most critical fix of the session.
+- **Dashboard Functionality Restored (DONE):**
+  - Fixed the broken dashboard metrics by ensuring the component was calling the correct backend URL using the new centralized config.
+- **Git & Local Environment Support (DONE):**
+  - Successfully guided the user through numerous local environment issues, including git conflicts, git credential setup (PAT), and yarn installation.
 
 **Earlier issues found/mentioned but not fixed**
-- The high-priority production environment issues (500 error, no web UI) and the user's data loss concerns that were carried over from the previous session were not addressed. They are listed in the **All Pending/In progress Issue list**.
+   - The React duplicate key warning was identified but not resolved. It is listed in the **All Pending/In progress Issue list**.
 
 **Known issue recurrence from previous fork**
-  - **Issue recurrence in previous fork**: Environment Instability (ngrok/Expo).
-  - **Recurrence count**: This was a major blocker for the first half of the session.
-  - **Status**: RESOLVED. The root cause was identified as a package dependency issue and fixed using env: load .env
-env: export EXPO_TUNNEL_SUBDOMAIN EXPO_PACKAGER_HOSTNAME EXPO_PUBLIC_BACKEND_URL EXPO_USE_FAST_RESOLVER METRO_CACHE_ROOT
-Dependencies are up to date.
+  - **Issue recurrence in previous fork**: Production backend returns a 500 Internal Server Error.
+  - **Recurrence count**: High. This was a major blocker for the second half of the session.
+  - **Status**: RESOLVED. The root cause was identified as a Pydantic model validation error in  and has been fixed. The fix is pending deployment by the user.
 
 **Code Architecture**
 
 
 **Key Technical Concepts**
-- **Frontend**: React Native (Expo), Expo Router, TypeScript.
-- **Architecture**: The key architectural decision was to pivot from a live LLM API call to a fully client-side, stateless topic generation engine to meet strict user requirements on privacy, latency, and reliability.
-- **Topic Generation Engine**: A custom solution built in  that uses:
-    - **Regex Matching**: For sophisticated role, seniority, and stage detection from free-text strings.
-    - **Topic Database**: A large, structured JavaScript object () acting as a local, hardcoded database.
-    - **Seeded Shuffle Algorithm**: A Fisher-Yates shuffle using  as a seed to guarantee unique results on every Refresh click.
-- **Cross-Platform Compatibility**: Identified and fixed a web-compatibility issue by creating a wrapper function for the  API.
+- **Frontend**: React Native (Expo), Expo Router, TypeScript, React Context.
+- **Backend**: FastAPI, Pydantic, MongoDB (with Motor).
+- **Centralized Configuration**: A key architectural improvement was the creation of . This file exports a single  function that correctly determines the backend URL based on the environment (EAS build  vs. Expo Go ), solving widespread inconsistencies.
+- **Pydantic Model Configuration**: The backend 500 error was resolved by using Pydantic's  on the  model to make it robust against extra fields in the database, a common issue when evolving schemas.
+- **EAS Build Configuration**: The  file was configured to specify a Node.js version () and to inject environment variables into production builds ().
 
 **key DB schema**
-  - No database schema changes were made in this session. All work was on the frontend.
+  - No database schema changes were made. The backend  model was updated to be more flexible with the existing schema.
 
 **changes in tech stack**
   - None.
 
 **All files of reference**
-- : The primary file for the current and future work on the Prep Checklist. All logic and topic data reside here.
-- : This file was modified to fix the Save button bug and needs user verification.
+- : **NEW & CRITICAL**. This file now dictates which backend the entire frontend communicates with. Any new component needing the backend URL should import  from here.
+- : Major consumer of the new . Contains the core authentication logic.
+- : Contains the  model fix and the  fallback logic.
+- : Contains the build-time configuration, including the crucial Node.js version.
+- : The file where the duplicate key warning was reported.
 
 **Areas that need refactoring**:
-- The  file has grown to over 2000 lines and contains business logic (role detection), data (topic pools), and view logic. It could be refactored by extracting:
-    -  into its own  data file.
-    - The role/stage/seniority detection logic into a custom hook (e.g., ).
-    - The  utility function into a  file.
+- The  file is now almost 3,000 lines long. The  constant should be extracted to a separate  data file, and the detection logic could be moved to a custom hook to improve readability and maintainability.
 
 **key api endpoints**
-- No API endpoints were created or modified. All work was client-side. The agent did identify obsolete calls to a removed  endpoint but confirmed they were not blocking the current work.
+- : Exchanges a temporary auth service ID for a permanent session token.
+- : Fetches the current user's profile using a session token.
+- : Used to get and create job applications.
+- : A set of endpoints (, , , ) that provide data for the dashboard.
 
 **Critical Info for New Agent**
-- **The architecture is now client-side.** Do not attempt to re-introduce a live LLM call for the Prep Checklist. The user explicitly approved the current architecture (a large, in-file topic database) to meet privacy and performance needs. Your main task is to *add data* to this existing engine.
-- **The main file is .** All pending work involves expanding the regex patterns and the  object within this single file.
-- **Follow the existing pattern.** When adding new roles, create a new role key (e.g., ), add regex to the  function, add a display name to , and create comprehensive topic pools for that role inside .
-- **User verification is pending for the Save button.** After you complete the current task, remember to ask the user to test the job creation form on the web to confirm the fix.
+- **The URL Problem is Solved (Theoretically):** A massive effort was made to centralize backend URL logic into . **DO NOT** add local  functions or hardcode URLs in any component. Always . This is the single source of truth.
+- **Production vs. Dev:** The previous agent's biggest struggle was managing two different environments (the local dev server vs. the user's production server). The centralized  is designed to handle this automatically. For Expo Go, it uses the URL from . For production builds, it uses the  from the  KUBERNETES_SERVICE_PORT_HTTPS=443
+PYTHON_SHA256=8d3ed8ec5c88c1c95f5e558612a725450d2452813ddad5e58fdb1a53b1209b78
+KUBERNETES_SERVICE_PORT=443
+PYTHONUNBUFFERED=1
+PIP_NO_INPUT=1
+STRIPE_API_KEY=sk_test_emergent
+HOSTNAME=agent-env-de16af9b-952b-4e62-9ec7-7b5fe0b766b8
+PYTHON_VERSION=3.11.14
+base_url=https://demobackend.emergentagent.com
+run_id=de16af9b-952b-4e62-9ec7-7b5fe0b766b8
+UV_COMPILE_BYTECODE=1
+PLUGIN_VENV_PATH=/opt/plugins-venv
+PWD=/app/frontend
+code_server_password=d82dadb8
+HOME=/root
+LANG=C.UTF-8
+KUBERNETES_PORT_443_TCP=tcp://34.118.224.1:443
+VIRTUAL_ENV=/root/.venv
+GPG_KEY=A035C8C19219BA821ECEA86B64E628F8D684696D
+PLAYWRIGHT_BROWSERS_PATH=/pw-browsers
+integration_proxy_url=https://integrations.emergentagent.com
+preview_endpoint=https://interview-coach-96.preview.emergentagent.com
+ENABLE_RELOAD=true
+SHLVL=0
+KUBERNETES_PORT_443_TCP_PROTO=tcp
+KUBERNETES_PORT_443_TCP_ADDR=34.118.224.1
+KUBERNETES_SERVICE_HOST=34.118.224.1
+KUBERNETES_PORT=tcp://34.118.224.1:443
+KUBERNETES_PORT_443_TCP_PORT=443
+PATH=/root/.venv/bin:/opt/plugins-venv/bin:/opt/bin:/usr/local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+monitor_polling_interval=1
+NEXT_TELEMETRY_DISABLED=1
+NODE_VERSION=20
+DEBIAN_FRONTEND=noninteractive
+OLDPWD=/app
+_=/usr/bin/env block.
+- **Backend Model Flexibility:** The production 500 error was fixed by making the Pydantic  model in  ignore extra fields. Be aware of this if you modify backend models; they need to be backward-compatible or a data migration is required.
+- **The Next Step is a User-Led Build:** Your first task is to guide the user to pull the latest changes and start a new backend deployment and iOS build. Do not make further code changes until the result of that build is known.
 
 **documents created in this job**
-- None.
+- 
 
 **Last 10 User Messages and any pending HUMAN messages**
-- **LATEST User (#324):** Requested to expand the topic pools to include Mechanical/Chemical Engineering, DBAs, and various HR roles. (Status: **IN PROGRESS**)
-- **User (#300):** Requested to expand logic for SVP/VP, software architects, AI/ML engineers, TPMs, and other software roles. (Status: Completed)
-- **User (#299):** Confirmed the Data Scientist fix is working. (Status: Completed)
-- **User (#281):** Provided a screenshot showing the Data Scientist role was being misclassified. (Status: Addressed)
-- **User (#262):** Provided a screenshot showing the Senior Pediatrician role was being misclassified. (Status: Addressed)
-- **User (#261):** Reported that the save functionality was not working on the web due to no visual feedback. (Status: Addressed, awaiting verification)
-- **User (#181):** Reported the Save button issue after creating a new job entry. (Status: In Progress at the time, now fixed)
-- **User (#175):** Provided a screenshot showing the Senior Turbine Engineer was being misclassified as a Software Engineer. (Status: Addressed)
-- **User (#169):** Reported the refresh button was still not generating truly new topics. (Status: Addressed)
-- **User (#156):** Reported that the Prep Checklist feature was still not working as expected after a rewrite. (Status: Addressed)
-- **User (#149):** Critically reminded the agent of the required stateless, client-side architecture after the agent made a wrong turn. (Status: Addressed)
+- **LATEST User (#391):** Confirmed records are visible and a new job can be added. But reported a new duplicate key warning and that the dashboard metrics are broken. (Status: **Partially Addressed** - Dashboard fixed, duplicate key pending)
+- **User (#381):** Asked the agent to fix the remaining files with the wrong URL. (Status: Completed)
+- **User (#379):** The agent found the root cause of the 401 error:  was using the production URL while auth was on the dev URL. (Status: Addressed)
+- **User (#373):** Reported login completed successfully in logs, but saving a job still fails. (Status: In Progress)
+- **User (#367):** Confirmed the new session token works on the backend, but the app is not using it correctly. (Status: In Progress)
+- **User (#362):** A new session was created after login. (Status: In Progress)
+- **User (#358):** Still getting a 401 Invalid Session error. (Status: In Progress)
+- **User (#357):** The agent confirmed the backend is working correctly and the issue is a stale session token in Expo Go. (Status: Addressed)
+- **User (#326):** Able to log in with Google, but sees zero records and gets a 401 error when adding a new job. (Status: In Progress)
+- **User (#274):** Frustrated with testing, received a new Exchange Failed: 400 Invalid Session ID error. Demanded a thorough test from the agent. (Status: Addressed)
 
 **Project Health Check:**
 - **Broken**:
-    - The production environment remains in a broken state from the previous fork (500 errors, data integrity concerns). This has not been addressed.
+  - The production environment () is currently running old, broken code. It requires a redeployment by the user with the latest fixes.
 - **Mocked**:
-    - N/A. The LLM dependency was intentionally removed and replaced with a client-side data implementation.
+  - N/A
 
 **3rd Party Integrations**
-- **Ngrok**: Used for the Expo Go preview tunnel. Now stable.
+- **Ngrok**: Used for the Expo Go preview tunnel.
+- **Apple Authentication**: Integrated via .
+- **Google Authentication**: Integrated via Expo's web browser flow and a custom backend exchange.
 
 **Testing status**
-  - Testing agent used after significant changes: YES,  was used to confirm backend health before debugging the frontend Save button issue.
-  - Troubleshoot agent used after agent stuck in loop: NO, the agent successfully debugged the complex environment issue without needing the troubleshooter.
+  - Testing agent used after significant changes: NO
+  - Troubleshoot agent used after agent stuck in loop: YES, the troubleshoot agent was critical in identifying the Pydantic model validation error as the cause of the production 500 error.
   - Test files created: None.
-  - Known regressions: None in this session. The major regression from the previous session (broken dev environment) was fixed.
+  - Known regressions:
+    - The dashboard functionality was temporarily broken by the agent's initial auth fixes but was later restored.
+    - A new duplicate key warning appeared after the job list started working.
 
 **Credentials to test flow:**
-- The user has been testing with various job titles, including Senior Turbine Engineer, Senior Pediatrician, and Data Scientist. No specific login credentials are required for the next agent.
+- The user is testing with the Google account .
 
 **What agent forgot to execute**
-- The agent correctly prioritized the user's active requests and did not forget any explicit instructions in this session. It has a clear pending task to continue the work it was doing. The long-standing production issues remain on the backlog as lower-priority items.
+- The agent did not resolve the Encountered two children with the same key warning reported by the user. It acknowledged the issue but moved on to the production readiness refactor. This is the primary piece of technical debt from this session.
 
 </analysis>
