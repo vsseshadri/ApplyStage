@@ -62,7 +62,7 @@ const getBackendUrl = (): string => {
   if (manifestUrl) return manifestUrl;
   
   // Production fallback
-  return 'https://repo-preview-43.emergent.host';
+  return 'https://career-topics.emergent.host';
 };
 
 const BACKEND_URL = getBackendUrl();

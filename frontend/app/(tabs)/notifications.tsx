@@ -30,7 +30,7 @@ const getBackendUrl = (): string => {
   if (envUrl) return envUrl;
   const configUrl = Constants.expoConfig?.extra?.EXPO_PUBLIC_BACKEND_URL;
   if (configUrl) return configUrl;
-  return 'https://repo-preview-43.emergent.host';
+  return 'https://career-topics.emergent.host';
 };
 const BACKEND_URL = getBackendUrl();
 
