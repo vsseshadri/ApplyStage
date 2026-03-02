@@ -2909,6 +2909,30 @@ const getTopicsForProfile = (
   
   // Stage mapping - map various stage names to our topic pool keys
   const stageMapping: Record<string, string[]> = {
+    // Recruiter/Initial screening variations
+    'recruiter_screening': ['recruiter_screening', 'phone_screen'],
+    'recruiter_screen': ['recruiter_screening', 'phone_screen'],
+    'recruiter_call': ['recruiter_screening', 'phone_screen'],
+    'initial_screen': ['recruiter_screening', 'phone_screen'],
+    'hr_screen': ['recruiter_screening', 'phone_screen'],
+    'hr_screening': ['recruiter_screening', 'phone_screen'],
+    // Phone screen variations
+    'phone_screen': ['phone_screen', 'recruiter_screening'],
+    'phone_interview': ['phone_screen', 'recruiter_screening'],
+    'phone_call': ['phone_screen', 'recruiter_screening'],
+    'screening_call': ['phone_screen', 'recruiter_screening'],
+    // Hiring manager variations
+    'hiring_manager': ['hiring_manager', 'behavioural', 'final_round'],
+    'hiring_manager_interview': ['hiring_manager', 'behavioural'],
+    'manager_interview': ['hiring_manager', 'behavioural'],
+    'manager_round': ['hiring_manager', 'behavioural'],
+    // Final round variations
+    'final_round': ['final_round', 'hiring_manager', 'behavioural'],
+    'final_interview': ['final_round', 'hiring_manager'],
+    'final': ['final_round', 'hiring_manager'],
+    'onsite': ['final_round', 'hiring_manager', 'technical_round'],
+    'on_site': ['final_round', 'hiring_manager', 'technical_round'],
+    'in_person': ['final_round', 'hiring_manager'],
     // Clinical variations
     'clinical': ['clinical'],
     'clinical_case_review': ['clinical'],
@@ -2939,6 +2963,9 @@ const getTopicsForProfile = (
     'case_study': ['case_study'],
     'case_interview': ['case_study'],
     'business_case': ['case_study'],
+    // Offer stage
+    'offer': ['final_round'],
+    'offer_negotiation': ['final_round'],
   };
   
   // Get potential stage keys to try
