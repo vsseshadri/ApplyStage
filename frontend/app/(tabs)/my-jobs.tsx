@@ -3550,6 +3550,8 @@ const createStyles = (colors: any, isDark: boolean, isTablet: boolean = false) =
     fontSize: 14,
     color: colors.primary,
     fontWeight: '500',
+    minWidth: 100,
+    textAlign: 'right',
   },
   input: { 
     borderRadius: 8, 
