@@ -74,7 +74,7 @@ export default function SettingsScreen() {
     setSavingTargets(true);
     try {
       const weeklyVal = parseInt(weeklyTarget) || 10;
-      const monthlyVal = parseInt(monthlyTarget) || 40;
+      const monthlyVal = Math.round(weeklyVal * 4.33); // Auto-calculate monthly
       
       const response = await fetch(
         `${BACKEND_URL}/api/user/target-goals`, 
