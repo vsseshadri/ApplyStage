@@ -39,9 +39,11 @@ export default function SettingsScreen() {
   
   // Target Goals state
   const [weeklyTarget, setWeeklyTarget] = useState<string>('10');
-  const [monthlyTarget, setMonthlyTarget] = useState<string>('40');
   const [savingTargets, setSavingTargets] = useState(false);
   const [isEditingTargets, setIsEditingTargets] = useState(true); // Start in edit mode until goals are fetched
+  
+  // Auto-calculate monthly target from weekly (weekly * 4.33 rounded)
+  const monthlyTarget = Math.round((parseInt(weeklyTarget) || 0) * 4.33).toString();
 
   React.useEffect(() => {
     checkBiometricType();
