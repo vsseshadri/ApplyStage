@@ -524,7 +524,7 @@ export default function NotificationsScreen() {
           <Ionicons name="notifications-off-outline" size={64} color={colors.textSecondary} />
           <Text style={[styles.emptyText, { color: colors.textSecondary }]}>No Notifications</Text>
           <Text style={[styles.emptySubtext, { color: colors.textSecondary }]}>
-            You're all caught up! Reminders and reports will appear here.
+            You're all caught up! Reminders will appear here.
           </Text>
         </View>
       ) : (
