@@ -2666,7 +2666,15 @@ export default function MyJobsScreen() {
                           dynamicStyles.liquidGlassSliderItem,
                           isSelected && dynamicStyles.liquidGlassSliderItemSelected,
                         ]}
-                        onPress={() => !partialEditMode && setFormData({ ...formData, work_mode: mode })}
+                        onPress={() => {
+                          if (!partialEditMode) {
+                            // Trigger haptic feedback on mode change
+                            if (Platform.OS !== 'web') {
+                              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                            }
+                            setFormData({ ...formData, work_mode: mode });
+                          }
+                        }}
                         disabled={partialEditMode}
                         activeOpacity={0.8}
                       >
