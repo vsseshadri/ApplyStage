@@ -3477,7 +3477,6 @@ const createStyles = (colors: any, isDark: boolean, isTablet: boolean = false) =
     fontWeight: '500',
   },
   dropdownButton: {
-    flex: 1,
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
@@ -3486,7 +3485,6 @@ const createStyles = (colors: any, isDark: boolean, isTablet: boolean = false) =
     borderColor: colors.inputBorder,
     borderRadius: 8,
     padding: 12,
-    marginRight: 8,
   },
   dropdownButtonText: {
     fontSize: 15,
