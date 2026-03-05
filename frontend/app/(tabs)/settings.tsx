@@ -844,19 +844,9 @@ export default function SettingsScreen() {
               
               <View style={styles.targetInputContainer}>
                 <Text style={styles.targetLabel}>Monthly</Text>
-                {isEditingTargets ? (
-                  <TextInput
-                    style={styles.targetInput}
-                    value={monthlyTarget}
-                    onChangeText={setMonthlyTarget}
-                    keyboardType="number-pad"
-                    placeholder="40"
-                    placeholderTextColor={colors.textSecondary}
-                  />
-                ) : (
-                  <Text style={styles.targetValueDisplay}>{monthlyTarget}</Text>
-                )}
-                <Text style={styles.targetUnit}>apps/month</Text>
+                {/* Monthly is always read-only - auto-calculated from weekly */}
+                <Text style={[styles.targetValueDisplay, { color: colors.textSecondary }]}>{monthlyTarget}</Text>
+                <Text style={styles.targetUnit}>auto-calculated</Text>
               </View>
               
               <TouchableOpacity 
