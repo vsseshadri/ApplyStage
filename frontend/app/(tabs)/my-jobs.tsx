@@ -2565,8 +2565,8 @@ export default function MyJobsScreen() {
             <ScrollView style={dynamicStyles.modalScroll} contentContainerStyle={dynamicStyles.modalScrollContent} keyboardShouldPersistTaps="handled">
               {/* Company Name with Priority Badge */}
               <View style={dynamicStyles.formSection}>
-                <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <Text style={dynamicStyles.label}>Company Name *</Text>
+                <View style={dynamicStyles.labelRow}>
+                  <Text style={[dynamicStyles.label, { marginBottom: 0 }]}>Company Name *</Text>
                   <TouchableOpacity 
                     style={dynamicStyles.priorityBadge}
                     onPress={() => !partialEditMode && setFormData(prev => ({...prev, is_priority: !prev.is_priority}))}
@@ -2595,7 +2595,7 @@ export default function MyJobsScreen() {
               {/* Position with Dropdown + Custom Option */}
               <View style={dynamicStyles.formSection}>
                 <View style={dynamicStyles.labelRow}>
-                  <Text style={dynamicStyles.label}>Position *</Text>
+                  <Text style={[dynamicStyles.label, { marginBottom: 0 }]}>Position *</Text>
                   {!partialEditMode && (
                     <TouchableOpacity onPress={() => {
                       setShowPositionInput(!showPositionInput);
