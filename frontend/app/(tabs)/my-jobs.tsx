@@ -2756,7 +2756,7 @@ export default function MyJobsScreen() {
               {/* Application Status with Dropdown + Custom Option */}
               <View style={dynamicStyles.formSection}>
                 <View style={dynamicStyles.labelRow}>
-                  <Text style={dynamicStyles.label}>Application Status *</Text>
+                  <Text style={[dynamicStyles.label, { marginBottom: 0 }]}>Application Status *</Text>
                   <TouchableOpacity onPress={() => {
                     setShowStatusInput(!showStatusInput);
                     if (!showStatusInput) {
