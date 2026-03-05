@@ -60,7 +60,7 @@ export default function SettingsScreen() {
         const data = await response.json();
         if (data.target_progress) {
           setWeeklyTarget(data.target_progress.weekly.target?.toString() || '10');
-          setMonthlyTarget(data.target_progress.monthly.target?.toString() || '40');
+          // Monthly is auto-calculated, no need to set it
           setIsEditingTargets(false); // Show in view mode after fetching
         }
       }
