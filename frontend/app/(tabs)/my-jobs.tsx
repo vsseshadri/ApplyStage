@@ -9,6 +9,7 @@ import Constants from 'expo-constants';
 import { format, differenceInDays, subDays, isAfter } from 'date-fns';
 import * as DocumentPicker from 'expo-document-picker';
 import * as Calendar from 'expo-calendar';
+import * as Haptics from 'expo-haptics';
 import { useFocusEffect } from '@react-navigation/native';
 import { US_STATES_AND_CITIES, US_STATES } from '../../utils/usStatesAndCities';
 import { CANADA_PROVINCES_AND_CITIES, CANADA_PROVINCES } from '../../utils/canadaProvincesAndCities';
