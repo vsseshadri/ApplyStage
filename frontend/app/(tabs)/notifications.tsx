@@ -520,7 +520,7 @@ export default function NotificationsScreen() {
       </Modal>
 
       {notifications.length === 0 && reports.length === 0 ? (
-        <View style={styles.emptyContainer}>
+        <View style={[styles.emptyContainer, { flex: 1, marginTop: -50 }]}>
           <Ionicons name="notifications-off-outline" size={64} color={colors.textSecondary} />
           <Text style={[styles.emptyText, { color: colors.textSecondary }]}>No Notifications</Text>
           <Text style={[styles.emptySubtext, { color: colors.textSecondary }]}>
