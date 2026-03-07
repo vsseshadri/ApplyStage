@@ -279,6 +279,7 @@ const getRoleDisplayName = (role: RoleType): string => {
     pharmacist: 'Pharmacy',
     accounting: 'Accounting',
     finance: 'Finance',
+    payroll: 'Payroll',
     consulting: 'Consulting',
     sales: 'Sales',
     marketing: 'Marketing',
