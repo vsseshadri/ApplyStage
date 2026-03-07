@@ -3625,7 +3625,8 @@ const createStyles = (colors: any, isDark: boolean, isTablet: boolean = false) =
     fontSize: 14,
   },
   locationRow: { 
-    flexDirection: 'row', 
+    flexDirection: 'row',
+    gap: 8,
   },
   salaryRow: { 
     flexDirection: 'row', 
