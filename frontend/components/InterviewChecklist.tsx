@@ -64,7 +64,7 @@ type RoleType =
   | 'software' | 'software_architect' | 'data' | 'ml_engineer' | 'dba' | 'product' | 'program' | 'tpm' | 'pmo' | 'project_mgmt' | 'design'
   | 'professional_services' | 'solutions_architect' | 'customer_success'
   | 'mechanical' | 'aerospace' | 'electrical_hw' | 'chemical' | 'civil'
-  | 'clinical' | 'pharmacist' | 'accounting' | 'finance' | 'consulting' | 'sales'
+  | 'clinical' | 'pharmacist' | 'accounting' | 'finance' | 'payroll' | 'consulting' | 'sales'
   | 'marketing' | 'hr' | 'legal' | 'admin' | 'operations' | 'general';
 
 const detectSeniority = (pos: string): Seniority => {
