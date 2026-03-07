@@ -217,8 +217,13 @@ const detectRole = (pos: string): RoleType => {
     return 'marketing';
   }
   
-  // HR - Human Resources, People Operations, HRBP, Payroll, Training
-  if (/\b(human resource|hr\b|recruiter|talent|people ops|people operations|people advisor|people partner|hrbp|hr business partner|compensation|benefits|payroll|training|l&d|learning and development|employee relations|workforce|staffing)\b/.test(p)) {
+  // Payroll - Payroll Specialist, Payroll Administrator, Payroll Analyst
+  if (/\b(payroll)\b/.test(p)) {
+    return 'payroll';
+  }
+  
+  // HR - Human Resources, People Operations, HRBP, Training
+  if (/\b(human resource|hr\b|recruiter|talent|people ops|people operations|people advisor|people partner|hrbp|hr business partner|compensation|benefits|training|l&d|learning and development|employee relations|workforce|staffing)\b/.test(p)) {
     return 'hr';
   }
   
