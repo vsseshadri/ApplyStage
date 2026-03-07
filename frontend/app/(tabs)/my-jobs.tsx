@@ -2702,7 +2702,7 @@ export default function MyJobsScreen() {
                   <View style={[dynamicStyles.locationRow, partialEditMode && { opacity: 0.5 }]}>
                     {/* State Dropdown Button */}
                     <TouchableOpacity 
-                      style={[dynamicStyles.dropdownButton, partialEditMode && dynamicStyles.inputDisabled]}
+                      style={[dynamicStyles.dropdownButton, { flex: 1 }, partialEditMode && dynamicStyles.inputDisabled]}
                       onPress={() => !partialEditMode && setShowStateDropdown(true)}
                       disabled={partialEditMode}
                     >
@@ -2714,7 +2714,7 @@ export default function MyJobsScreen() {
 
                     {/* City Dropdown Button - Now optional */}
                     <TouchableOpacity 
-                      style={[dynamicStyles.dropdownButton, (!selectedState || partialEditMode) && dynamicStyles.dropdownDisabled]}
+                      style={[dynamicStyles.dropdownButton, { flex: 1 }, (!selectedState || partialEditMode) && dynamicStyles.dropdownDisabled]}
                       onPress={() => !partialEditMode && selectedState && setShowCityDropdown(true)}
                       disabled={!selectedState || partialEditMode}
                     >
