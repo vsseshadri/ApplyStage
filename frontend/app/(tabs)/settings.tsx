@@ -358,7 +358,6 @@ export default function SettingsScreen() {
     displayNameLabel: {
       fontSize: 13,
       color: colors.textSecondary,
-      marginBottom: 6,
     },
     displayNameLabelRow: {
       flexDirection: 'row',
