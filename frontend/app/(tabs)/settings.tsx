@@ -453,7 +453,12 @@ export default function SettingsScreen() {
       flexDirection: 'row',
       alignItems: 'center',
       justifyContent: 'space-between',
-      marginBottom: 8,
+      marginBottom: 12,
+    },
+    targetSectionLabel: {
+      fontSize: 14,
+      fontWeight: '600',
+      color: colors.text,
     },
     targetInputContainer: {
       flex: 1,
