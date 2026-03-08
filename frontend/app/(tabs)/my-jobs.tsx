@@ -2599,8 +2599,8 @@ export default function MyJobsScreen() {
                   <Text style={[dynamicStyles.label, { marginBottom: 0 }]}>Company Name *</Text>
                   <TouchableOpacity 
                     style={dynamicStyles.priorityBadge}
-                    onPress={() => !partialEditMode && setFormData(prev => ({...prev, is_priority: !prev.is_priority}))}
-                    disabled={partialEditMode}
+                    onPress={() => !editingJob && setFormData(prev => ({...prev, is_priority: !prev.is_priority}))}
+                    disabled={!!editingJob}
                   >
                     <Ionicons 
                       name={formData.is_priority ? "star" : "star-outline"} 
@@ -2613,12 +2613,12 @@ export default function MyJobsScreen() {
                   </TouchableOpacity>
                 </View>
                 <TextInput
-                  style={[dynamicStyles.input, partialEditMode && dynamicStyles.inputDisabled]}
+                  style={[dynamicStyles.input, editingJob && dynamicStyles.inputDisabled]}
                   value={formData.company_name}
                   onChangeText={handleCompanyNameChange}
                   placeholder="e.g., Google, Microsoft"
                   placeholderTextColor={colors.textSecondary}
-                  editable={!partialEditMode}
+                  editable={!editingJob}
                 />
               </View>
 
@@ -2626,7 +2626,7 @@ export default function MyJobsScreen() {
               <View style={dynamicStyles.formSection}>
                 <View style={dynamicStyles.labelRow}>
                   <Text style={[dynamicStyles.label, { marginBottom: 0 }]}>Position *</Text>
-                  {!partialEditMode && (
+                  {!editingJob && (
                     <TouchableOpacity onPress={() => {
                       setShowPositionInput(!showPositionInput);
                       if (!showPositionInput) {
@@ -2639,7 +2639,7 @@ export default function MyJobsScreen() {
                   )}
                 </View>
                 
-                {showPositionInput && !partialEditMode ? (
+                {showPositionInput && !editingJob ? (
                   <View style={dynamicStyles.customPositionRow}>
                     <TextInput
                       ref={customPositionInputRef}
@@ -2656,9 +2656,9 @@ export default function MyJobsScreen() {
                   </View>
                 ) : (
                   <TouchableOpacity 
-                    style={[dynamicStyles.dropdownButton, partialEditMode && dynamicStyles.inputDisabled]}
-                    onPress={() => !partialEditMode && setShowPositionDropdown(true)}
-                    disabled={partialEditMode}
+                    style={[dynamicStyles.dropdownButton, editingJob && dynamicStyles.inputDisabled]}
+                    onPress={() => !editingJob && setShowPositionDropdown(true)}
+                    disabled={!!editingJob}
                   >
                     <Text style={[dynamicStyles.dropdownButtonText, !formData.position && dynamicStyles.dropdownPlaceholder]}>
                       {formData.position || 'Select Position'}
@@ -2672,9 +2672,9 @@ export default function MyJobsScreen() {
               <View style={dynamicStyles.formSection}>
                 <Text style={dynamicStyles.label}>Position Type *</Text>
                 <TouchableOpacity 
-                  style={[dynamicStyles.dropdownButton, partialEditMode && dynamicStyles.inputDisabled]}
-                  onPress={() => !partialEditMode && setShowJobTypeDropdown(true)}
-                  disabled={partialEditMode}
+                  style={[dynamicStyles.dropdownButton, editingJob && dynamicStyles.inputDisabled]}
+                  onPress={() => !editingJob && setShowJobTypeDropdown(true)}
+                  disabled={!!editingJob}
                 >
                   <Text style={[dynamicStyles.dropdownButtonText, !formData.job_type && dynamicStyles.dropdownPlaceholder]}>
                     {formData.job_type || 'Select Position Type'}
@@ -2686,7 +2686,7 @@ export default function MyJobsScreen() {
               {/* Work Mode - Compact Liquid Glass Slider */}
               <View style={dynamicStyles.formSection}>
                 <Text style={dynamicStyles.label}>Work Mode *</Text>
-                <View style={[dynamicStyles.liquidGlassSlider, partialEditMode && { opacity: 0.5 }]}>
+                <View style={[dynamicStyles.liquidGlassSlider, editingJob && { opacity: 0.5 }]}>
                   {WORK_MODES.map((mode, index) => {
                     const isSelected = formData.work_mode === mode;
                     return (
@@ -2697,7 +2697,7 @@ export default function MyJobsScreen() {
                           isSelected && dynamicStyles.liquidGlassSliderItemSelected,
                         ]}
                         onPress={() => {
-                          if (!partialEditMode) {
+                          if (!editingJob) {
                             // Trigger haptic feedback on mode change
                             if (Platform.OS !== 'web') {
                               Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
