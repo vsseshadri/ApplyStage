@@ -944,10 +944,12 @@ export default function SettingsScreen() {
           </View>
         </View>
 
-        {/* Sign Out Button - Apple-style */}
-        <TouchableOpacity style={styles.signOutButton} onPress={handleLogout}>
-          <Text style={styles.signOutButtonText}>Sign Out</Text>
-        </TouchableOpacity>
+        {/* Sign Out Button - Apple-style with red text on card */}
+        <View style={styles.section}>
+          <TouchableOpacity style={styles.signOutButton} onPress={handleLogout}>
+            <Text style={styles.signOutButtonText}>Sign Out</Text>
+          </TouchableOpacity>
+        </View>
       </ScrollView>
 
       {/* Country Selection Modal */}
