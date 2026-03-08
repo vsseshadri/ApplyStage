@@ -943,9 +943,9 @@ export default function SettingsScreen() {
           </View>
         </View>
 
-        {/* Logout Button */}
-        <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
-          <Text style={styles.logoutButtonText}>Logout</Text>
+        {/* Sign Out Button - Apple-style */}
+        <TouchableOpacity style={styles.signOutButton} onPress={handleLogout}>
+          <Text style={styles.signOutButtonText}>Sign Out</Text>
         </TouchableOpacity>
       </ScrollView>
 
