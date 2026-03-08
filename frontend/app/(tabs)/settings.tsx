@@ -360,6 +360,12 @@ export default function SettingsScreen() {
       color: colors.textSecondary,
       marginBottom: 6,
     },
+    displayNameLabelRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      marginBottom: 8,
+    },
     displayNameInputRow: {
       flexDirection: 'row',
       alignItems: 'center',
