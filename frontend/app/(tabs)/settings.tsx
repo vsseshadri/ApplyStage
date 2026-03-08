@@ -640,18 +640,18 @@ export default function SettingsScreen() {
       fontSize: 15,
       color: colors.text,
     },
-    logoutButton: {
-      backgroundColor: colors.error || '#EF4444',
+    signOutButton: {
+      backgroundColor: 'transparent',
       borderRadius: 12,
       padding: 16,
       alignItems: 'center',
       marginTop: 20,
       marginBottom: 40,
     },
-    logoutButtonText: {
-      color: '#fff',
-      fontSize: 16,
-      fontWeight: '600',
+    signOutButtonText: {
+      color: colors.text,
+      fontSize: 17,
+      fontWeight: '400',
     },
     // Country dropdown styles
     countryDropdownButton: {
