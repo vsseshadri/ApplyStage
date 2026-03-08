@@ -642,15 +642,13 @@ export default function SettingsScreen() {
       color: colors.text,
     },
     signOutButton: {
-      backgroundColor: 'transparent',
+      backgroundColor: colors.cardBackground,
       borderRadius: 12,
       padding: 16,
       alignItems: 'center',
-      marginTop: 20,
-      marginBottom: 40,
     },
     signOutButtonText: {
-      color: colors.text,
+      color: '#FF3B30',
       fontSize: 17,
       fontWeight: '400',
     },
