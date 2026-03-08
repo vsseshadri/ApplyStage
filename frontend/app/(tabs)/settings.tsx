@@ -658,9 +658,7 @@ export default function SettingsScreen() {
       color: colors.text,
     },
     signOutButton: {
-      backgroundColor: colors.cardBackground,
-      borderRadius: 12,
-      padding: 16,
+      padding: 4,
       alignItems: 'center',
     },
     signOutButtonText: {
