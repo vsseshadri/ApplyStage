@@ -2705,7 +2705,7 @@ export default function MyJobsScreen() {
                             setFormData({ ...formData, work_mode: mode });
                           }
                         }}
-                        disabled={partialEditMode}
+                        disabled={!!editingJob}
                         activeOpacity={0.8}
                       >
                         <Ionicons 
