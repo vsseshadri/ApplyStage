@@ -1446,10 +1446,23 @@ export default function MyJobsScreen() {
 
     // When editing existing job: Check if scheduled date is past due
     if (editingJob && formData.upcoming_schedule) {
-      const scheduledDate = new Date(formData.upcoming_schedule);
+      // Parse the date properly - handle both MM/DD/YYYY and ISO formats
+      let scheduledDate: Date;
+      const dateStr = formData.upcoming_schedule;
+      
+      if (dateStr.includes('/')) {
+        // MM/DD/YYYY format
+        const [month, day, year] = dateStr.split('/').map(Number);
+        scheduledDate = new Date(year, month - 1, day);
+      } else {
+        // ISO format or other
+        scheduledDate = new Date(dateStr);
+      }
+      
       const today = new Date();
       today.setHours(0, 0, 0, 0);
       scheduledDate.setHours(0, 0, 0, 0);
+      
       if (scheduledDate < today) {
         showAlert('Past Due Date', 'The "Scheduled On" date is in the past. Please update it to today or a future date before saving.');
         return;
