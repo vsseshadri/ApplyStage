@@ -834,21 +834,22 @@ export default function SettingsScreen() {
           </View>
         </View>
 
-        {/* Target Goals Section */}
+        {/* Target Goals Section - Edit button INSIDE card */}
         <View style={styles.section}>
-          <View style={styles.targetHeaderRow}>
-            <Text style={styles.sectionTitle}>Application Targets</Text>
-            <TouchableOpacity 
-              style={styles.editButton}
-              onPress={isEditingTargets ? saveTargetGoals : () => setIsEditingTargets(true)}
-              disabled={savingTargets}
-            >
-              <Text style={[styles.editButtonText, savingTargets && { opacity: 0.5 }]}>
-                {savingTargets ? 'Saving...' : (isEditingTargets ? 'Save' : 'Edit')}
-              </Text>
-            </TouchableOpacity>
-          </View>
+          <Text style={styles.sectionTitle}>Application Targets</Text>
           <View style={styles.card}>
+            <View style={styles.targetHeaderRow}>
+              <Text style={styles.targetSectionLabel}>Weekly & Monthly Goals</Text>
+              <TouchableOpacity 
+                style={styles.editButton}
+                onPress={isEditingTargets ? saveTargetGoals : () => setIsEditingTargets(true)}
+                disabled={savingTargets}
+              >
+                <Text style={[styles.editButtonText, savingTargets && { opacity: 0.5 }]}>
+                  {savingTargets ? 'Saving...' : (isEditingTargets ? 'Save' : 'Edit')}
+                </Text>
+              </TouchableOpacity>
+            </View>
             <View style={styles.targetRow}>
               <View style={styles.targetInputContainer}>
                 <Text style={styles.targetLabel}>Weekly</Text>
