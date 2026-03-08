@@ -787,7 +787,7 @@ export default function SettingsScreen() {
           {/* Preferences Label */}
           <Text style={styles.notificationPrefsLabel}>Preferences</Text>
           
-          {/* Preferred Display Name */}
+          {/* Preferred Display Name - Edit button INSIDE card */}
           <View style={styles.displayNameContainer}>
             <View style={styles.displayNameLabelRow}>
               <Text style={styles.displayNameLabel}>Preferred Display Name</Text>
@@ -816,7 +816,7 @@ export default function SettingsScreen() {
                   {preferredName || 'No Input'}
                 </Text>
               </View>
-            )}}
+            )}
           </View>
           
           {/* Domicile Country */}
