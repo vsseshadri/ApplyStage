@@ -483,7 +483,7 @@ export default function SettingsScreen() {
       fontSize: 13,
       fontWeight: '600',
       color: colors.primary,
-      paddingVertical: 8,
+      paddingVertical: 6,
       paddingHorizontal: 4,
     },
     
