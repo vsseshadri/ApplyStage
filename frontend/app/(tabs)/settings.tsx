@@ -784,7 +784,14 @@ export default function SettingsScreen() {
           
           {/* Preferred Display Name */}
           <View style={styles.displayNameContainer}>
-            <Text style={styles.displayNameLabel}>Preferred Display Name</Text>
+            <View style={styles.displayNameLabelRow}>
+              <Text style={styles.displayNameLabel}>Preferred Display Name</Text>
+              {!isEditingName && (
+                <TouchableOpacity style={styles.editButton} onPress={handleEditName}>
+                  <Text style={styles.editButtonText}>Edit</Text>
+                </TouchableOpacity>
+              )}
+            </View>
             {isEditingName ? (
               <View style={styles.displayNameInputRow}>
                 <TextInput
@@ -803,11 +810,8 @@ export default function SettingsScreen() {
                 <Text style={styles.displayNameValue}>
                   {preferredName || 'No Input'}
                 </Text>
-                <TouchableOpacity style={styles.editButton} onPress={handleEditName}>
-                  <Text style={styles.editButtonText}>Edit</Text>
-                </TouchableOpacity>
               </View>
-            )}
+            )}}
           </View>
           
           {/* Domicile Country */}
