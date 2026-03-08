@@ -1301,6 +1301,9 @@ export default function MyJobsScreen() {
 
   const openEditModal = (job: any) => {
     setEditingJob(job);
+    // When editing an existing job, always use restricted edit mode (not partialEditMode)
+    // This makes most fields non-editable
+    setPartialEditMode(false); // We'll use editingJob check instead for field restrictions
     setFormData({
       company_name: job.company_name,
       position: job.position,
@@ -1328,6 +1331,21 @@ export default function MyJobsScreen() {
     setShowPositionInput(false);
     setNewPosition('');
     setModalVisible(true);
+  };
+
+  // Helper function to check if scheduled date is past due
+  const isScheduledDatePastDue = (): boolean => {
+    if (!formData.upcoming_schedule) return false;
+    const scheduledDate = new Date(formData.upcoming_schedule);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    scheduledDate.setHours(0, 0, 0, 0);
+    return scheduledDate < today;
+  };
+
+  // Helper function to check if a field should be non-editable when editing existing job
+  const isFieldNonEditable = (): boolean => {
+    return !!editingJob; // All restricted fields are non-editable when editing existing job
   };
 
   const handlePickResume = async () => {
