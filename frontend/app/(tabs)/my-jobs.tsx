@@ -2729,12 +2729,12 @@ export default function MyJobsScreen() {
               {formData.work_mode !== 'remote' && (
                 <View style={dynamicStyles.formSection}>
                   <Text style={dynamicStyles.label}>Location {formData.work_mode !== 'remote' ? '*' : ''}</Text>
-                  <View style={[dynamicStyles.locationRow, partialEditMode && { opacity: 0.5 }]}>
+                  <View style={[dynamicStyles.locationRow, editingJob && { opacity: 0.5 }]}>
                     {/* State Dropdown Button */}
                     <TouchableOpacity 
-                      style={[dynamicStyles.dropdownButton, { flex: 1 }, partialEditMode && dynamicStyles.inputDisabled]}
-                      onPress={() => !partialEditMode && setShowStateDropdown(true)}
-                      disabled={partialEditMode}
+                      style={[dynamicStyles.dropdownButton, { flex: 1 }, editingJob && dynamicStyles.inputDisabled]}
+                      onPress={() => !editingJob && setShowStateDropdown(true)}
+                      disabled={!!editingJob}
                     >
                       <Text style={[dynamicStyles.dropdownButtonText, !selectedState && dynamicStyles.dropdownPlaceholder]}>
                         {selectedState || `Select ${stateLabel}`}
@@ -2744,9 +2744,9 @@ export default function MyJobsScreen() {
 
                     {/* City Dropdown Button - Now optional */}
                     <TouchableOpacity 
-                      style={[dynamicStyles.dropdownButton, { flex: 1 }, (!selectedState || partialEditMode) && dynamicStyles.dropdownDisabled]}
-                      onPress={() => !partialEditMode && selectedState && setShowCityDropdown(true)}
-                      disabled={!selectedState || partialEditMode}
+                      style={[dynamicStyles.dropdownButton, { flex: 1 }, (!selectedState || editingJob) && dynamicStyles.dropdownDisabled]}
+                      onPress={() => !editingJob && selectedState && setShowCityDropdown(true)}
+                      disabled={!selectedState || !!editingJob}
                     >
                       <Text style={[dynamicStyles.dropdownButtonText, !selectedCity && dynamicStyles.dropdownPlaceholder]}>
                         {selectedCity || 'City (Optional)'}
