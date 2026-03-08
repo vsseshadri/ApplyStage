@@ -441,6 +441,7 @@ export default function SettingsScreen() {
     targetRow: {
       flexDirection: 'row',
       alignItems: 'center',
+      justifyContent: 'space-between',
       gap: 12,
     },
     targetInputContainer: {
