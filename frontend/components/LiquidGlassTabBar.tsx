@@ -7,7 +7,6 @@ import {
   Dimensions,
   Platform,
 } from 'react-native';
-import { BlurView } from 'expo-blur';
 import { Ionicons } from '@expo/vector-icons';
 import Animated, {
   useAnimatedStyle,
@@ -212,14 +211,12 @@ export default function LiquidGlassTabBar({
 
   const bottomPadding = insets.bottom > 0 ? Math.max(insets.bottom - 20, 4) : 4;
 
-  // Glass colors
+  // Glass colors - match screen background for seamless look
   const glassBackground = isDark
-    ? 'rgba(28, 28, 30, 0.75)'
-    : 'rgba(248, 248, 250, 0.85)';
+    ? colors.background
+    : colors.background;
 
-  const glassBorder = isDark
-    ? 'rgba(255, 255, 255, 0.1)'
-    : 'rgba(0, 0, 0, 0.08)';
+  const glassBorder = 'transparent';
 
   const capsuleBackground = isDark
     ? 'rgba(255, 255, 255, 0.12)'
@@ -249,25 +246,7 @@ export default function LiquidGlassTabBar({
             },
           ]}
         >
-          {/* Blur layer */}
-          {Platform.OS !== 'web' ? (
-            <BlurView
-              intensity={isDark ? 40 : 60}
-              tint={isDark ? 'dark' : 'light'}
-              style={StyleSheet.absoluteFill}
-            />
-          ) : (
-            <View
-              style={[
-                StyleSheet.absoluteFill,
-                {
-                  backgroundColor: isDark
-                    ? 'rgba(28, 28, 30, 0.92)'
-                    : 'rgba(248, 248, 250, 0.92)',
-                } as any,
-              ]}
-            />
-          )}
+          {/* Tab bar uses solid screen background - no blur needed */}
 
           {/* Sliding selection capsule */}
           <Animated.View
@@ -355,7 +334,6 @@ const styles = StyleSheet.create({
     height: TAB_BAR_HEIGHT,
     borderRadius: OUTER_RADIUS,
     overflow: 'hidden',
-    borderWidth: Platform.OS === 'ios' ? 0.5 : 0,
   },
 
   capsule: {
