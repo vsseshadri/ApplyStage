@@ -34,14 +34,14 @@ const TABS = [
 
 // ─── Design Constants ────────────────────────────────────────
 const TAB_BAR_HORIZONTAL_MARGIN = 12;
-const TAB_BAR_HEIGHT = 64;
-const OUTER_RADIUS = 34;
-const INNER_CAPSULE_RADIUS = 22;
+const TAB_BAR_HEIGHT = 60;
+const OUTER_RADIUS = 30;
+const INNER_CAPSULE_RADIUS = 20;
 const TAB_COUNT = TABS.length;
 const TAB_BAR_INNER_WIDTH = SCREEN_WIDTH - TAB_BAR_HORIZONTAL_MARGIN * 2;
 const TAB_WIDTH = TAB_BAR_INNER_WIDTH / TAB_COUNT;
-const CAPSULE_H_INSET = 6; // horizontal inset of capsule within tab cell
-const CAPSULE_V_INSET = 8; // vertical inset of capsule within tab bar
+const CAPSULE_H_INSET = 5;
+const CAPSULE_V_INSET = 6;
 
 // ─── Spring Configs (Apple-style physics) ────────────────────
 const SLIDE_SPRING = {
@@ -87,26 +87,18 @@ const TabItem = memo(function TabItem({
   isDark,
   primaryColor,
 }: TabItemProps) {
-  // Per-tab animation values
   const scale = useSharedValue(1);
-  const iconScale = useSharedValue(isSelected ? 1 : 0.9);
-  const labelOpacity = useSharedValue(isSelected ? 1 : 0);
+  const iconScale = useSharedValue(isSelected ? 1 : 0.92);
 
   useEffect(() => {
-    iconScale.value = withSpring(isSelected ? 1 : 0.9, ICON_SPRING);
-    labelOpacity.value = withTiming(isSelected ? 1 : 0, {
-      duration: isSelected ? 250 : 150,
-      easing: Easing.out(Easing.cubic),
-    });
+    iconScale.value = withSpring(isSelected ? 1 : 0.92, ICON_SPRING);
   }, [isSelected]);
 
   const handlePress = useCallback(() => {
-    // Micro-bounce feedback
     scale.value = withSequence(
-      withTiming(0.88, { duration: 60 }),
+      withTiming(0.9, { duration: 60 }),
       withSpring(1, BOUNCE_SPRING),
     );
-    // Haptic feedback
     if (Platform.OS !== 'web') {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     }
@@ -121,16 +113,10 @@ const TabItem = memo(function TabItem({
     transform: [{ scale: iconScale.value }],
   }));
 
-  const labelStyle = useAnimatedStyle(() => ({
-    opacity: labelOpacity.value,
-    transform: [
-      { translateY: interpolateWithClamp(labelOpacity.value, 0, 1, 4, 0) },
-    ],
-  }));
-
   const selectedColor = primaryColor;
-  const unselectedColor = isDark ? 'rgba(255,255,255,0.45)' : 'rgba(60,60,67,0.45)';
+  const unselectedColor = isDark ? 'rgba(255,255,255,0.45)' : 'rgba(60,60,67,0.5)';
   const iconColor = isSelected ? selectedColor : unselectedColor;
+  const labelColor = isSelected ? selectedColor : unselectedColor;
   const iconName = isSelected ? tab.icon : tab.iconOutline;
   const showBadge = tab.name === 'notifications' && notificationCount > 0;
 
@@ -148,7 +134,7 @@ const TabItem = memo(function TabItem({
         <Animated.View style={[styles.iconWrap, iconContainerStyle]}>
           <Ionicons
             name={iconName as any}
-            size={isSelected ? 23 : 22}
+            size={22}
             color={iconColor}
           />
           {showBadge && (
@@ -160,33 +146,23 @@ const TabItem = memo(function TabItem({
           )}
         </Animated.View>
 
-        <Animated.Text
+        {/* Labels always visible */}
+        <Text
           style={[
             styles.tabLabel,
-            { color: isSelected ? selectedColor : unselectedColor },
-            labelStyle,
+            {
+              color: labelColor,
+              fontWeight: isSelected ? '600' : '500',
+            },
           ]}
           numberOfLines={1}
         >
           {tab.title}
-        </Animated.Text>
+        </Text>
       </TouchableOpacity>
     </Animated.View>
   );
 });
-
-// Utility: interpolate with clamping (worklet-compatible)
-function interpolateWithClamp(
-  value: number,
-  inMin: number,
-  inMax: number,
-  outMin: number,
-  outMax: number,
-): number {
-  'worklet';
-  const t = Math.max(0, Math.min(1, (value - inMin) / (inMax - inMin)));
-  return outMin + t * (outMax - outMin);
-}
 
 // ─── Main Liquid Glass Tab Bar ───────────────────────────────
 interface LiquidGlassTabBarProps {
@@ -205,193 +181,165 @@ export default function LiquidGlassTabBar({
   const { colors, isDark } = useTheme();
   const insets = useSafeAreaInsets();
 
-  // Shared values for the sliding capsule
   const capsuleX = useSharedValue(0);
   const capsuleScaleX = useSharedValue(1);
-  const capsuleOpacity = useSharedValue(1);
 
-  // Determine which of our known tabs is currently active
   const currentTabIndex = (() => {
     const activeRouteName = state.routes[state.index]?.name;
     return TABS.findIndex((t) => t.name === activeRouteName);
   })();
 
-  // Animate capsule when active tab changes
   useEffect(() => {
     if (currentTabIndex < 0) return;
-
     const targetX = currentTabIndex * TAB_WIDTH + CAPSULE_H_INSET;
-
-    // Liquid stretch: briefly widen, slide, then settle
     capsuleScaleX.value = withSequence(
-      withTiming(1.12, { duration: 80, easing: Easing.out(Easing.quad) }),
+      withTiming(1.1, { duration: 80, easing: Easing.out(Easing.quad) }),
       withSpring(1, SLIDE_SPRING),
     );
     capsuleX.value = withSpring(targetX, SLIDE_SPRING);
   }, [currentTabIndex]);
 
-  // Capsule animated style
   const capsuleStyle = useAnimatedStyle(() => ({
     transform: [
       { translateX: capsuleX.value },
       { scaleX: capsuleScaleX.value },
     ],
-    opacity: capsuleOpacity.value,
   }));
 
-  // Filter to only our visible tabs
   const visibleRoutes = state.routes.filter((route: any) =>
     TABS.some((t) => t.name === route.name),
   );
 
-  // Bottom padding for safe area
-  const bottomPadding = insets.bottom > 0 ? insets.bottom : 16;
+  const bottomPadding = insets.bottom > 0 ? insets.bottom : 8;
 
   // Glass colors
   const glassBackground = isDark
-    ? 'rgba(28, 28, 30, 0.55)'
-    : 'rgba(255, 255, 255, 0.65)';
+    ? 'rgba(28, 28, 30, 0.75)'
+    : 'rgba(248, 248, 250, 0.85)';
 
   const glassBorder = isDark
-    ? 'rgba(255, 255, 255, 0.12)'
-    : 'rgba(255, 255, 255, 0.8)';
+    ? 'rgba(255, 255, 255, 0.1)'
+    : 'rgba(0, 0, 0, 0.08)';
 
   const capsuleBackground = isDark
-    ? 'rgba(255, 255, 255, 0.14)'
-    : 'rgba(0, 0, 0, 0.07)';
+    ? 'rgba(255, 255, 255, 0.12)'
+    : 'rgba(0, 0, 0, 0.06)';
 
   const capsuleHighlightColor = isDark
-    ? 'rgba(255, 255, 255, 0.08)'
-    : 'rgba(255, 255, 255, 0.9)';
+    ? 'rgba(255, 255, 255, 0.06)'
+    : 'rgba(255, 255, 255, 0.8)';
 
-  const outerShadowOpacity = isDark ? 0.4 : 0.12;
+  const topBorderColor = isDark
+    ? 'rgba(255, 255, 255, 0.08)'
+    : 'rgba(0, 0, 0, 0.06)';
 
   return (
     <View
       style={[
         styles.wrapper,
-        { paddingBottom: bottomPadding },
+        {
+          paddingBottom: bottomPadding,
+          backgroundColor: isDark ? 'rgba(0, 0, 0, 0.9)' : 'rgba(242, 242, 247, 0.95)',
+          borderTopColor: topBorderColor,
+        },
       ]}
-      pointerEvents="box-none"
     >
-      {/* Outer shadow layer (separate to not clip with overflow: hidden) */}
-      <View
-        style={[
-          styles.shadowLayer,
-          {
-            shadowOpacity: outerShadowOpacity,
-          },
-        ]}
-      />
-
-      {/* Main glass container */}
-      <View
-        style={[
-          styles.glassOuter,
-          {
-            backgroundColor: glassBackground,
-            borderColor: glassBorder,
-          },
-        ]}
-      >
-        {/* Blur layer */}
-        {Platform.OS !== 'web' ? (
-          <BlurView
-            intensity={isDark ? 50 : 80}
-            tint={isDark ? 'systemChromeMaterialDark' : 'systemChromeMaterialLight'}
-            style={StyleSheet.absoluteFill}
-          />
-        ) : (
-          <View
-            style={[
-              StyleSheet.absoluteFill,
-              {
-                backgroundColor: isDark
-                  ? 'rgba(28, 28, 30, 0.88)'
-                  : 'rgba(255, 255, 255, 0.88)',
-                backdropFilter: 'blur(40px)',
-              } as any,
-            ]}
-          />
-        )}
-
-        {/* Top highlight line (simulates glass refraction edge) */}
+      {/* Glass bar container */}
+      <View style={[styles.barContainer]}>
         <View
           style={[
-            styles.topHighlight,
+            styles.glassOuter,
             {
-              backgroundColor: isDark
-                ? 'rgba(255,255,255,0.06)'
-                : 'rgba(255,255,255,0.7)',
+              backgroundColor: glassBackground,
+              borderColor: glassBorder,
             },
-          ]}
-        />
-
-        {/* Sliding selection capsule */}
-        <Animated.View
-          style={[
-            styles.capsule,
-            {
-              width: TAB_WIDTH - CAPSULE_H_INSET * 2,
-              top: CAPSULE_V_INSET,
-              bottom: CAPSULE_V_INSET,
-            },
-            capsuleStyle,
           ]}
         >
-          <View
-            style={[
-              styles.capsuleBody,
-              { backgroundColor: capsuleBackground },
-            ]}
-          >
-            {/* Inner capsule top highlight */}
+          {/* Blur layer */}
+          {Platform.OS !== 'web' ? (
+            <BlurView
+              intensity={isDark ? 40 : 60}
+              tint={isDark ? 'dark' : 'light'}
+              style={StyleSheet.absoluteFill}
+            />
+          ) : (
             <View
               style={[
-                styles.capsuleHighlight,
-                { backgroundColor: capsuleHighlightColor },
+                StyleSheet.absoluteFill,
+                {
+                  backgroundColor: isDark
+                    ? 'rgba(28, 28, 30, 0.92)'
+                    : 'rgba(248, 248, 250, 0.92)',
+                } as any,
               ]}
             />
-          </View>
-        </Animated.View>
+          )}
 
-        {/* Tab buttons */}
-        <View style={styles.tabRow}>
-          {visibleRoutes.map((route: any, idx: number) => {
-            const tabConfig = TABS.find((t) => t.name === route.name);
-            if (!tabConfig) return null;
-
-            const tabIndex = TABS.findIndex((t) => t.name === route.name);
-            const isSelected = tabIndex === currentTabIndex;
-
-            return (
-              <TabItem
-                key={route.key}
-                tab={tabConfig}
-                index={tabIndex}
-                isSelected={isSelected}
-                notificationCount={notificationCount}
-                isDark={isDark}
-                primaryColor={colors.primary}
-                onPress={() => {
-                  const event = navigation.emit({
-                    type: 'tabPress',
-                    target: route.key,
-                    canPreventDefault: true,
-                  });
-                  if (!isSelected && !event.defaultPrevented) {
-                    navigation.navigate(route.name);
-                  }
-                }}
-                onLongPress={() => {
-                  navigation.emit({
-                    type: 'tabLongPress',
-                    target: route.key,
-                  });
-                }}
+          {/* Sliding selection capsule */}
+          <Animated.View
+            style={[
+              styles.capsule,
+              {
+                width: TAB_WIDTH - CAPSULE_H_INSET * 2,
+                top: CAPSULE_V_INSET,
+                bottom: CAPSULE_V_INSET,
+              },
+              capsuleStyle,
+            ]}
+          >
+            <View
+              style={[
+                styles.capsuleBody,
+                { backgroundColor: capsuleBackground },
+              ]}
+            >
+              <View
+                style={[
+                  styles.capsuleHighlight,
+                  { backgroundColor: capsuleHighlightColor },
+                ]}
               />
-            );
-          })}
+            </View>
+          </Animated.View>
+
+          {/* Tab buttons */}
+          <View style={styles.tabRow}>
+            {visibleRoutes.map((route: any, idx: number) => {
+              const tabConfig = TABS.find((t) => t.name === route.name);
+              if (!tabConfig) return null;
+
+              const tabIndex = TABS.findIndex((t) => t.name === route.name);
+              const isSelected = tabIndex === currentTabIndex;
+
+              return (
+                <TabItem
+                  key={route.key}
+                  tab={tabConfig}
+                  index={tabIndex}
+                  isSelected={isSelected}
+                  notificationCount={notificationCount}
+                  isDark={isDark}
+                  primaryColor={colors.primary}
+                  onPress={() => {
+                    const event = navigation.emit({
+                      type: 'tabPress',
+                      target: route.key,
+                      canPreventDefault: true,
+                    });
+                    if (!isSelected && !event.defaultPrevented) {
+                      navigation.navigate(route.name);
+                    }
+                  }}
+                  onLongPress={() => {
+                    navigation.emit({
+                      type: 'tabLongPress',
+                      target: route.key,
+                    });
+                  }}
+                />
+              );
+            })}
+          </View>
         </View>
       </View>
     </View>
@@ -400,35 +348,14 @@ export default function LiquidGlassTabBar({
 
 // ─── Styles ──────────────────────────────────────────────────
 const styles = StyleSheet.create({
+  // Static wrapper - NOT absolute, sits in layout flow
   wrapper: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    paddingHorizontal: TAB_BAR_HORIZONTAL_MARGIN,
+    borderTopWidth: 0.5,
   },
 
-  shadowLayer: {
-    position: 'absolute',
-    left: TAB_BAR_HORIZONTAL_MARGIN + 4,
-    right: TAB_BAR_HORIZONTAL_MARGIN + 4,
-    bottom: 20,
-    height: TAB_BAR_HEIGHT,
-    borderRadius: OUTER_RADIUS,
-    backgroundColor: 'transparent',
-    ...Platform.select({
-      ios: {
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 8 },
-        shadowRadius: 24,
-      },
-      android: {
-        elevation: 16,
-      },
-      web: {
-        boxShadow: '0px 8px 24px rgba(0,0,0,0.12)',
-      },
-    }),
+  barContainer: {
+    paddingHorizontal: TAB_BAR_HORIZONTAL_MARGIN,
+    paddingTop: 6,
   },
 
   glassOuter: {
@@ -436,15 +363,6 @@ const styles = StyleSheet.create({
     borderRadius: OUTER_RADIUS,
     overflow: 'hidden',
     borderWidth: Platform.OS === 'ios' ? 0.5 : 0,
-  },
-
-  topHighlight: {
-    position: 'absolute',
-    top: 0,
-    left: 12,
-    right: 12,
-    height: 0.5,
-    borderRadius: 0.5,
   },
 
   capsule: {
@@ -495,12 +413,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     width: 28,
-    height: 28,
+    height: 26,
   },
 
   tabLabel: {
     fontSize: 10,
-    fontWeight: '600',
     marginTop: 2,
     letterSpacing: 0.1,
   },
