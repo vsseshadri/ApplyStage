@@ -7,6 +7,7 @@ import {
   Dimensions,
   Platform,
 } from 'react-native';
+import { BlurView } from 'expo-blur';
 import { Ionicons } from '@expo/vector-icons';
 import Animated, {
   useAnimatedStyle,
@@ -32,17 +33,17 @@ const TABS = [
 ];
 
 // ─── Design Constants ────────────────────────────────────────
-const TAB_BAR_HORIZONTAL_MARGIN = 12;
-const TAB_BAR_HEIGHT = 60;
-const OUTER_RADIUS = 30;
-const INNER_CAPSULE_RADIUS = 20;
+const TAB_BAR_HORIZONTAL_MARGIN = 10;
+const TAB_BAR_HEIGHT = 56;
+const OUTER_RADIUS = 28;
+const INNER_CAPSULE_RADIUS = 18;
 const TAB_COUNT = TABS.length;
 const TAB_BAR_INNER_WIDTH = SCREEN_WIDTH - TAB_BAR_HORIZONTAL_MARGIN * 2;
 const TAB_WIDTH = TAB_BAR_INNER_WIDTH / TAB_COUNT;
-const CAPSULE_H_INSET = 5;
-const CAPSULE_V_INSET = 6;
+const CAPSULE_H_INSET = 4;
+const CAPSULE_V_INSET = 5;
 
-// ─── Spring Configs (Apple-style physics) ────────────────────
+// ─── Spring Configs ──────────────────────────────────────────
 const SLIDE_SPRING = {
   damping: 20,
   stiffness: 200,
@@ -64,7 +65,7 @@ const ICON_SPRING = {
   mass: 0.6,
 };
 
-// ─── Individual Tab Item (proper hook usage) ─────────────────
+// ─── Individual Tab Item ─────────────────────────────────────
 interface TabItemProps {
   tab: typeof TABS[number];
   index: number;
@@ -113,7 +114,7 @@ const TabItem = memo(function TabItem({
   }));
 
   const selectedColor = primaryColor;
-  const unselectedColor = isDark ? 'rgba(255,255,255,0.45)' : 'rgba(60,60,67,0.5)';
+  const unselectedColor = isDark ? 'rgba(255,255,255,0.6)' : 'rgba(60,60,67,0.6)';
   const iconColor = isSelected ? selectedColor : unselectedColor;
   const labelColor = isSelected ? selectedColor : unselectedColor;
   const iconName = isSelected ? tab.icon : tab.iconOutline;
@@ -145,7 +146,6 @@ const TabItem = memo(function TabItem({
           )}
         </Animated.View>
 
-        {/* Labels always visible */}
         <Text
           style={[
             styles.tabLabel,
@@ -209,110 +209,143 @@ export default function LiquidGlassTabBar({
     TABS.some((t) => t.name === route.name),
   );
 
-  const bottomPadding = insets.bottom > 0 ? Math.max(insets.bottom - 20, 4) : 4;
-
-  // Glass colors - match screen background for seamless look
-  const glassBackground = isDark
-    ? colors.background
-    : colors.background;
-
-  const glassBorder = 'transparent';
+  const bottomOffset = insets.bottom > 0 ? insets.bottom - 12 : 6;
 
   const capsuleBackground = isDark
-    ? 'rgba(255, 255, 255, 0.12)'
-    : 'rgba(0, 0, 0, 0.06)';
+    ? 'rgba(255, 255, 255, 0.14)'
+    : 'rgba(0, 0, 0, 0.07)';
 
   const capsuleHighlightColor = isDark
     ? 'rgba(255, 255, 255, 0.06)'
     : 'rgba(255, 255, 255, 0.8)';
 
+  const glassBorder = isDark
+    ? 'rgba(255, 255, 255, 0.15)'
+    : 'rgba(255, 255, 255, 0.85)';
+
   return (
     <View
       style={[
         styles.wrapper,
-        {
-          paddingBottom: bottomPadding,
-        },
+        { bottom: bottomOffset },
       ]}
+      pointerEvents="box-none"
     >
-      {/* Glass bar container */}
-      <View style={[styles.barContainer]}>
+      {/* Shadow */}
+      <View
+        style={[
+          styles.shadowLayer,
+          Platform.select({
+            ios: { shadowOpacity: isDark ? 0.5 : 0.15 },
+            android: {},
+            web: {},
+          }),
+        ]}
+      />
+
+      {/* Glass container */}
+      <View
+        style={[
+          styles.glassOuter,
+          { borderColor: glassBorder },
+        ]}
+      >
+        {/* Blur effect */}
+        {Platform.OS !== 'web' ? (
+          <BlurView
+            intensity={isDark ? 60 : 80}
+            tint={isDark ? 'systemChromeMaterialDark' : 'systemChromeMaterialLight'}
+            style={StyleSheet.absoluteFill}
+          />
+        ) : (
+          <View
+            style={[
+              StyleSheet.absoluteFill,
+              {
+                backgroundColor: isDark
+                  ? 'rgba(28, 28, 30, 0.88)'
+                  : 'rgba(255, 255, 255, 0.88)',
+              } as any,
+            ]}
+          />
+        )}
+
+        {/* Top highlight edge */}
         <View
           style={[
-            styles.glassOuter,
+            styles.topHighlight,
             {
-              backgroundColor: glassBackground,
-              borderColor: glassBorder,
+              backgroundColor: isDark
+                ? 'rgba(255,255,255,0.08)'
+                : 'rgba(255,255,255,0.6)',
             },
           ]}
-        >
-          {/* Tab bar uses solid screen background - no blur needed */}
+        />
 
-          {/* Sliding selection capsule */}
-          <Animated.View
+        {/* Sliding capsule */}
+        <Animated.View
+          style={[
+            styles.capsule,
+            {
+              width: TAB_WIDTH - CAPSULE_H_INSET * 2,
+              top: CAPSULE_V_INSET,
+              bottom: CAPSULE_V_INSET,
+            },
+            capsuleStyle,
+          ]}
+        >
+          <View
             style={[
-              styles.capsule,
-              {
-                width: TAB_WIDTH - CAPSULE_H_INSET * 2,
-                top: CAPSULE_V_INSET,
-                bottom: CAPSULE_V_INSET,
-              },
-              capsuleStyle,
+              styles.capsuleBody,
+              { backgroundColor: capsuleBackground },
             ]}
           >
             <View
               style={[
-                styles.capsuleBody,
-                { backgroundColor: capsuleBackground },
+                styles.capsuleHighlight,
+                { backgroundColor: capsuleHighlightColor },
               ]}
-            >
-              <View
-                style={[
-                  styles.capsuleHighlight,
-                  { backgroundColor: capsuleHighlightColor },
-                ]}
-              />
-            </View>
-          </Animated.View>
-
-          {/* Tab buttons */}
-          <View style={styles.tabRow}>
-            {visibleRoutes.map((route: any, idx: number) => {
-              const tabConfig = TABS.find((t) => t.name === route.name);
-              if (!tabConfig) return null;
-
-              const tabIndex = TABS.findIndex((t) => t.name === route.name);
-              const isSelected = tabIndex === currentTabIndex;
-
-              return (
-                <TabItem
-                  key={route.key}
-                  tab={tabConfig}
-                  index={tabIndex}
-                  isSelected={isSelected}
-                  notificationCount={notificationCount}
-                  isDark={isDark}
-                  primaryColor={colors.primary}
-                  onPress={() => {
-                    const event = navigation.emit({
-                      type: 'tabPress',
-                      target: route.key,
-                      canPreventDefault: true,
-                    });
-                    if (!isSelected && !event.defaultPrevented) {
-                      navigation.navigate(route.name);
-                    }
-                  }}
-                  onLongPress={() => {
-                    navigation.emit({
-                      type: 'tabLongPress',
-                      target: route.key,
-                    });
-                  }}
-                />
-              );
-            })}
+            />
           </View>
+        </Animated.View>
+
+        {/* Tab buttons */}
+        <View style={styles.tabRow}>
+          {visibleRoutes.map((route: any) => {
+            const tabConfig = TABS.find((t) => t.name === route.name);
+            if (!tabConfig) return null;
+
+            const tabIndex = TABS.findIndex((t) => t.name === route.name);
+            const isSelected = tabIndex === currentTabIndex;
+
+            return (
+              <TabItem
+                key={route.key}
+                tab={tabConfig}
+                index={tabIndex}
+                isSelected={isSelected}
+                notificationCount={notificationCount}
+                isDark={isDark}
+                primaryColor={colors.primary}
+                onPress={() => {
+                  const event = navigation.emit({
+                    type: 'tabPress',
+                    target: route.key,
+                    canPreventDefault: true,
+                  });
+                  if (!isSelected && !event.defaultPrevented) {
+                    navigation.navigate(route.name);
+                  }
+                }}
+                onLongPress={() => {
+                  navigation.emit({
+                    type: 'tabLongPress',
+                    target: route.key,
+                  });
+                }}
+              />
+            );
+          })}
         </View>
       </View>
     </View>
@@ -321,19 +354,45 @@ export default function LiquidGlassTabBar({
 
 // ─── Styles ──────────────────────────────────────────────────
 const styles = StyleSheet.create({
-  // Static wrapper - NOT absolute, sits in layout flow
   wrapper: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    paddingHorizontal: TAB_BAR_HORIZONTAL_MARGIN,
   },
 
-  barContainer: {
-    paddingHorizontal: TAB_BAR_HORIZONTAL_MARGIN,
-    paddingTop: 4,
+  shadowLayer: {
+    ...StyleSheet.absoluteFillObject,
+    borderRadius: OUTER_RADIUS,
+    ...Platform.select({
+      ios: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 8 },
+        shadowRadius: 24,
+      },
+      android: {
+        elevation: 16,
+      },
+      web: {
+        boxShadow: '0px 8px 24px rgba(0,0,0,0.12)',
+      } as any,
+    }),
   },
 
   glassOuter: {
     height: TAB_BAR_HEIGHT,
     borderRadius: OUTER_RADIUS,
     overflow: 'hidden',
+    borderWidth: Platform.OS === 'ios' ? 0.5 : 0,
+  },
+
+  topHighlight: {
+    position: 'absolute',
+    top: 0,
+    left: 14,
+    right: 14,
+    height: 0.5,
+    borderRadius: 0.5,
   },
 
   capsule: {
@@ -375,21 +434,21 @@ const styles = StyleSheet.create({
   tabTouchInner: {
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 4,
+    paddingVertical: 2,
     width: '100%',
-    minHeight: 48,
+    minHeight: 44,
   },
 
   iconWrap: {
     alignItems: 'center',
     justifyContent: 'center',
-    width: 28,
-    height: 26,
+    width: 26,
+    height: 24,
   },
 
   tabLabel: {
     fontSize: 10,
-    marginTop: 2,
+    marginTop: 1,
     letterSpacing: 0.1,
   },
 
