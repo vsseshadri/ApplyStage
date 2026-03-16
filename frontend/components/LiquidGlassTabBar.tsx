@@ -229,18 +229,12 @@ export default function LiquidGlassTabBar({
     ? 'rgba(255, 255, 255, 0.06)'
     : 'rgba(255, 255, 255, 0.8)';
 
-  const topBorderColor = isDark
-    ? 'rgba(255, 255, 255, 0.08)'
-    : 'rgba(0, 0, 0, 0.06)';
-
   return (
     <View
       style={[
         styles.wrapper,
         {
           paddingBottom: bottomPadding,
-          backgroundColor: isDark ? 'rgba(0, 0, 0, 0.9)' : 'rgba(242, 242, 247, 0.95)',
-          borderTopColor: topBorderColor,
         },
       ]}
     >
@@ -350,7 +344,6 @@ export default function LiquidGlassTabBar({
 const styles = StyleSheet.create({
   // Static wrapper - NOT absolute, sits in layout flow
   wrapper: {
-    borderTopWidth: 0.5,
   },
 
   barContainer: {
