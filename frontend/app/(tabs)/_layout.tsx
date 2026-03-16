@@ -7,6 +7,7 @@ import { BlurView } from 'expo-blur';
 import { useAuth } from '../../contexts/AuthContext';
 import { useRouter } from 'expo-router';
 import Constants from 'expo-constants';
+import LiquidGlassTabBar from '../../components/LiquidGlassTabBar';
 
 // Get backend URL
 const getBackendUrl = (): string => {
