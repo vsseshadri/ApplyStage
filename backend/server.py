@@ -351,9 +351,11 @@ async def exchange_session(session_id: str):
             )
             
             user_id = None
+            is_new_user = False
             if existing_user:
                 user_id = existing_user["user_id"]
             else:
+                is_new_user = True
                 user_id = f"user_{uuid.uuid4().hex[:12]}"
                 new_user = {
                     "user_id": user_id,
@@ -368,17 +370,33 @@ async def exchange_session(session_id: str):
                 await db.users.insert_one(new_user)
             
             session_token = user_data["session_token"]
-            await db.user_sessions.insert_one({
+            
+            # Use upsert to handle duplicate session tokens gracefully
+            await db.user_sessions.update_one(
+                {"session_token": session_token},
+                {"$set": {
+                    "user_id": user_id,
+                    "session_token": session_token,
+                    "expires_at": datetime.now(timezone.utc) + timedelta(days=7),
+                    "created_at": datetime.now(timezone.utc)
+                }},
+                upsert=True
+            )
+            
+            # Clean up old expired sessions for this user (housekeeping)
+            await db.user_sessions.delete_many({
                 "user_id": user_id,
-                "session_token": session_token,
-                "expires_at": datetime.now(timezone.utc) + timedelta(days=7),
-                "created_at": datetime.now(timezone.utc)
+                "expires_at": {"$lt": datetime.now(timezone.utc)},
+                "session_token": {"$ne": session_token}
             })
             
             return SessionDataResponse(**user_data)
             
     except httpx.RequestError as e:
         raise HTTPException(status_code=500, detail=f"Authentication service error: {str(e)}")
+    except Exception as e:
+        logger.error(f"Exchange session error: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Session exchange failed: {str(e)}")
 
 @api_router.get("/auth/me", response_model=User)
 async def get_me(current_user: User = Depends(get_current_user)):
