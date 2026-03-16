@@ -210,7 +210,7 @@ export default function LiquidGlassTabBar({
     TABS.some((t) => t.name === route.name),
   );
 
-  const bottomPadding = insets.bottom > 0 ? insets.bottom : 8;
+  const bottomPadding = insets.bottom > 0 ? Math.max(insets.bottom - 20, 4) : 4;
 
   // Glass colors
   const glassBackground = isDark
@@ -355,7 +355,7 @@ const styles = StyleSheet.create({
 
   barContainer: {
     paddingHorizontal: TAB_BAR_HORIZONTAL_MARGIN,
-    paddingTop: 6,
+    paddingTop: 4,
   },
 
   glassOuter: {
