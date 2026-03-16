@@ -81,41 +81,10 @@ export default function TabsLayout() {
     <View style={{ flex: 1 }}>
       <Tabs
         initialRouteName="my-jobs"
+        tabBar={(props) => (
+          <LiquidGlassTabBar {...props} notificationCount={notificationCount} />
+        )}
         screenOptions={{
-          tabBarActiveTintColor: colors.primary,
-          tabBarInactiveTintColor: isDark ? 'rgba(255, 255, 255, 0.5)' : 'rgba(0, 0, 0, 0.4)',
-          tabBarStyle: {
-            backgroundColor: isDark ? 'rgba(28, 28, 30, 0.75)' : 'rgba(255, 255, 255, 0.8)',
-            borderTopWidth: 0.5,
-            borderTopColor: isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)',
-            height: Platform.OS === 'ios' ? 88 : 64,
-            paddingBottom: Platform.OS === 'ios' ? 28 : 8,
-            paddingTop: 8,
-            paddingHorizontal: 4,
-            position: 'absolute',
-            elevation: 0,
-          },
-          tabBarBackground: () => (
-            <BlurView
-              intensity={isDark ? 50 : 80}
-              tint={isDark ? 'dark' : 'light'}
-              style={{ 
-                position: 'absolute', 
-                top: 0, 
-                left: 0, 
-                right: 0, 
-                bottom: 0,
-              }}
-            />
-          ),
-          tabBarLabelStyle: {
-            fontSize: 11,
-            fontWeight: '600',
-            marginTop: 2,
-          },
-          tabBarIconStyle: {
-            marginTop: 4,
-          },
           headerShown: false,
         }}
       >
@@ -123,54 +92,30 @@ export default function TabsLayout() {
           name="dashboard"
           options={{
             title: 'Dashboard',
-            tabBarIcon: ({ color, size }) => (
-              <Ionicons name="stats-chart" size={22} color={color} />
-            ),
           }}
         />
         <Tabs.Screen
           name="my-jobs"
           options={{
             title: 'My Jobs',
-            tabBarIcon: ({ color, size }) => (
-              <Ionicons name="briefcase" size={22} color={color} />
-            ),
           }}
         />
         <Tabs.Screen
           name="notifications"
           options={{
             title: 'Notifications',
-            tabBarIcon: ({ color, size }) => (
-              <View>
-                <Ionicons name="notifications" size={22} color={color} />
-                {notificationCount > 0 && (
-                  <View style={[styles.badge, { backgroundColor: '#EF4444' }]}>
-                    <Text style={styles.badgeText}>
-                      {notificationCount > 99 ? '99+' : notificationCount}
-                    </Text>
-                  </View>
-                )}
-              </View>
-            ),
           }}
         />
         <Tabs.Screen
           name="analytics"
           options={{
             title: 'Analytics',
-            tabBarIcon: ({ color, size }) => (
-              <Ionicons name="analytics" size={22} color={color} />
-            ),
           }}
         />
         <Tabs.Screen
           name="settings"
           options={{
             title: 'Settings',
-            tabBarIcon: ({ color, size }) => (
-              <Ionicons name="settings" size={22} color={color} />
-            ),
           }}
         />
         <Tabs.Screen
