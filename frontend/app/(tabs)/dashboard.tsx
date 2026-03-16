@@ -1520,7 +1520,8 @@ const createStyles = (colors: any, isDark: boolean) => StyleSheet.create({
     flex: 1 
   },
   scrollContent: { 
-    padding: 16 
+    padding: 16,
+    paddingBottom: 100,
   },
   // Tablet Layout Styles
   tabletContainer: {

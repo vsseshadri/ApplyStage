@@ -1,9 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Tabs } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
-import { useTheme } from '../../contexts/ThemeContext';
-import { Platform, View, Text, TouchableOpacity, StyleSheet } from 'react-native';
-import { BlurView } from 'expo-blur';
+import { View } from 'react-native';
 import { useAuth } from '../../contexts/AuthContext';
 import { useRouter } from 'expo-router';
 import Constants from 'expo-constants';
@@ -20,7 +17,6 @@ const getBackendUrl = (): string => {
 const BACKEND_URL = getBackendUrl();
 
 export default function TabsLayout() {
-  const { colors, isDark } = useTheme();
   const { sessionToken } = useAuth();
   const router = useRouter();
   const [notificationCount, setNotificationCount] = useState(0);
@@ -128,40 +124,3 @@ export default function TabsLayout() {
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  addButtonContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingTop: 4,
-  },
-  addButton: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    justifyContent: 'center',
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 3,
-    elevation: 4,
-  },
-  badge: {
-    position: 'absolute',
-    right: -8,
-    top: -4,
-    minWidth: 18,
-    height: 18,
-    borderRadius: 9,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingHorizontal: 4,
-  },
-  badgeText: {
-    color: 'white',
-    fontSize: 10,
-    fontWeight: '700',
-  },
-});
