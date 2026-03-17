@@ -1,7 +1,17 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Switch, Image, Alert, TextInput, Linking, Modal, FlatList } from 'react-native';
+import React, { useState, useEffect, useCallback } from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Switch, Image, Alert, TextInput, Linking, Modal, FlatList, Platform, Dimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import { BlurView } from 'expo-blur';
+import Animated, {
+  useAnimatedStyle,
+  useSharedValue,
+  withSpring,
+  withSequence,
+  withTiming,
+  Easing,
+} from 'react-native-reanimated';
+import * as Haptics from 'expo-haptics';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useAuth } from '../../contexts/AuthContext';
 import { useRouter } from 'expo-router';
@@ -20,8 +30,195 @@ const getBackendUrl = (): string => {
 };
 const BACKEND_URL = getBackendUrl();
 
+// ─── Liquid Glass Theme Toggle ───────────────────────────────
+const THEME_OPTIONS = [
+  { key: 'light' as const, label: 'Light', icon: 'sunny' },
+  { key: 'dark' as const, label: 'Dark', icon: 'moon' },
+  { key: 'auto' as const, label: 'Auto', icon: 'phone-portrait' },
+];
+
+const TOGGLE_HEIGHT = 44;
+const TOGGLE_RADIUS = 22;
+const CAPSULE_INSET = 3;
+
+function GlassThemeToggle({
+  theme,
+  onThemeChange,
+  isDark,
+  colors,
+}: {
+  theme: string;
+  onThemeChange: (t: 'light' | 'dark' | 'auto') => void;
+  isDark: boolean;
+  colors: any;
+}) {
+  const activeIndex = THEME_OPTIONS.findIndex((o) => o.key === theme);
+  const capsuleX = useSharedValue(0);
+  const capsuleScaleX = useSharedValue(1);
+
+  // Calculate option width based on container
+  const TOGGLE_WIDTH = Dimensions.get('window').width * 0.65;
+  const OPTION_WIDTH = (TOGGLE_WIDTH - CAPSULE_INSET * 2) / THEME_OPTIONS.length;
+
+  useEffect(() => {
+    if (activeIndex < 0) return;
+    const targetX = CAPSULE_INSET + activeIndex * OPTION_WIDTH;
+    capsuleScaleX.value = withSequence(
+      withTiming(1.08, { duration: 70, easing: Easing.out(Easing.quad) }),
+      withSpring(1, { damping: 18, stiffness: 200, mass: 0.7 }),
+    );
+    capsuleX.value = withSpring(targetX, {
+      damping: 20,
+      stiffness: 200,
+      mass: 0.8,
+    });
+  }, [activeIndex, OPTION_WIDTH]);
+
+  const capsuleStyle = useAnimatedStyle(() => ({
+    transform: [
+      { translateX: capsuleX.value },
+      { scaleX: capsuleScaleX.value },
+    ],
+  }));
+
+  const glassBg = isDark
+    ? 'rgba(255, 255, 255, 0.08)'
+    : 'rgba(0, 0, 0, 0.06)';
+
+  const glassBorder = isDark
+    ? 'rgba(255, 255, 255, 0.12)'
+    : 'rgba(0, 0, 0, 0.08)';
+
+  const capsuleBg = isDark
+    ? 'rgba(255, 255, 255, 0.16)'
+    : 'rgba(255, 255, 255, 0.95)';
+
+  const capsuleShadow = isDark ? 0 : 0.1;
+
+  return (
+    <View style={{ alignItems: 'center', marginTop: 8 }}>
+      <View
+        style={{
+          width: TOGGLE_WIDTH,
+          height: TOGGLE_HEIGHT,
+          borderRadius: TOGGLE_RADIUS,
+          overflow: 'hidden',
+          borderWidth: 0.5,
+          borderColor: glassBorder,
+          backgroundColor: glassBg,
+        }}
+      >
+        {/* Blur backdrop */}
+        {Platform.OS !== 'web' ? (
+          <BlurView
+            intensity={isDark ? 30 : 50}
+            tint={isDark ? 'dark' : 'light'}
+            style={StyleSheet.absoluteFill}
+          />
+        ) : (
+          <View
+            style={[
+              StyleSheet.absoluteFill,
+              {
+                backgroundColor: isDark
+                  ? 'rgba(40, 40, 44, 0.9)'
+                  : 'rgba(240, 240, 244, 0.9)',
+              },
+            ]}
+          />
+        )}
+
+        {/* Sliding capsule */}
+        <Animated.View
+          style={[
+            {
+              position: 'absolute',
+              top: CAPSULE_INSET,
+              bottom: CAPSULE_INSET,
+              width: OPTION_WIDTH,
+              borderRadius: TOGGLE_RADIUS - CAPSULE_INSET,
+              zIndex: 0,
+              ...Platform.select({
+                ios: {
+                  shadowColor: '#000',
+                  shadowOffset: { width: 0, height: 2 },
+                  shadowOpacity: capsuleShadow,
+                  shadowRadius: 6,
+                },
+                android: { elevation: isDark ? 0 : 3 },
+                web: {
+                  boxShadow: isDark
+                    ? 'none'
+                    : '0px 2px 6px rgba(0,0,0,0.1)',
+                },
+              } as any),
+            },
+            capsuleStyle,
+          ]}
+        >
+          <View
+            style={{
+              flex: 1,
+              backgroundColor: capsuleBg,
+              borderRadius: TOGGLE_RADIUS - CAPSULE_INSET,
+            }}
+          />
+        </Animated.View>
+
+        {/* Options */}
+        <View style={{ flex: 1, flexDirection: 'row', zIndex: 1 }}>
+          {THEME_OPTIONS.map((opt) => {
+            const isActive = opt.key === theme;
+            const iconColor = isActive
+              ? colors.primary
+              : isDark
+                ? 'rgba(255,255,255,0.5)'
+                : 'rgba(60,60,67,0.5)';
+            const textColor = isActive
+              ? colors.text
+              : isDark
+                ? 'rgba(255,255,255,0.5)'
+                : 'rgba(60,60,67,0.5)';
+
+            return (
+              <TouchableOpacity
+                key={opt.key}
+                activeOpacity={0.7}
+                onPress={() => {
+                  if (Platform.OS !== 'web') {
+                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                  }
+                  onThemeChange(opt.key);
+                }}
+                style={{
+                  flex: 1,
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: 5,
+                }}
+              >
+                <Ionicons name={opt.icon as any} size={16} color={iconColor} />
+                <Text
+                  style={{
+                    fontSize: 13,
+                    fontWeight: isActive ? '600' : '500',
+                    color: textColor,
+                  }}
+                >
+                  {opt.label}
+                </Text>
+              </TouchableOpacity>
+            );
+          })}
+        </View>
+      </View>
+    </View>
+  );
+}
+
 export default function SettingsScreen() {
-  const { theme, setTheme, colors } = useTheme();
+  const { theme, setTheme, colors, isDark } = useTheme();
   const { user, logout, sessionToken, biometricEnabled, biometricAvailable, enableBiometric, disableBiometric, refreshUser } = useAuth();
   const router = useRouter();
   
@@ -621,32 +818,6 @@ export default function SettingsScreen() {
       color: colors.text,
       marginBottom: 16,
     },
-    themeOptions: {
-      flexDirection: 'row',
-      justifyContent: 'space-between',
-    },
-    themeButton: {
-      flex: 1,
-      alignItems: 'center',
-      paddingVertical: 16,
-      borderRadius: 8,
-      borderWidth: 1,
-      borderColor: colors.border,
-      marginHorizontal: 4,
-    },
-    themeButtonActive: {
-      backgroundColor: colors.primary,
-      borderColor: colors.primary,
-    },
-    themeButtonText: {
-      marginTop: 8,
-      fontSize: 14,
-      color: colors.text,
-    },
-    themeButtonTextActive: {
-      color: '#fff',
-      fontWeight: '600',
-    },
     settingRow: {
       flexDirection: 'row',
       justifyContent: 'space-between',
@@ -886,49 +1057,12 @@ export default function SettingsScreen() {
           <Text style={styles.sectionTitle}>Appearance</Text>
           <View style={styles.card}>
             <Text style={styles.cardLabel}>Theme</Text>
-            <View style={styles.themeOptions}>
-              <TouchableOpacity
-                style={[styles.themeButton, theme === 'light' && styles.themeButtonActive]}
-                onPress={() => handleThemeChange('light')}
-              >
-                <Ionicons 
-                  name="sunny" 
-                  size={24} 
-                  color={theme === 'light' ? '#fff' : colors.text} 
-                />
-                <Text style={[styles.themeButtonText, theme === 'light' && styles.themeButtonTextActive]}>
-                  Light
-                </Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                style={[styles.themeButton, theme === 'dark' && styles.themeButtonActive]}
-                onPress={() => handleThemeChange('dark')}
-              >
-                <Ionicons 
-                  name="moon" 
-                  size={24} 
-                  color={theme === 'dark' ? '#fff' : colors.text} 
-                />
-                <Text style={[styles.themeButtonText, theme === 'dark' && styles.themeButtonTextActive]}>
-                  Dark
-                </Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                style={[styles.themeButton, theme === 'auto' && styles.themeButtonActive]}
-                onPress={() => handleThemeChange('auto')}
-              >
-                <Ionicons 
-                  name="phone-portrait" 
-                  size={24} 
-                  color={theme === 'auto' ? '#fff' : colors.text} 
-                />
-                <Text style={[styles.themeButtonText, theme === 'auto' && styles.themeButtonTextActive]}>
-                  Auto
-                </Text>
-              </TouchableOpacity>
-            </View>
+            <GlassThemeToggle
+              theme={theme}
+              onThemeChange={handleThemeChange}
+              isDark={isDark}
+              colors={colors}
+            />
           </View>
         </View>
 
