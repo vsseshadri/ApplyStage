@@ -2757,10 +2757,25 @@ export default function MyJobsScreen() {
                 </TouchableOpacity>
               </View>
 
-              {/* Work Mode - Compact Liquid Glass Slider */}
+              {/* Work Mode - Frosted Liquid Glass Toggle */}
               <View style={dynamicStyles.formSection}>
                 <Text style={dynamicStyles.label}>Work Mode *</Text>
                 <View style={[dynamicStyles.liquidGlassSlider, editingJob && { opacity: 0.5 }]}>
+                  {/* Blur backdrop */}
+                  {Platform.OS !== 'web' ? (
+                    <BlurView
+                      intensity={isDark ? 30 : 50}
+                      tint={isDark ? 'dark' : 'light'}
+                      style={StyleSheet.absoluteFill}
+                    />
+                  ) : (
+                    <View
+                      style={[
+                        StyleSheet.absoluteFill,
+                        { backgroundColor: isDark ? 'rgba(40,40,44,0.9)' : 'rgba(240,240,244,0.9)' },
+                      ]}
+                    />
+                  )}
                   {WORK_MODES.map((mode, index) => {
                     const isSelected = formData.work_mode === mode;
                     return (
@@ -2772,7 +2787,6 @@ export default function MyJobsScreen() {
                         ]}
                         onPress={() => {
                           if (!editingJob) {
-                            // Trigger haptic feedback on mode change
                             if (Platform.OS !== 'web') {
                               Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                             }
@@ -2785,7 +2799,7 @@ export default function MyJobsScreen() {
                         <Ionicons 
                           name={mode === 'remote' ? 'home' : mode === 'hybrid' ? 'git-merge' : 'business'} 
                           size={16} 
-                          color={isSelected ? '#FFFFFF' : colors.textSecondary} 
+                          color={isSelected ? colors.primary : isDark ? 'rgba(255,255,255,0.5)' : 'rgba(60,60,67,0.5)'} 
                         />
                         <Text style={[
                           dynamicStyles.liquidGlassSliderText,
@@ -3822,9 +3836,12 @@ const createStyles = (colors: any, isDark: boolean, isTablet: boolean = false) =
   // Compact Liquid Glass Slider Styles
   liquidGlassSlider: {
     flexDirection: 'row',
-    backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(120,120,128,0.12)',
-    borderRadius: 10,
-    padding: 2,
+    backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.04)',
+    borderRadius: 20,
+    padding: 3,
+    overflow: 'hidden',
+    borderWidth: 0.5,
+    borderColor: isDark ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.08)',
   },
   liquidGlassSliderItem: {
     flex: 1,
@@ -3833,24 +3850,31 @@ const createStyles = (colors: any, isDark: boolean, isTablet: boolean = false) =
     justifyContent: 'center',
     paddingVertical: 8,
     paddingHorizontal: 6,
-    borderRadius: 8,
-    gap: 4,
+    borderRadius: 17,
+    gap: 5,
   },
   liquidGlassSliderItemSelected: {
-    backgroundColor: colors.primary,
-    shadowColor: colors.primary,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.3,
-    shadowRadius: 4,
-    elevation: 4,
+    backgroundColor: isDark ? 'rgba(255,255,255,0.16)' : 'rgba(255,255,255,0.95)',
+    ...Platform.select({
+      ios: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: isDark ? 0 : 0.1,
+        shadowRadius: 6,
+      },
+      android: { elevation: isDark ? 0 : 3 },
+      web: {
+        boxShadow: isDark ? 'none' : '0px 2px 6px rgba(0,0,0,0.1)',
+      },
+    } as any),
   },
   liquidGlassSliderText: {
-    fontSize: 12,
+    fontSize: 13,
     fontWeight: '500',
-    color: colors.textSecondary,
+    color: isDark ? 'rgba(255,255,255,0.5)' : 'rgba(60,60,67,0.5)',
   },
   liquidGlassSliderTextSelected: {
-    color: '#FFFFFF',
+    color: colors.primary,
     fontWeight: '600',
   },
   statusContainer: { 
