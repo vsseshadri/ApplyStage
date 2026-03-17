@@ -209,7 +209,7 @@ export default function LiquidGlassTabBar({
     TABS.some((t) => t.name === route.name),
   );
 
-  const bottomOffset = insets.bottom > 0 ? insets.bottom - 12 : 6;
+  const bottomOffset = insets.bottom > 0 ? insets.bottom - 22 : 4;
 
   const capsuleBackground = isDark
     ? 'rgba(255, 255, 255, 0.14)'
