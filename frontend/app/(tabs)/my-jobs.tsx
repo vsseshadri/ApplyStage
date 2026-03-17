@@ -2393,9 +2393,11 @@ export default function MyJobsScreen() {
                 intensity={isDark ? 30 : 50}
                 tint={isDark ? 'dark' : 'light'}
                 style={StyleSheet.absoluteFill}
+                pointerEvents="none"
               />
             ) : (
               <View
+                pointerEvents="none"
                 style={[
                   StyleSheet.absoluteFill,
                   { backgroundColor: isDark ? 'rgba(40,40,44,0.9)' : 'rgba(240,240,244,0.9)' },
@@ -2441,9 +2443,11 @@ export default function MyJobsScreen() {
                 intensity={isDark ? 30 : 50}
                 tint={isDark ? 'dark' : 'light'}
                 style={StyleSheet.absoluteFill}
+                pointerEvents="none"
               />
             ) : (
               <View
+                pointerEvents="none"
                 style={[
                   StyleSheet.absoluteFill,
                   { backgroundColor: isDark ? 'rgba(40,40,44,0.9)' : 'rgba(240,240,244,0.9)' },
@@ -2472,9 +2476,11 @@ export default function MyJobsScreen() {
                 intensity={isDark ? 30 : 50}
                 tint={isDark ? 'dark' : 'light'}
                 style={StyleSheet.absoluteFill}
+                pointerEvents="none"
               />
             ) : (
               <View
+                pointerEvents="none"
                 style={[
                   StyleSheet.absoluteFill,
                   { backgroundColor: isDark ? 'rgba(40,40,44,0.9)' : 'rgba(240,240,244,0.9)' },
@@ -2761,15 +2767,17 @@ export default function MyJobsScreen() {
               <View style={dynamicStyles.formSection}>
                 <Text style={dynamicStyles.label}>Work Mode *</Text>
                 <View style={[dynamicStyles.liquidGlassSlider, editingJob && { opacity: 0.5 }]}>
-                  {/* Blur backdrop */}
+                  {/* Blur backdrop - pointerEvents none so touches pass through */}
                   {Platform.OS !== 'web' ? (
                     <BlurView
                       intensity={isDark ? 30 : 50}
                       tint={isDark ? 'dark' : 'light'}
                       style={StyleSheet.absoluteFill}
+                      pointerEvents="none"
                     />
                   ) : (
                     <View
+                      pointerEvents="none"
                       style={[
                         StyleSheet.absoluteFill,
                         { backgroundColor: isDark ? 'rgba(40,40,44,0.9)' : 'rgba(240,240,244,0.9)' },
