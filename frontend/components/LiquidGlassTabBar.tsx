@@ -41,7 +41,7 @@ const TAB_COUNT = TABS.length;
 const TAB_BAR_INNER_WIDTH = SCREEN_WIDTH - TAB_BAR_HORIZONTAL_MARGIN * 2;
 const TAB_WIDTH = TAB_BAR_INNER_WIDTH / TAB_COUNT;
 const CAPSULE_H_INSET = 4;
-const CAPSULE_V_INSET = 5;
+const CAPSULE_V_INSET = 3;
 
 // ─── Spring Configs ──────────────────────────────────────────
 const SLIDE_SPRING = {
@@ -213,11 +213,11 @@ export default function LiquidGlassTabBar({
 
   const capsuleBackground = isDark
     ? 'rgba(255, 255, 255, 0.14)'
-    : 'rgba(0, 0, 0, 0.07)';
+    : 'rgba(0, 0, 0, 0.10)';
 
   const capsuleHighlightColor = isDark
-    ? 'rgba(255, 255, 255, 0.06)'
-    : 'rgba(255, 255, 255, 0.8)';
+    ? 'rgba(255, 255, 255, 0.04)'
+    : 'rgba(255, 255, 255, 0.5)';
 
   const glassBorder = isDark
     ? 'rgba(255, 255, 255, 0.15)'
