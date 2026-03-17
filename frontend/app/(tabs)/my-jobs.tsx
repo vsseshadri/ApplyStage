@@ -5,6 +5,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useFilter } from '../../contexts/FilterContext';
 import { Ionicons } from '@expo/vector-icons';
+import { BlurView } from 'expo-blur';
 import Constants from 'expo-constants';
 import { format, differenceInDays, subDays, isAfter } from 'date-fns';
 import * as DocumentPicker from 'expo-document-picker';
@@ -2378,62 +2379,122 @@ export default function MyJobsScreen() {
         </View>
       </View>
       
-      {/* Horizontal Filters */}
+      {/* Horizontal Filters - Liquid Glass Style */}
       <View style={dynamicStyles.filterContainer}>
         <ScrollView 
           horizontal 
           showsHorizontalScrollIndicator={false} 
           contentContainerStyle={dynamicStyles.filterScroll}
         >
-          <TouchableOpacity
-            style={[dynamicStyles.filterChip, localFilter === 'all' && filter === 'all' && workModeFilter === 'all' && statusFilter === 'all' && dynamicStyles.filterChipActive]}
-            onPress={() => { setLocalFilter('all'); setWorkModeFilter('all'); setStatusFilter('all'); clearFilter(); }}
-          >
-            <Text style={[dynamicStyles.filterChipText, localFilter === 'all' && filter === 'all' && workModeFilter === 'all' && statusFilter === 'all' && dynamicStyles.filterChipTextActive]}>
-              All ({jobs.length})
-            </Text>
-          </TouchableOpacity>
+          <View style={dynamicStyles.glassFilterBar}>
+            {/* Blur backdrop */}
+            {Platform.OS !== 'web' ? (
+              <BlurView
+                intensity={isDark ? 30 : 50}
+                tint={isDark ? 'dark' : 'light'}
+                style={StyleSheet.absoluteFill}
+              />
+            ) : (
+              <View
+                style={[
+                  StyleSheet.absoluteFill,
+                  { backgroundColor: isDark ? 'rgba(40,40,44,0.9)' : 'rgba(240,240,244,0.9)' },
+                ]}
+              />
+            )}
+
+            <TouchableOpacity
+              style={[dynamicStyles.filterChip, localFilter === 'all' && filter === 'all' && workModeFilter === 'all' && statusFilter === 'all' && dynamicStyles.filterChipActive]}
+              onPress={() => { 
+                if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                setLocalFilter('all'); setWorkModeFilter('all'); setStatusFilter('all'); clearFilter(); 
+              }}
+            >
+              <Text style={[dynamicStyles.filterChipText, localFilter === 'all' && filter === 'all' && workModeFilter === 'all' && statusFilter === 'all' && dynamicStyles.filterChipTextActive]}>
+                All ({jobs.length})
+              </Text>
+            </TouchableOpacity>
+            
+            <TouchableOpacity
+              style={[dynamicStyles.filterChip, (localFilter === 'last_10_days' || filter === 'last_10_days') && dynamicStyles.filterChipActive]}
+              onPress={() => { 
+                if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                if (localFilter === 'last_10_days' || filter === 'last_10_days') {
+                  setLocalFilter('all'); 
+                  clearFilter();
+                } else {
+                  setLocalFilter('last_10_days'); 
+                }
+              }}
+            >
+              <Ionicons name="time-outline" size={14} color={(localFilter === 'last_10_days' || filter === 'last_10_days') ? 'white' : isDark ? 'rgba(255,255,255,0.6)' : 'rgba(60,60,67,0.6)'} />
+              <Text style={[dynamicStyles.filterChipText, (localFilter === 'last_10_days' || filter === 'last_10_days') && dynamicStyles.filterChipTextActive]}>
+                Last 10 Days
+              </Text>
+            </TouchableOpacity>
+          </View>
           
-          <TouchableOpacity
-            style={[dynamicStyles.filterChip, (localFilter === 'last_10_days' || filter === 'last_10_days') && dynamicStyles.filterChipActive]}
-            onPress={() => { 
-              if (localFilter === 'last_10_days' || filter === 'last_10_days') {
-                setLocalFilter('all'); 
-                clearFilter();
-              } else {
-                setLocalFilter('last_10_days'); 
-              }
-            }}
-          >
-            <Ionicons name="time-outline" size={14} color={(localFilter === 'last_10_days' || filter === 'last_10_days') ? 'white' : colors.text} />
-            <Text style={[dynamicStyles.filterChipText, (localFilter === 'last_10_days' || filter === 'last_10_days') && dynamicStyles.filterChipTextActive]}>
-              Last 10 Days
-            </Text>
-          </TouchableOpacity>
+          {/* Work Mode Filter - Separate glass pill */}
+          <View style={dynamicStyles.glassFilterPill}>
+            {Platform.OS !== 'web' ? (
+              <BlurView
+                intensity={isDark ? 30 : 50}
+                tint={isDark ? 'dark' : 'light'}
+                style={StyleSheet.absoluteFill}
+              />
+            ) : (
+              <View
+                style={[
+                  StyleSheet.absoluteFill,
+                  { backgroundColor: isDark ? 'rgba(40,40,44,0.9)' : 'rgba(240,240,244,0.9)' },
+                ]}
+              />
+            )}
+            <TouchableOpacity
+              style={[dynamicStyles.filterChip, workModeFilter !== 'all' && dynamicStyles.filterChipActive]}
+              onPress={() => {
+                if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                setShowWorkModeFilterDropdown(true);
+              }}
+            >
+              <Ionicons name="briefcase-outline" size={14} color={workModeFilter !== 'all' ? 'white' : isDark ? 'rgba(255,255,255,0.6)' : 'rgba(60,60,67,0.6)'} />
+              <Text style={[dynamicStyles.filterChipText, workModeFilter !== 'all' && dynamicStyles.filterChipTextActive]}>
+                {workModeFilter === 'all' ? 'Work Mode' : workModeFilter.charAt(0).toUpperCase() + workModeFilter.slice(1)}
+              </Text>
+              <Ionicons name="chevron-down" size={12} color={workModeFilter !== 'all' ? 'white' : isDark ? 'rgba(255,255,255,0.5)' : 'rgba(60,60,67,0.5)'} />
+            </TouchableOpacity>
+          </View>
           
-          {/* Work Mode Filter - Opens Dropdown */}
-          <TouchableOpacity
-            style={[dynamicStyles.filterChip, workModeFilter !== 'all' && dynamicStyles.filterChipActive]}
-            onPress={() => setShowWorkModeFilterDropdown(true)}
-          >
-            <Ionicons name="briefcase-outline" size={14} color={workModeFilter !== 'all' ? 'white' : colors.text} />
-            <Text style={[dynamicStyles.filterChipText, workModeFilter !== 'all' && dynamicStyles.filterChipTextActive]}>
-              {workModeFilter === 'all' ? 'Work Mode' : workModeFilter.charAt(0).toUpperCase() + workModeFilter.slice(1)}
-            </Text>
-            <Ionicons name="chevron-down" size={12} color={workModeFilter !== 'all' ? 'white' : colors.text} />
-          </TouchableOpacity>
-          
-          {/* Status Filter - Opens Dropdown */}
-          <TouchableOpacity
-            style={[dynamicStyles.filterChip, statusFilter !== 'all' && dynamicStyles.filterChipActive]}
-            onPress={() => setShowStatusFilterDropdown(true)}
-          >
-            <Ionicons name="flag-outline" size={14} color={statusFilter !== 'all' ? 'white' : colors.text} />
-            <Text style={[dynamicStyles.filterChipText, statusFilter !== 'all' && dynamicStyles.filterChipTextActive]}>
-              {statusFilter === 'all' ? 'Status' : formatStatus(statusFilter)}
-            </Text>
-            <Ionicons name="chevron-down" size={12} color={statusFilter !== 'all' ? 'white' : colors.text} />
-          </TouchableOpacity>
+          {/* Status Filter - Separate glass pill */}
+          <View style={dynamicStyles.glassFilterPill}>
+            {Platform.OS !== 'web' ? (
+              <BlurView
+                intensity={isDark ? 30 : 50}
+                tint={isDark ? 'dark' : 'light'}
+                style={StyleSheet.absoluteFill}
+              />
+            ) : (
+              <View
+                style={[
+                  StyleSheet.absoluteFill,
+                  { backgroundColor: isDark ? 'rgba(40,40,44,0.9)' : 'rgba(240,240,244,0.9)' },
+                ]}
+              />
+            )}
+            <TouchableOpacity
+              style={[dynamicStyles.filterChip, statusFilter !== 'all' && dynamicStyles.filterChipActive]}
+              onPress={() => {
+                if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                setShowStatusFilterDropdown(true);
+              }}
+            >
+              <Ionicons name="flag-outline" size={14} color={statusFilter !== 'all' ? 'white' : isDark ? 'rgba(255,255,255,0.6)' : 'rgba(60,60,67,0.6)'} />
+              <Text style={[dynamicStyles.filterChipText, statusFilter !== 'all' && dynamicStyles.filterChipTextActive]}>
+                {statusFilter === 'all' ? 'Status' : formatStatus(statusFilter)}
+              </Text>
+              <Ionicons name="chevron-down" size={12} color={statusFilter !== 'all' ? 'white' : isDark ? 'rgba(255,255,255,0.5)' : 'rgba(60,60,67,0.5)'} />
+            </TouchableOpacity>
+          </View>
         </ScrollView>
       </View>
       
@@ -3039,10 +3100,7 @@ const createStyles = (colors: any, isDark: boolean, isTablet: boolean = false) =
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 12,
-    paddingVertical: 10,
-    backgroundColor: colors.card,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border,
+    paddingVertical: 8,
   },
   filterScroll: {
     flexDirection: 'row',
@@ -3050,25 +3108,44 @@ const createStyles = (colors: any, isDark: boolean, isTablet: boolean = false) =
     gap: 8,
     paddingRight: 60,
   },
+  glassFilterBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderRadius: 20,
+    overflow: 'hidden',
+    borderWidth: 0.5,
+    borderColor: isDark ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.08)',
+    backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.04)',
+    gap: 2,
+    paddingHorizontal: 2,
+    paddingVertical: 2,
+  },
+  glassFilterPill: {
+    borderRadius: 20,
+    overflow: 'hidden',
+    borderWidth: 0.5,
+    borderColor: isDark ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.08)',
+    backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.04)',
+  },
   filterChip: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 16,
-    backgroundColor: isDark ? '#2C2C2E' : '#F3F4F6',
+    paddingVertical: 7,
+    borderRadius: 18,
     gap: 4,
   },
   filterChipActive: {
-    backgroundColor: colors.primary,
+    backgroundColor: isDark ? 'rgba(255,255,255,0.16)' : 'rgba(0,0,0,0.08)',
   },
   filterChipText: {
     fontSize: 13,
-    color: colors.text,
+    color: isDark ? 'rgba(255,255,255,0.6)' : 'rgba(60,60,67,0.6)',
     fontWeight: '500',
   },
   filterChipTextActive: {
-    color: 'white',
+    color: colors.primary,
+    fontWeight: '600',
   },
   selectButton: {
     padding: 8,
