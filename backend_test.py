@@ -1,306 +1,234 @@
 #!/usr/bin/env python3
 """
-Backend API Testing Script for CareerFlow CSV Import Feature
-Tests salary_range and recruiter_email field support in job creation/updates
+Backend Test Suite for CareerFlow API
+Testing conditional editability of salary_range and recruiter_email fields
 """
-
 import requests
 import json
+import uuid
+from datetime import datetime
 import sys
-from typing import Dict, Any, Optional
 
-# Configuration
-BASE_URL = "https://prep-boost-1.preview.emergentagent.com"
-API_BASE = f"{BASE_URL}/api"
+# Backend URL from environment
+BACKEND_URL = "https://prep-boost-1.preview.emergentagent.com"
 TEST_TOKEN = "test_token_abc123"
 
-class BackendTester:
-    def __init__(self):
-        self.session = requests.Session()
-        self.session.headers.update({
-            'Authorization': f'Bearer {TEST_TOKEN}',
-            'Content-Type': 'application/json'
-        })
-        self.created_job_id = None
+def print_test(title, passed, details=""):
+    """Print test result with formatting"""
+    status = "✅ PASS" if passed else "❌ FAIL"
+    print(f"{status} - {title}")
+    if details:
+        print(f"  {details}")
+    print()
 
-    def test_auth(self) -> Dict[str, Any]:
-        """Test authentication endpoint"""
-        print("🔐 Testing Authentication...")
-        try:
-            response = self.session.get(f"{API_BASE}/auth/me")
-            if response.status_code == 200:
-                user_data = response.json()
-                print(f"✅ PASS - Authentication successful. User: {user_data.get('email', 'Unknown')}")
-                return {"status": "PASS", "data": user_data}
-            else:
-                print(f"❌ FAIL - Auth endpoint returned {response.status_code}: {response.text}")
-                return {"status": "FAIL", "error": f"HTTP {response.status_code}"}
-        except Exception as e:
-            print(f"❌ FAIL - Auth request failed: {e}")
-            return {"status": "FAIL", "error": str(e)}
-
-    def test_create_job_with_salary_and_recruiter(self) -> Dict[str, Any]:
-        """Test POST /api/jobs with salary_range and recruiter_email"""
-        print("\n💼 Testing Job Creation with Salary Range and Recruiter Email...")
-        
-        job_data = {
-            "company_name": "CSV Import Test Corp",
-            "position": "Software Engineer", 
-            "date_applied": "2026-03-17T00:00:00.000Z",
-            "job_type": "Full-Time",
-            "location": {"state": "California", "city": "San Jose"},
-            "work_mode": "remote",
-            "status": "applied",
-            "salary_range": {"min": 85000, "max": 120000},
-            "recruiter_email": "recruiter@testcorp.com",
-            "job_url": "",
-            "notes": "",
-            "follow_up_days": 7,
-            "is_priority": False
-        }
-        
-        try:
-            response = self.session.post(f"{API_BASE}/jobs", json=job_data)
-            if response.status_code == 200:
-                job = response.json()
-                self.created_job_id = job.get('job_id')
-                
-                # Verify salary_range and recruiter_email are preserved
-                salary_range = job.get('salary_range', {})
-                recruiter_email = job.get('recruiter_email')
-                
-                if (salary_range.get('min') == 85000 and 
-                    salary_range.get('max') == 120000 and 
-                    recruiter_email == "recruiter@testcorp.com"):
-                    print(f"✅ PASS - Job created successfully with correct salary_range and recruiter_email")
-                    print(f"   Job ID: {self.created_job_id}")
-                    print(f"   Salary Range: ${salary_range.get('min'):,} - ${salary_range.get('max'):,}")
-                    print(f"   Recruiter Email: {recruiter_email}")
-                    return {"status": "PASS", "job_id": self.created_job_id, "data": job}
-                else:
-                    print(f"❌ FAIL - Job created but salary_range or recruiter_email incorrect")
-                    print(f"   Expected salary: {{min: 85000, max: 120000}}, got: {salary_range}")
-                    print(f"   Expected recruiter: recruiter@testcorp.com, got: {recruiter_email}")
-                    return {"status": "FAIL", "error": "Incorrect field values"}
-            else:
-                print(f"❌ FAIL - Job creation failed: HTTP {response.status_code}")
-                print(f"   Response: {response.text}")
-                return {"status": "FAIL", "error": f"HTTP {response.status_code}"}
-        except Exception as e:
-            print(f"❌ FAIL - Job creation request failed: {e}")
-            return {"status": "FAIL", "error": str(e)}
-
-    def test_get_jobs_verify_creation(self) -> Dict[str, Any]:
-        """Test GET /api/jobs and verify the created job appears with correct data"""
-        print("\n📋 Testing Job List Retrieval...")
-        
-        if not self.created_job_id:
-            print("❌ FAIL - No job ID available to verify")
-            return {"status": "FAIL", "error": "No job ID"}
-        
-        try:
-            response = self.session.get(f"{API_BASE}/jobs")
-            if response.status_code == 200:
-                jobs_data = response.json()
-                jobs = jobs_data.get('jobs', [])
-                
-                # Find our created job
-                created_job = None
-                for job in jobs:
-                    if job.get('job_id') == self.created_job_id:
-                        created_job = job
-                        break
-                
-                if created_job:
-                    salary_range = created_job.get('salary_range', {})
-                    recruiter_email = created_job.get('recruiter_email')
-                    company_name = created_job.get('company_name')
-                    
-                    if (salary_range.get('min') == 85000 and 
-                        salary_range.get('max') == 120000 and 
-                        recruiter_email == "recruiter@testcorp.com" and
-                        company_name == "CSV Import Test Corp"):
-                        print(f"✅ PASS - Job found in list with correct salary_range and recruiter_email")
-                        print(f"   Company: {company_name}")
-                        print(f"   Salary Range: ${salary_range.get('min'):,} - ${salary_range.get('max'):,}")
-                        print(f"   Recruiter Email: {recruiter_email}")
-                        return {"status": "PASS", "data": created_job}
-                    else:
-                        print(f"❌ FAIL - Job found but with incorrect data")
-                        return {"status": "FAIL", "error": "Incorrect data"}
-                else:
-                    print(f"❌ FAIL - Created job not found in job list")
-                    return {"status": "FAIL", "error": "Job not found"}
-            else:
-                print(f"❌ FAIL - Job list retrieval failed: HTTP {response.status_code}")
-                return {"status": "FAIL", "error": f"HTTP {response.status_code}"}
-        except Exception as e:
-            print(f"❌ FAIL - Job list request failed: {e}")
-            return {"status": "FAIL", "error": str(e)}
-
-    def test_update_job_salary_and_recruiter(self) -> Dict[str, Any]:
-        """Test PUT /api/jobs/{job_id} with updated salary_range and recruiter_email"""
-        print("\n✏️ Testing Job Update with New Salary Range and Recruiter Email...")
-        
-        if not self.created_job_id:
-            print("❌ FAIL - No job ID available to update")
-            return {"status": "FAIL", "error": "No job ID"}
-        
-        update_data = {
-            "salary_range": {"min": 90000, "max": 130000},
-            "recruiter_email": "new.recruiter@testcorp.com"
-        }
-        
-        try:
-            response = self.session.put(f"{API_BASE}/jobs/{self.created_job_id}", json=update_data)
-            if response.status_code == 200:
-                job = response.json()
-                
-                # Verify updated salary_range and recruiter_email
-                salary_range = job.get('salary_range', {})
-                recruiter_email = job.get('recruiter_email')
-                
-                if (salary_range.get('min') == 90000 and 
-                    salary_range.get('max') == 130000 and 
-                    recruiter_email == "new.recruiter@testcorp.com"):
-                    print(f"✅ PASS - Job updated successfully with new salary_range and recruiter_email")
-                    print(f"   Updated Salary Range: ${salary_range.get('min'):,} - ${salary_range.get('max'):,}")
-                    print(f"   Updated Recruiter Email: {recruiter_email}")
-                    return {"status": "PASS", "data": job}
-                else:
-                    print(f"❌ FAIL - Job updated but salary_range or recruiter_email incorrect")
-                    print(f"   Expected salary: {{min: 90000, max: 130000}}, got: {salary_range}")
-                    print(f"   Expected recruiter: new.recruiter@testcorp.com, got: {recruiter_email}")
-                    return {"status": "FAIL", "error": "Incorrect updated values"}
-            else:
-                print(f"❌ FAIL - Job update failed: HTTP {response.status_code}")
-                print(f"   Response: {response.text}")
-                return {"status": "FAIL", "error": f"HTTP {response.status_code}"}
-        except Exception as e:
-            print(f"❌ FAIL - Job update request failed: {e}")
-            return {"status": "FAIL", "error": str(e)}
-
-    def test_get_individual_job_verify_update(self) -> Dict[str, Any]:
-        """Test GET /api/jobs/{job_id} and verify the update persisted"""
-        print("\n🔍 Testing Individual Job Retrieval to Verify Update...")
-        
-        if not self.created_job_id:
-            print("❌ FAIL - No job ID available to verify")
-            return {"status": "FAIL", "error": "No job ID"}
-        
-        try:
-            response = self.session.get(f"{API_BASE}/jobs/{self.created_job_id}")
-            if response.status_code == 200:
-                job = response.json()
-                
-                # Verify persisted updates
-                salary_range = job.get('salary_range', {})
-                recruiter_email = job.get('recruiter_email')
-                company_name = job.get('company_name')
-                
-                if (salary_range.get('min') == 90000 and 
-                    salary_range.get('max') == 130000 and 
-                    recruiter_email == "new.recruiter@testcorp.com"):
-                    print(f"✅ PASS - Updated job data persisted correctly")
-                    print(f"   Company: {company_name}")
-                    print(f"   Final Salary Range: ${salary_range.get('min'):,} - ${salary_range.get('max'):,}")
-                    print(f"   Final Recruiter Email: {recruiter_email}")
-                    return {"status": "PASS", "data": job}
-                else:
-                    print(f"❌ FAIL - Updated job data did not persist correctly")
-                    print(f"   Expected salary: {{min: 90000, max: 130000}}, got: {salary_range}")
-                    print(f"   Expected recruiter: new.recruiter@testcorp.com, got: {recruiter_email}")
-                    return {"status": "FAIL", "error": "Update not persisted"}
-            else:
-                print(f"❌ FAIL - Individual job retrieval failed: HTTP {response.status_code}")
-                return {"status": "FAIL", "error": f"HTTP {response.status_code}"}
-        except Exception as e:
-            print(f"❌ FAIL - Individual job request failed: {e}")
-            return {"status": "FAIL", "error": str(e)}
-
-    def test_cleanup_delete_job(self) -> Dict[str, Any]:
-        """Test DELETE /api/jobs/{job_id} to clean up test data"""
-        print("\n🗑️ Testing Cleanup - Deleting Test Job...")
-        
-        if not self.created_job_id:
-            print("❌ FAIL - No job ID available to delete")
-            return {"status": "FAIL", "error": "No job ID"}
-        
-        try:
-            response = self.session.delete(f"{API_BASE}/jobs/{self.created_job_id}")
-            if response.status_code == 200:
-                print(f"✅ PASS - Test job deleted successfully")
-                print(f"   Deleted Job ID: {self.created_job_id}")
-                return {"status": "PASS"}
-            else:
-                print(f"❌ FAIL - Job deletion failed: HTTP {response.status_code}")
-                print(f"   Response: {response.text}")
-                return {"status": "FAIL", "error": f"HTTP {response.status_code}"}
-        except Exception as e:
-            print(f"❌ FAIL - Job deletion request failed: {e}")
-            return {"status": "FAIL", "error": str(e)}
-
-    def run_all_tests(self):
-        """Run all CSV import backend support tests"""
-        print("🚀 Starting CSV Import Backend Support Tests")
-        print("=" * 60)
-        print(f"Backend URL: {BASE_URL}")
-        print(f"API Base: {API_BASE}")
-        print("=" * 60)
-        
-        results = {}
-        
-        # Test sequence
-        results['auth'] = self.test_auth()
-        if results['auth']['status'] != 'PASS':
-            print("\n❌ CRITICAL: Authentication failed. Cannot proceed with other tests.")
-            return results
-        
-        results['create_job'] = self.test_create_job_with_salary_and_recruiter()
-        results['get_jobs_verify'] = self.test_get_jobs_verify_creation()
-        results['update_job'] = self.test_update_job_salary_and_recruiter()
-        results['get_job_verify_update'] = self.test_get_individual_job_verify_update()
-        results['cleanup'] = self.test_cleanup_delete_job()
-        
-        # Summary
-        print("\n" + "=" * 60)
-        print("📊 TEST SUMMARY")
-        print("=" * 60)
-        
-        passed_tests = []
-        failed_tests = []
-        
-        for test_name, result in results.items():
-            status = result.get('status', 'UNKNOWN')
-            if status == 'PASS':
-                passed_tests.append(test_name)
-                print(f"✅ {test_name.replace('_', ' ').title()}: PASS")
-            else:
-                failed_tests.append(test_name)
-                error = result.get('error', 'Unknown error')
-                print(f"❌ {test_name.replace('_', ' ').title()}: FAIL - {error}")
-        
-        total_tests = len(results)
-        passed_count = len(passed_tests)
-        success_rate = (passed_count / total_tests) * 100 if total_tests > 0 else 0
-        
-        print(f"\n🎯 Overall Results: {passed_count}/{total_tests} tests passed ({success_rate:.1f}% success rate)")
-        
-        if passed_count == total_tests:
-            print("🎉 ALL TESTS PASSED! CSV import backend support is working correctly.")
-        else:
-            print(f"⚠️ {len(failed_tests)} test(s) failed. Review the issues above.")
-        
-        return results
-
-def main():
-    """Main function to run CSV import backend tests"""
-    tester = BackendTester()
-    results = tester.run_all_tests()
+def test_conditional_editability():
+    """
+    Test the conditional editability of salary_range and recruiter_email fields.
     
-    # Exit with appropriate code
-    all_passed = all(r.get('status') == 'PASS' for r in results.values())
-    sys.exit(0 if all_passed else 1)
+    Per review request:
+    1. Create job WITHOUT salary and recruiter_email 
+    2. Update that job WITH salary and recruiter_email (should work since original empty)
+    3. Create job WITH salary and recruiter_email already set
+    4. Update that job - verify salary and email persist
+    5. Cleanup
+    """
+    
+    headers = {"Authorization": f"Bearer {TEST_TOKEN}", "Content-Type": "application/json"}
+    test_results = []
+    job_ids_to_cleanup = []
+    
+    print("🧪 TESTING: Conditional Editability of salary_range and recruiter_email")
+    print("=" * 70)
+    print()
+    
+    # Step 0: Verify backend connectivity and auth
+    try:
+        auth_response = requests.get(f"{BACKEND_URL}/api/auth/me", headers=headers, timeout=10)
+        if auth_response.status_code == 200:
+            print_test("Backend connectivity and authentication", True, f"Connected to {BACKEND_URL}")
+        else:
+            print_test("Backend connectivity and authentication", False, f"Auth failed: {auth_response.status_code}")
+            return
+    except Exception as e:
+        print_test("Backend connectivity and authentication", False, f"Connection error: {str(e)}")
+        return
+    
+    # Test 1: Create job WITHOUT salary and recruiter_email
+    print("TEST 1: Create job WITHOUT salary and recruiter_email")
+    job_data_empty = {
+        "company_name": "Edit Test Corp A",
+        "position": "Data Analyst", 
+        "date_applied": "2026-03-17T00:00:00.000Z",
+        "job_type": "Full-Time",
+        "location": {"state": "Texas", "city": "Austin"},
+        "work_mode": "hybrid",
+        "status": "applied",
+        "salary_range": {"min": 0, "max": 0},
+        "recruiter_email": ""
+    }
+    
+    try:
+        response = requests.post(f"{BACKEND_URL}/api/jobs", headers=headers, json=job_data_empty, timeout=10)
+        if response.status_code in [200, 201]:
+            job_1 = response.json()
+            job_1_id = job_1.get("job_id")
+            job_ids_to_cleanup.append(job_1_id)
+            
+            # Verify empty values
+            salary_range = job_1.get("salary_range", {})
+            recruiter_email = job_1.get("recruiter_email", "")
+            
+            salary_empty = salary_range.get("min", 0) == 0 and salary_range.get("max", 0) == 0
+            email_empty = recruiter_email == "" or recruiter_email is None
+            
+            if salary_empty and email_empty:
+                print_test("Create job with empty salary and email", True, 
+                          f"Job created: {job_1.get('company_name')} - {job_1.get('position')}")
+                print(f"  ✓ salary_range: {salary_range} (min:0, max:0)")
+                print(f"  ✓ recruiter_email: '{recruiter_email}' (empty)")
+            else:
+                print_test("Create job with empty salary and email", False,
+                          f"Values not empty - salary: {salary_range}, email: '{recruiter_email}'")
+        else:
+            print_test("Create job with empty salary and email", False, 
+                      f"HTTP {response.status_code}: {response.text}")
+    except Exception as e:
+        print_test("Create job with empty salary and email", False, f"Error: {str(e)}")
+        return
+    
+    # Test 2: Update job WITH salary and recruiter_email (simulating user filling in empty fields)
+    print("TEST 2: Update job WITH salary and recruiter_email (filling empty fields)")
+    update_data_with_values = {
+        "salary_range": {"min": 75000, "max": 95000},
+        "recruiter_email": "hr@editcorp.com"
+    }
+    
+    try:
+        response = requests.put(f"{BACKEND_URL}/api/jobs/{job_1_id}", headers=headers, json=update_data_with_values, timeout=10)
+        if response.status_code == 200:
+            updated_job_1 = response.json()
+            
+            salary_range = updated_job_1.get("salary_range", {})
+            recruiter_email = updated_job_1.get("recruiter_email", "")
+            
+            salary_correct = salary_range.get("min") == 75000 and salary_range.get("max") == 95000
+            email_correct = recruiter_email == "hr@editcorp.com"
+            
+            if salary_correct and email_correct:
+                print_test("Update job with salary and email values", True,
+                          "Successfully updated previously empty fields")
+                print(f"  ✓ salary_range: {salary_range}")
+                print(f"  ✓ recruiter_email: '{recruiter_email}'")
+            else:
+                print_test("Update job with salary and email values", False,
+                          f"Values not saved correctly - salary: {salary_range}, email: '{recruiter_email}'")
+        else:
+            print_test("Update job with salary and email values", False,
+                      f"HTTP {response.status_code}: {response.text}")
+    except Exception as e:
+        print_test("Update job with salary and email values", False, f"Error: {str(e)}")
+    
+    # Test 3: Create job WITH salary and recruiter_email already set
+    print("TEST 3: Create job WITH salary and recruiter_email already set")
+    job_data_with_values = {
+        "company_name": "Edit Test Corp B",
+        "position": "Product Manager",
+        "date_applied": "2026-03-17T00:00:00.000Z", 
+        "job_type": "Full-Time",
+        "location": {"state": "California", "city": "San Francisco"},
+        "work_mode": "remote",
+        "status": "applied",
+        "salary_range": {"min": 100000, "max": 140000},
+        "recruiter_email": "pm-recruiter@testcorp.com"
+    }
+    
+    try:
+        response = requests.post(f"{BACKEND_URL}/api/jobs", headers=headers, json=job_data_with_values, timeout=10)
+        if response.status_code in [200, 201]:
+            job_2 = response.json()
+            job_2_id = job_2.get("job_id")
+            job_ids_to_cleanup.append(job_2_id)
+            
+            salary_range = job_2.get("salary_range", {})
+            recruiter_email = job_2.get("recruiter_email", "")
+            
+            salary_correct = salary_range.get("min") == 100000 and salary_range.get("max") == 140000
+            email_correct = recruiter_email == "pm-recruiter@testcorp.com"
+            
+            if salary_correct and email_correct:
+                print_test("Create job with preset salary and email", True,
+                          f"Job created: {job_2.get('company_name')} - {job_2.get('position')}")
+                print(f"  ✓ salary_range: {salary_range}")
+                print(f"  ✓ recruiter_email: '{recruiter_email}'")
+            else:
+                print_test("Create job with preset salary and email", False,
+                          f"Values not saved - salary: {salary_range}, email: '{recruiter_email}'")
+        else:
+            print_test("Create job with preset salary and email", False,
+                      f"HTTP {response.status_code}: {response.text}")
+    except Exception as e:
+        print_test("Create job with preset salary and email", False, f"Error: {str(e)}")
+        return
+    
+    # Test 4: Update job - verify salary and email persist 
+    print("TEST 4: Update job - verify salary and email persist")
+    update_data_same_values = {
+        "salary_range": {"min": 100000, "max": 140000},
+        "recruiter_email": "pm-recruiter@testcorp.com",
+        "notes": "Updated job notes"  # Add a different field to confirm update worked
+    }
+    
+    try:
+        response = requests.put(f"{BACKEND_URL}/api/jobs/{job_2_id}", headers=headers, json=update_data_same_values, timeout=10)
+        if response.status_code == 200:
+            updated_job_2 = response.json()
+            
+            salary_range = updated_job_2.get("salary_range", {})
+            recruiter_email = updated_job_2.get("recruiter_email", "")
+            notes = updated_job_2.get("notes", "")
+            
+            salary_unchanged = salary_range.get("min") == 100000 and salary_range.get("max") == 140000
+            email_unchanged = recruiter_email == "pm-recruiter@testcorp.com"
+            notes_updated = notes == "Updated job notes"
+            
+            if salary_unchanged and email_unchanged and notes_updated:
+                print_test("Update job - values persist correctly", True,
+                          "Salary and email values unchanged, other fields updated")
+                print(f"  ✓ salary_range: {salary_range} (unchanged)")
+                print(f"  ✓ recruiter_email: '{recruiter_email}' (unchanged)")
+                print(f"  ✓ notes: '{notes}' (updated)")
+            else:
+                print_test("Update job - values persist correctly", False,
+                          f"Values changed unexpectedly - salary: {salary_range}, email: '{recruiter_email}', notes: '{notes}'")
+        else:
+            print_test("Update job - values persist correctly", False,
+                      f"HTTP {response.status_code}: {response.text}")
+    except Exception as e:
+        print_test("Update job - values persist correctly", False, f"Error: {str(e)}")
+    
+    # Test 5: Cleanup - Delete both test jobs
+    print("TEST 5: Cleanup - Delete test jobs")
+    cleanup_success = True
+    
+    for job_id in job_ids_to_cleanup:
+        try:
+            response = requests.delete(f"{BACKEND_URL}/api/jobs/{job_id}", headers=headers, timeout=10)
+            if response.status_code != 200:
+                cleanup_success = False
+                print(f"  ❌ Failed to delete job {job_id}: {response.status_code}")
+        except Exception as e:
+            cleanup_success = False
+            print(f"  ❌ Error deleting job {job_id}: {str(e)}")
+    
+    if cleanup_success:
+        print_test("Cleanup test jobs", True, f"Successfully deleted {len(job_ids_to_cleanup)} test jobs")
+    else:
+        print_test("Cleanup test jobs", False, "Some jobs may not have been deleted")
+    
+    print()
+    print("=" * 70)
+    print("🏁 CONDITIONAL EDITABILITY TEST COMPLETE")
+    print("=" * 70)
 
 if __name__ == "__main__":
-    main()
+    test_conditional_editability()

@@ -3027,24 +3027,24 @@ export default function MyJobsScreen() {
               {/* Salary Range - Dynamic Currency */}
               <View style={dynamicStyles.formSection}>
                 <Text style={dynamicStyles.label}>Salary Range ({currencyInfo.code})</Text>
-                <View style={[dynamicStyles.salaryRow, editingJob && { opacity: 0.5 }]}>
+                <View style={[dynamicStyles.salaryRow, editingJob && editingJob.salary_range?.min > 0 && editingJob.salary_range?.max > 0 && { opacity: 0.5 }]}>
                   <TextInput
-                    style={[dynamicStyles.input, dynamicStyles.halfInput, editingJob && dynamicStyles.inputDisabled]}
+                    style={[dynamicStyles.input, dynamicStyles.halfInput, editingJob && editingJob.salary_range?.min > 0 && dynamicStyles.inputDisabled]}
                     value={formData.min_salary}
                     onChangeText={(text) => handleSalaryChange('min_salary', text)}
                     placeholder={`Min (e.g., ${currencyInfo.code === 'INR' ? '10,00,000' : '100,000'})`}
                     keyboardType="numeric"
                     placeholderTextColor={colors.textSecondary}
-                    editable={!editingJob}
+                    editable={!editingJob || !(editingJob?.salary_range?.min > 0)}
                   />
                   <TextInput
-                    style={[dynamicStyles.input, dynamicStyles.halfInput, editingJob && dynamicStyles.inputDisabled]}
+                    style={[dynamicStyles.input, dynamicStyles.halfInput, editingJob && editingJob.salary_range?.max > 0 && dynamicStyles.inputDisabled]}
                     value={formData.max_salary}
                     onChangeText={(text) => handleSalaryChange('max_salary', text)}
                     placeholder={`Max (e.g., ${currencyInfo.code === 'INR' ? '15,00,000' : '150,000'})`}
                     keyboardType="numeric"
                     placeholderTextColor={colors.textSecondary}
-                    editable={!editingJob}
+                    editable={!editingJob || !(editingJob?.salary_range?.max > 0)}
                   />
                 </View>
               </View>
@@ -3077,13 +3077,14 @@ export default function MyJobsScreen() {
               <View style={dynamicStyles.formSection}>
                 <Text style={dynamicStyles.label}>Recruiter Email</Text>
                 <TextInput
-                  style={dynamicStyles.input}
+                  style={[dynamicStyles.input, editingJob && editingJob.recruiter_email && dynamicStyles.inputDisabled]}
                   value={formData.recruiter_email}
                   onChangeText={(text) => setFormData({ ...formData, recruiter_email: text })}
                   placeholder="recruiter@company.com"
                   placeholderTextColor={colors.textSecondary}
                   autoCapitalize="none"
                   keyboardType="email-address"
+                  editable={!editingJob || !editingJob?.recruiter_email}
                 />
               </View>
 
