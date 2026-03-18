@@ -630,6 +630,46 @@ export default function MyJobsScreen() {
   };
 
   // ============ CSV HELPER FUNCTIONS ============
+  
+  // Parse a salary string into a numeric value
+  const parseSalaryValue = (raw: string): number => {
+    if (!raw) return 0;
+    let cleaned = raw.trim().replace(/[$,\s]/g, '');
+    // Handle "k" suffix (e.g., "80k" → 80000)
+    if (/\d+\.?\d*[kK]$/i.test(cleaned)) {
+      cleaned = cleaned.replace(/[kK]$/, '');
+      const val = parseFloat(cleaned);
+      return isNaN(val) ? 0 : Math.round(val * 1000);
+    }
+    const val = parseFloat(cleaned);
+    return isNaN(val) ? 0 : Math.round(val);
+  };
+
+  // Parse a salary range string (e.g., "$80,000 - $120,000") into min and max
+  const parseSalaryRange = (raw: string): { min: number; max: number } => {
+    if (!raw) return { min: 0, max: 0 };
+    // Try splitting by common separators: " - ", "-", " to ", "–", "—"
+    const separators = [/\s*[-–—]\s*/, /\s+to\s+/i];
+    for (const sep of separators) {
+      const parts = raw.split(sep);
+      if (parts.length >= 2) {
+        const min = parseSalaryValue(parts[0]);
+        const max = parseSalaryValue(parts[1]);
+        if (min > 0 || max > 0) return { min, max };
+      }
+    }
+    // Single value - treat as min
+    const single = parseSalaryValue(raw);
+    return { min: single, max: 0 };
+  };
+
+  // Validate email format
+  const isValidEmail = (email: string): boolean => {
+    if (!email) return false;
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email.trim());
+  };
+
   // Helper function to parse a CSV line handling quoted values
   const parseCSVLine = (line: string): string[] => {
     const result: string[] = [];
@@ -888,7 +928,7 @@ export default function MyJobsScreen() {
       
       // Check if first row is a header row
       const firstRow = dataRows[0].map(cell => String(cell).toLowerCase().trim());
-      const expectedHeaders = ['company name', 'position', 'position type', 'state', 'city', 'date applied', 'work mode', 'application status'];
+      const expectedHeaders = ['company name', 'position', 'position type', 'state', 'city', 'date applied', 'work mode', 'application status', 'min salary', 'max salary', 'recruiter email'];
       const headerAliases: { [key: string]: string[] } = {
         'company name': ['company name', 'company', 'company_name'],
         'position': ['position', 'role', 'job title', 'title'],
@@ -898,11 +938,14 @@ export default function MyJobsScreen() {
         'date applied': ['date applied', 'date_applied', 'applied date', 'applied_date', 'date'],
         'work mode': ['work mode', 'work_mode', 'mode', 'remote/onsite', 'workplace'],
         'application status': ['application status', 'status', 'application_status', 'stage'],
+        'min salary': ['min salary', 'min_salary', 'minimum salary', 'salary min', 'salary_min', 'salary', 'salary range', 'salary_range', 'compensation', 'pay', 'annual salary'],
+        'max salary': ['max salary', 'max_salary', 'maximum salary', 'salary max', 'salary_max'],
+        'recruiter email': ['recruiter email', 'recruiter_email', 'recruiter contact', 'recruiter', 'email', 'contact email', 'contact_email'],
       };
       
       // Determine if it's a header row by checking if first cell matches any header alias
       let hasHeaders = false;
-      let columnMap: number[] = [0, 1, 2, 3, 4, 5, 6, 7]; // Default positional mapping
+      let columnMap: number[] = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, -1]; // Default positional mapping (last -1 = recruiter email from last col)
       
       // Check if first row contains header keywords
       const headerMatches = expectedHeaders.map(header => {
@@ -916,7 +959,7 @@ export default function MyJobsScreen() {
       
       if (foundHeaderCount >= 4) {
         hasHeaders = true;
-        columnMap = headerMatches.map((idx, i) => idx !== -1 ? idx : i);
+        columnMap = headerMatches.map((idx, i) => idx !== -1 ? idx : (i < firstRow.length ? i : -1));
         console.log('Header row detected, column mapping:', columnMap);
         
         // Validate that required headers are present
@@ -933,6 +976,15 @@ export default function MyJobsScreen() {
         }
       } else {
         console.log('No header row detected, using positional parsing');
+        // For no-header CSVs: check the last column for recruiter email
+        const maxCols = Math.max(...dataRows.map(r => r.length));
+        // Recruiter email (index 10 in columnMap) → last column if it exists beyond col 9
+        if (maxCols > 10) {
+          columnMap[10] = maxCols - 1; // last column
+        } else if (maxCols === 10) {
+          // Columns 0-9 only, no recruiter email column
+          columnMap[10] = -1;
+        }
       }
       
       const startIndex = hasHeaders ? 1 : 0;
@@ -978,6 +1030,42 @@ export default function MyJobsScreen() {
         const workModeRaw = String(row[columnMap[6]] || '').trim();
         const statusRaw = String(row[columnMap[7]] || '').trim();
         
+        // Extract salary values from columns 8 and 9
+        const salaryCol8Raw = columnMap[8] >= 0 && columnMap[8] < row.length ? String(row[columnMap[8]] || '').trim() : '';
+        const salaryCol9Raw = columnMap[9] >= 0 && columnMap[9] < row.length ? String(row[columnMap[9]] || '').trim() : '';
+        
+        let salaryMin = 0;
+        let salaryMax = 0;
+        
+        if (salaryCol8Raw && salaryCol9Raw) {
+          // Both columns have values → col 8 = min, col 9 = max
+          salaryMin = parseSalaryValue(salaryCol8Raw);
+          salaryMax = parseSalaryValue(salaryCol9Raw);
+        } else if (salaryCol8Raw) {
+          // Only col 8 → could be a range in one cell (e.g., "$80k - $120k")
+          const rangeResult = parseSalaryRange(salaryCol8Raw);
+          salaryMin = rangeResult.min;
+          salaryMax = rangeResult.max;
+        }
+        
+        // Extract recruiter email from the last column (or mapped column)
+        let recruiterEmail = '';
+        const recruiterColIdx = columnMap[10];
+        if (recruiterColIdx >= 0 && recruiterColIdx < row.length) {
+          const rawEmail = String(row[recruiterColIdx] || '').trim();
+          if (isValidEmail(rawEmail)) {
+            recruiterEmail = rawEmail;
+          } else if (rawEmail) {
+            console.log(`Row ${i + 1}: Invalid email format skipped: "${rawEmail}"`);
+          }
+        } else {
+          // Fallback: check the actual last column of this row
+          const lastColVal = String(row[row.length - 1] || '').trim();
+          if (isValidEmail(lastColVal)) {
+            recruiterEmail = lastColVal;
+          }
+        }
+        
         // Skip rows without company name or position (minimum required fields)
         if (!companyName || !position) {
           console.log(`Skipping row ${i + 1}: missing company name or position`);
@@ -1017,6 +1105,8 @@ export default function MyJobsScreen() {
               date_applied: dateApplied,
               work_mode: workMode || 'remote',
               status: status || 'applied',
+              ...(salaryMin > 0 || salaryMax > 0 ? { salary_range: { min: salaryMin, max: salaryMax } } : {}),
+              ...(recruiterEmail ? { recruiter_email: recruiterEmail } : {}),
             }
           });
         } else {
@@ -1030,9 +1120,9 @@ export default function MyJobsScreen() {
             date_applied: dateApplied,
             work_mode: workMode || 'remote',
             status: status || 'applied',
-            salary_range: { min: 0, max: 0 },
+            salary_range: { min: salaryMin, max: salaryMax },
             job_url: '',
-            recruiter_email: '',
+            recruiter_email: recruiterEmail,
             notes: '',
             follow_up_days: 7,
             is_priority: false,
