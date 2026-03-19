@@ -50,7 +50,7 @@
       "typedRoutes": true
     },
     "extra": {
-      "EXPO_PUBLIC_BACKEND_URL": "https://prep-boost-1.preview.emergentagent.com"
+      "EXPO_PUBLIC_BACKEND_URL": "https://careerflow-deploy.preview.emergentagent.com"
     }
   }
 }

@@ -10,7 +10,7 @@ from datetime import datetime
 import sys
 
 # Backend URL from environment
-BACKEND_URL = "https://prep-boost-1.preview.emergentagent.com"
+BACKEND_URL = "https://careerflow-deploy.preview.emergentagent.com"
 TEST_TOKEN = "test_token_abc123"
 
 def print_test(title, passed, details=""):
