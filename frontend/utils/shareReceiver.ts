@@ -1,14 +1,12 @@
 /**
  * Share Receiver Utility
- * Handles shared content from other apps on both iOS and Android
+ * Handles shared content from other apps via iOS Share Extension
  * 
  * iOS: Uses App Groups to receive data from Share Extension via native bridge
- * Android: Uses react-native-receive-sharing-intent for intent handling
  */
 
-import { Platform, Linking, AppState, AppStateStatus, NativeModules } from 'react-native';
+import { Platform, Linking, NativeModules } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import ReceiveSharingIntent from 'react-native-receive-sharing-intent';
 
 // Native module for iOS Share Extension data bridge
 const { ShareDataBridge } = NativeModules;
@@ -189,48 +187,6 @@ function formatCompanyName(slug: string): string {
     .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
     .join(' ')
     .trim();
-}
-
-/**
- * Initialize share intent listener (for Android)
- */
-export function initializeShareListener(callback: (data: SharedJobData) => void): () => void {
-  if (Platform.OS === 'android') {
-    // Check if the native module is available (requires custom dev client, not Expo Go)
-    const nativeModule = NativeModules.ReceiveSharingIntent;
-    if (!nativeModule) {
-      console.log('ReceiveSharingIntent native module not available (Expo Go does not support it). Skipping share listener.');
-      return () => {};
-    }
-
-    // Get initial shared files on app launch
-    ReceiveSharingIntent.getReceivedFiles(
-      (files: any[]) => {
-        if (files && files.length > 0) {
-          const file = files[0];
-          const url = file.weblink || file.text || '';
-          if (url) {
-            callback({
-              url: url,
-              text: file.text,
-              timestamp: Date.now(),
-            });
-          }
-        }
-      },
-      (error: any) => {
-        console.log('Error getting shared files:', error);
-      },
-      'com.vsseshadri.careerflow' // Your app's package name
-    );
-
-    // Clear intent after processing
-    return () => {
-      ReceiveSharingIntent.clearReceivedFiles();
-    };
-  }
-  
-  return () => {};
 }
 
 /**

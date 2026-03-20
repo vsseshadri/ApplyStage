@@ -359,7 +359,6 @@ class ShareViewController: UIViewController {
  */
 function withShareExtension(config) {
   return withPlugins(config, [
-    withAndroidShareIntentFilter,
     withIOSURLScheme,
     withAppGroupEntitlements,
     withShareExtensionTarget,

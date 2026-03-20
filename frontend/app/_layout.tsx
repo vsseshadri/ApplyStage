@@ -6,7 +6,7 @@ import { ThemeProvider } from '../contexts/ThemeContext';
 import { FilterProvider } from '../contexts/FilterContext';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import * as SplashScreen from 'expo-splash-screen';
-import { SharedJobData, storeSharedData, initializeShareListener, checkIOSAppGroupData } from '../utils/shareReceiver';
+import { SharedJobData, storeSharedData, checkIOSAppGroupData } from '../utils/shareReceiver';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // Prevent the splash screen from auto-hiding
@@ -147,9 +147,6 @@ function ShareHandler({ children }: { children: React.ReactNode }) {
 
   // Check for shared content on mount and app state changes
   useEffect(() => {
-    // Initialize Android share listener
-    const cleanupAndroidListener = initializeShareListener(handleSharedData);
-    
     // Check initial URL (app launched from share)
     const checkInitialUrl = async () => {
       try {
@@ -224,7 +221,6 @@ function ShareHandler({ children }: { children: React.ReactNode }) {
     return () => {
       subscription.remove();
       appStateSubscription.remove();
-      cleanupAndroidListener();
     };
   }, [isAuthenticated]);
 
