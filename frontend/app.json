@@ -12,7 +12,7 @@
       "supportsTablet": true,
       "bundleIdentifier": "com.vsseshadri.careerflow",
       "usesAppleSignIn": true,
-      "buildNumber": "1",
+      "buildNumber": "4",
       "icon": "./assets/images/icon.png",
       "config": {
         "usesNonExemptEncryption": false
