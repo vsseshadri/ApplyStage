@@ -10,7 +10,7 @@ import sys
 from datetime import datetime, timezone
 
 # Backend URL from environment
-BACKEND_URL = "https://careerflow-deploy.preview.emergentagent.com"
+BACKEND_URL = "https://careerflow-deploy-1.preview.emergentagent.com"
 API_BASE = f"{BACKEND_URL}/api"
 
 # Test authentication token

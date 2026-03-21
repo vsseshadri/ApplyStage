@@ -18,7 +18,7 @@ const fs = require('fs');
 const path = require('path');
 
 const SHARE_EXT_NAME = 'ShareExtension';
-const APP_GROUP_ID = 'group.com.vsseshadri.careerflow';
+const APP_GROUP_ID = 'group.app.emergent.viniyo';
 
 /**
  * Configure Android manifest with intent filters for share receiving
@@ -107,7 +107,7 @@ function withIOSURLScheme(config) {
 
     if (!hasScheme) {
       config.modResults.CFBundleURLTypes.push({
-        CFBundleURLName: 'com.vsseshadri.careerflow',
+        CFBundleURLName: 'app.emergent.viniyo',
         CFBundleURLSchemes: ['careerflow']
       });
     }
@@ -146,7 +146,7 @@ function withShareExtensionTarget(config) {
     const projectRoot = config.modRequest.projectRoot;
     const platformProjectRoot = config.modRequest.platformProjectRoot;
     
-    const bundleIdentifier = config.ios?.bundleIdentifier || 'com.vsseshadri.careerflow';
+    const bundleIdentifier = config.ios?.bundleIdentifier || 'app.emergent.viniyo';
     const shareExtBundleId = `${bundleIdentifier}.${SHARE_EXT_NAME}`;
     
     // Create Share Extension directory

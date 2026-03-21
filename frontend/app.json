@@ -10,7 +10,7 @@
     "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.vsseshadri.careerflow",
+      "bundleIdentifier": "app.emergent.viniyo",
       "usesAppleSignIn": true,
       "buildNumber": "4",
       "icon": "./assets/images/icon.png",
@@ -30,7 +30,7 @@
         "CFBundleDisplayName": "CareerFlow",
         "CFBundleURLTypes": [
           {
-            "CFBundleURLName": "com.vsseshadri.careerflow",
+            "CFBundleURLName": "app.emergent.viniyo",
             "CFBundleURLSchemes": [
               "careerflow"
             ]
@@ -39,7 +39,7 @@
       },
       "entitlements": {
         "com.apple.security.application-groups": [
-          "group.com.vsseshadri.careerflow"
+          "group.app.emergent.viniyo"
         ]
       }
     },

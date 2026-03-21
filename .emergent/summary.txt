@@ -1,169 +1,147 @@
-**original_problem_statement:**
-The user has provided logs from a failing EAS (Expo Application Services) build and requested an analysis and fix.
-
-**Key Build Errors:**
-1.  **Provisioning Profile Mismatch:** The primary error causing the build to fail is related to the iOS provisioning profile. The logs state:
-    *   
-    *   
-    *   
-2.  **Dependency & Configuration Warnings:**
-    *   
-    *   
-    *   
-
-The user has also made several feature and UI requests throughout the session which have been implemented. The current and most critical task is to resolve the deployment-blocking errors.
+<analysis>**original_problem_statement**: The user initially reported a series of issues starting with an iOS build failure. After this was fixed by removing the problematic Share Extension functionality, the user reported  errors related to an unmaintained Android sharing package. The user requested to remove this functionality entirely. Following that fix, an App Store submission error occurred due to a non-unique build number, which was also resolved. Finally, the user provided logs for a failing production deployment, which is the current focus. The deployment is failing due to a mismatch between the iOS provisioning profile and the app's entitlements for the required App Group. The user wants all deployment blockers fixed and the changes pushed to their GitHub repository.
 
 **User's preferred language**: English
 
 **what currently exists?**
-The application is a full-stack Expo (React Native) and FastAPI app. It features a highly customized UI with liquid glass style components for navigation and toggles. Recent feature additions include an enhanced CSV import function that handles salary ranges and recruiter emails, and conditional editability for those fields in existing job entries. All completed work has been committed and pushed to the user's GitHub  branch.
+The project is a full-stack mobile application named CareerFlow using Expo (React Native) for the frontend and FastAPI for the backend, with MongoDB as the database. The application includes a native iOS Share Extension that relies on App Groups for data communication. The Android-specific sharing functionality has been removed. All recent changes, including fixes for the iOS build,  errors, and the App Store build number, have been committed and pushed to the  branch of the user's GitHub repository.
 
 **Last working item**:
-    - Last item agent was working: The user provided EAS build error logs and asked the agent to analyze, debug, and fix the issues preventing a successful deployment. The agent invoked the , which provided an initial analysis, and was then explicitly tasked by the user to perform the fix.
-    - Status: NOT STARTED
-    - Agent Testing Done: N
-    - Which testing method agent to use? NA (The fix will be verified by a new deployment attempt, not by testing agents).
-    - User Testing Done: N
+*   **Last item agent was working**: Analyzing production deployment failure logs provided by the user. The  was used to parse these logs and identified critical errors.
+*   **Status**: IN PROGRESS
+*   **Agent Testing Done**: N/A
+*   **Which testing method agent to use?**: The fix involves configuration changes. Verification will be a successful deployment, not unit/integration tests. The agent should ask the user to trigger the deployment pipeline again after the fixes are applied.
+*   **User Testing Done**: N
 
 **All Pending/In progress Issue list**:
-  - Issue 1: EAS Build Failure due to Provisioning Profile Mismatch (P0)
-  - Issue 2: React Duplicate Key Warning (P1)
+*   **Issue 1**: Production deployment fails due to iOS provisioning and entitlement errors. (P0)
+*   **Issue 2**: Hardcoded URLs exist in the frontend codebase. (P1)
+*   **Issue 3**: Linting errors were detected in frontend files but were ignored by the previous agent. (P2)
 
-  Issues Detail:
-  - **Issue 1: EAS Build Failure due to Provisioning Profile Mismatch**
-     - **Description**: The iOS build is failing because the application's configuration in  requests capabilities (App Groups, Associated Domains, Sign in with Apple) that the provisioning profile used by EAS Build does not grant. This is an environment and configuration issue, not a runtime code bug.
-     - **Next debug checklist**:
-        1.  Examine  closely.
-        2.  Identify which configurations are enabling App Groups (likely related to  or an explicit  key), Associated Domains, and Sign in with Apple ().
-        3.  The agent cannot modify the provisioning profile. The only solution is to modify  to disable the capabilities that are causing the conflict.
-        4.  Also, address the warnings found by : remove the  file to resolve the multiple lock file issue.
-     - **Why fix this issue and what will be achieved with the fix?**: This is a critical blocker. Fixing it will allow the user to successfully build and deploy the iOS application.
-     - **Status**: NOT STARTED
-     - **Is recurring issue?** N
-     - **Should Test frontend/backend/both after fix?** None. The fix is validated by a successful build, not runtime tests.
-     - **Blocked on other issue**: None.
+**Issues Detail**:
+*   **Issue 1**:
+    *   **Description**: The EAS build log shows a fatal error because the provisioning profile does not support the required App Group. The logs indicate a mismatch: the provisioning profile is for a target named  (bundle ID ), but the entitlements file requires an App Group for .
+    *   **Attempted fixes**: None. The issue has only been identified.
+    *   **Next debug checklist**:
+        1.  Examine  to find the  under the  key.
+        2.  Examine  and the main app's entitlement file (likely  or similar) to verify the  value is .
+        3.  The core task is to align the bundle identifier in the Xcode project/ with the App Group ID and the provisioning profile being used for the deployment. The bundle identifier () in the build logs seems incorrect for the  app. This must be corrected to .
+        4.  Update the  in  to .
+        5.  Ensure the  plugin correctly sets the App Group for both the main target and the extension target.
+    *   **Why fix this issue and what will be achieved with the fix?**: This is a critical blocker. Fixing it will resolve the  and allow the application to be successfully built and deployed for production.
+    *   **Status**: NOT STARTED
+    *   **Is recurring issue?**: N
+    *   **Should Test frontend/backend/both after fix?**: N/A
+    *   **Blocked on other issue**: No
 
-  - **Issue 2: React Duplicate Key Warning**
-     - **Description**: A long-standing warning, Encountered two children with the same key, appears after adding a new job. This indicates an issue with how list items are keyed in .
-     - **Next debug checklist**:
-        - Inspect the  component in .
-        - Verify the  prop is using a unique and stable identifier for each job (e.g., ).
-     - **Why fix this issue and what will be achieved with the fix?**: Prevents potential UI bugs and performance degradation in the job list.
-     - **Status**: NOT STARTED
-     - **Is recurring issue?** Y
-     - **Should Test frontend/backend/both after fix?** Frontend
-     - **Blocked on other issue**: Issue 1 (EAS Build Failure) is higher priority.
+*   **Issue 2**:
+    *   **Description**: The  identified hardcoded production URLs in the frontend code.
+    *   **Attempted fixes**: None.
+    *   **Next debug checklist**:
+        1.  Search for and replace the hardcoded URL in  (line 65).
+        2.  Review the URLs in  (line 104) and  (line 104) and replace them if they are not meant to be static fallbacks.
+        3.  All backend URLs should be sourced from environment variables, like .
+    *   **Why fix this issue and what will be achieved with the fix?**: This ensures the application is environment-agnostic and can be deployed to different stages (dev, production) without code changes.
+    *   **Status**: NOT STARTED
+    *   **Is recurring issue?**: N
+    *   **Should Test frontend/backend/both after fix?**: Frontend
+    *   **Blocked on other issue**: No
+
+*   **Issue 3**:
+    *   **Description**: The linting tool () reported parsing errors () in  and . The previous agent ignored these errors.
+    *   **Attempted fixes**: None.
+    *   **Next debug checklist**:
+        1.  Re-run the lint command on both files.
+        2.  Inspect the reported lines for syntax errors (e.g., malformed JSX, incorrect TypeScript syntax).
+        3.  Fix the identified syntax errors.
+    *   **Why fix this issue and what will be achieved with the fix?**: Improves code quality and prevents potential, subtle runtime errors that the bundler might not catch.
+    *   **Status**: NOT STARTED
+    *   **Is recurring issue?**: N
+    *   **Should Test frontend/backend/both after fix?**: Frontend
+    *   **Blocked on other issue**: No
 
 **In progress Task List**:
-- None.
+*   None.
 
 **Upcoming and Future Tasks**
-- **Future Tasks:**
-    - **P2: Refactor :** The file has grown to over 3,300 lines. The  constant and the role detection logic should be extracted into separate utility/data files to improve maintainability.
+*   None have been specified by the user. The current focus is on unblocking the production deployment.
 
 **Completed work in this session**
-- **UI/UX Overhaul:**
-  - Implemented an Apple-style Liquid Glass floating tab bar with blur, haptic feedback, and animations, iterating through multiple user revisions to finalize the design. ()
-  - Converted the Appearance toggle in Settings to the liquid glass style. ()
-  - Converted the filter toggles and the Work Mode toggle in the job form to the liquid glass style. ()
-- **Bug Fixes:**
-  - **Google Sign-In Failure:** Resolved a Session expired error by updating the backend session exchange endpoint to handle new sessions correctly and clearing expired session tokens from the database. ()
-  - **Untouchable UI Elements:** Fixed a bug where the new glass-style toggles were not responding to touches by adding  to the  overlays. ()
-- **Feature Enhancements:**
-  - **CSV Import:** Enhanced the CSV import functionality to parse and import salary ranges and recruiter emails, with support for various formats and validation. ()
-  - **Conditional Form Editability:** Implemented logic to allow editing of salary and recruiter email fields in an existing job *only if* they were initially empty. ()
-- **Deployment & Version Control:**
-  - All feature changes were successfully committed and pushed to the user's  branch on GitHub.
-  - Performed a deployment readiness health check using the .
+*   **iOS Build Error Fixed**: Replaced  to resolve Swift API incompatibilities.
+*   ** Errors Resolved**: Removed the  package and all associated code for Android sharing functionality.
+*   **App Store Submission Error Fixed**: Incremented  in  to ensure a unique build number for the new submission.
+*   **Pushed all fixes to GitHub**: All the above changes were successfully committed and pushed to the user's  branch.
 
 **Earlier issues found/mentioned but not fixed**
-   - **Issue 1: React Duplicate Key Warning**
-     - As detailed in the **All Pending/In progress Issue list**, this issue from a previous session was not addressed.
-     - **Debug checklist**: Inspect  in the  of .
-     - **Why to solve this issue and what will be achieved with this?**: Prevents potential UI bugs and performance degradation in the job list.
-     - **Should Test frontend/backend/both after fix**: Frontend
-     - **Is recurring issue?** Y
+*   None.
 
 **Known issue recurrence from previous fork**
-  - **Issue recurrence in previous fork**: Production backend returns a 500 Internal Server Error.
-  - **Recurrence count**: 1
-  - **Status**: RESOLVED
+*   None. The previous handoff summary was empty.
 
 **Code Architecture**
 
 
 **Key Technical Concepts**
-- **Custom UI Components**: Extensive use of , , and  to create bespoke, animated, and theme-aware UI components.
-- **Expo Build System (EAS)**: The current task requires understanding EAS build logs and how  configures native capabilities for iOS.
-- **Conditional Logic in React**: Implemented complex conditional rendering and  props based on the  state to control form behavior.
-- **CSV Parsing**: Used  on the frontend to read and process data from user-uploaded CSV files.
-- **Backend API Integration**: Modified both frontend  calls and backend FastAPI endpoints () to support new data fields (, ).
+*   **Frontend**: React Native, Expo, Expo Router, TypeScript
+*   **Backend**: FastAPI, Python
+*   **Database**: MongoDB
+*   **Build/Deployment**: Expo Application Services (EAS), Fastlane
+*   **Native Features**: iOS Share Extension, App Groups
 
 **key DB schema**
-  - **user_sessions**:  - This was directly manipulated to clear expired sessions.
-  - **jobs**: Schema was implicitly updated to handle  and .
+*   **JobApplication**: { : str, : str, : Dict[str, str], : Dict[str, float], ... }
 
 **changes in tech stack**
-- No changes to the core tech stack.
+*   The  library was removed. No other changes.
 
 **All files of reference**
-- : **Crucial for the next step**. This file contains the native project configurations that are causing the build to fail.
-- : Contains the bulk of the application's recent feature work.
-- : Contains the code for the custom navigation bar.
+*   : Contains core app configuration, including the  and  which are relevant to the current issues.
+*   : Defines build profiles for EAS, including production settings.
+*   : Specifies the App Group ID for the share extension, which is central to the deployment error.
+*   : A custom Expo config plugin that modifies the native iOS project during prebuild to set up the Share Extension.
+*   : Contains a hardcoded URL that needs to be refactored.
 
 **Areas that need refactoring**:
-- : This file is now over 4000 lines and contains logic for the job list, multiple filters, the new/edit job modal, and the CSV import flow. It should be broken down into smaller components and hooks.
-- : Remains a very large file that should be refactored.
+*   Hardcoded URLs in , , and  need to be replaced with environment variables.
 
 **key api endpoints**
-- : (POST, PUT) Used to create and update jobs. Modified to accept  and .
-- : (POST) Modified to use  to prevent errors with new sessions.
+*   : For managing job applications.
+*   : Health check for the backend service.
 
 **Critical Info for New Agent**
-- **Your immediate and only task is to fix the iOS deployment failure.** The error logs clearly point to a mismatch between the capabilities requested in  (App Groups, Associated Domains, Sign In with Apple) and what the provisioning profile allows.
-- **You cannot change the provisioning profile.** Your only path is to **modify ** to disable the features causing the errors, if possible.
-- **Actionable steps:**
-    1.  Delete  from  to resolve the multiple lock file warning.
-    2.  Carefully inspect . Look for keys under  like , , and the  plugin config.
-    3.  Comment out or remove these configurations. The app uses Google Sign-In, so removing Apple Sign-In might be acceptable. The App Groups are likely for , which is marked as unmaintained; removing this feature might be necessary to get the build to pass.
-- **Do not commit the changes until the user confirms** that they are okay with potentially disabling these features to achieve a successful build.
+*   The highest priority is fixing the production deployment failure. The root cause is a mismatch between the bundle identifier () and the required App Group ID (). You must align the  in  to  and ensure the build process respects this.
+*   After fixing the deployment and hardcoded URL issues, you must commit and push the changes to the user's GitHub repository. The environment is already configured with the necessary credentials.
+*   Address the linting errors that were previously ignored to maintain code health.
 
 **documents and test reports created in this job**
-- : Updated multiple times with test plans for backend testing of CSV import and conditional editability.
+*   None.
 
 **Last 10 User Messages and any pending HUMAN messages**
-- **User (LATEST):** Provided detailed EAS build error logs and requested that the agent analyze and fix the issues preventing deployment. (Status: NOT STARTED)
-- **User:** Confirmed and requested to push changes for conditional field editability. (Status: Completed)
-- **User:** Requested that salary and recruiter email fields be editable in an existing job entry only if they are currently empty. (Status: Completed)
-- **User:** Confirmed and requested to push changes for the enhanced CSV import feature. (Status: Completed)
-- **User:** Requested to enhance CSV import to include salary ranges and recruiter email. (Status: Completed)
-- **User:** Confirmed and requested to push changes for the fixed liquid glass work mode toggle. (Status: Completed)
-- **User:** Reported that the work mode toggle was broken and not selectable after being restyled. (Status: Completed)
-- **User:** Confirmed and requested to push changes for the liquid glass work mode toggle. (Status: Completed)
-- **User:** Requested to change the Work Mode toggle in the job form to the liquid glass style. (Status: Completed)
-- **User:** Confirmed and requested to push changes for the liquid glass filter bar. (Status: Completed)
+1.  **Request (In Progress):** Fix deployment errors based on provided logs.
+2.  **Request (Completed):** Run a health check for deployment readiness.
+3.  **Request (Completed):** Commit and push changes to the Git repository.
+4.  **Request (Completed):** Fix the build number already used error for App Store submission.
+5.  **Request (Completed):** Remove the Android sharing feature.
+6.  **Request (Completed):** Correct errors reported by .
+7.  **Query (Resolved):** Inquired why the agent couldn't push to GitHub.
+8.  **Request (Resolved):** Asked the agent to push changes to GitHub.
+9.  **Statement (Acknowledged):** Confirmed that GitHub is already connected to Emergent.
+10. **Request (Resolved):** Initial request for the agent to push changes to GitHub.
 
 **Project Health Check:**
-- **Broken**: The iOS build process is broken due to configuration issues.
-- **Mocked**: N/A
+*   **Broken**: The production deployment process is blocked due to an iOS provisioning profile and entitlements mismatch.
+*   **Mocked**: No mocked components are reported.
 
 **3rd Party Integrations**
-- **Apple Authentication**: () - This is one of the sources of the build error.
-- **Google Authentication**: Implemented via Expo's web browser flow.
-- ****: This is likely the source of the App Groups capability requirement and is marked as unmaintained in the build logs.
-- **Expo Blur**: () Used for UI effects.
-- **Expo Haptics**: Used for tactile feedback.
-- **Papaparse**: Used for CSV parsing.
+*   None explicitly mentioned beyond the standard Expo and cloud service ecosystem. No LLM integrations are currently in use.
 
 **Testing status**
-  - Testing agent used after significant changes: YES (Backend testing was used for CSV import and conditional editability features).
-  - Troubleshoot agent used after agent stuck in loop: NO
-  - Test files created: None, but  was updated.
-  - Known regressions: None.
+*   **Testing agent used after significant changes**: YES (Deployment agent was used for analysis).
+*   **Troubleshoot agent used after agent stuck in loop**: NO.
+*   **Test files created**: None.
+*   **Known regressions**: None.
 
 **Credentials to test flow:**
-- None required for the current task.
+*   Git push credentials are automatically configured in the environment.
 
 **What agent forgot to execute**
-- The long-standing Duplicate Key warning in  has still not been addressed and is now a P1 issue.
-- The agent called  but then was asked to perform the analysis itself. It has not yet started this analysis.
+*   The previous agent failed to address linting errors reported by the  tool in  and . These errors should be investigated and fixed.</analysis>

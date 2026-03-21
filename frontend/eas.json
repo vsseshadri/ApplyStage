@@ -41,7 +41,7 @@
       "ios": {
         "ascAppId": "6758738779",
         "appleTeamId": "Q7F5A3AFZ8",
-        "bundleIdentifier": "com.vsseshadri.careerflow"
+        "bundleIdentifier": "app.emergent.viniyo"
       },
       "android": {
         "serviceAccountKeyPath": "./google-services.json",

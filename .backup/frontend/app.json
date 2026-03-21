@@ -50,7 +50,7 @@
       "typedRoutes": true
     },
     "extra": {
-      "EXPO_PUBLIC_BACKEND_URL": "https://careerflow-deploy.preview.emergentagent.com"
+      "EXPO_PUBLIC_BACKEND_URL": "https://careerflow-deploy-1.preview.emergentagent.com"
     }
   }
 }
