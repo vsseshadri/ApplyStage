@@ -351,7 +351,7 @@ export default function SettingsScreen() {
 
   // Open Help and Feedback email
   const handleHelpAndFeedback = async () => {
-    const emailUrl = 'mailto:careerflowfeedback@gmail.com?subject=CareerFlow%20Feedback';
+    const emailUrl = 'mailto:viniyoappsupport@gmail.com?subject=CareerFlow%20Feedback';
     
     try {
       const canOpen = await Linking.canOpenURL(emailUrl);
