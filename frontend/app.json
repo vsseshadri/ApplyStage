@@ -21,7 +21,6 @@
         "applinks:application-intel.emergent.host"
       ],
       "infoPlist": {
-        "NSUserTrackingUsageDescription": "Track your job applications and progress",
         "NSCalendarsUsageDescription": "Schedule reminders for job follow-ups",
         "NSPhotoLibraryUsageDescription": "Select a profile photo from your library",
         "NSCameraUsageDescription": "Take a profile photo",
