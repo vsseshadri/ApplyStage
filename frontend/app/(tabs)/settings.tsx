@@ -893,7 +893,7 @@ export default function SettingsScreen() {
       alignItems: 'center',
     },
     signOutButtonText: {
-      color: '#FF3B30',
+      color: '#007AFF',
       fontSize: 17,
       fontWeight: '400',
     },
