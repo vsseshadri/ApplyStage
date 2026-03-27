@@ -471,6 +471,66 @@ export default function SettingsScreen() {
     );
   };
 
+  const handleDeleteAccount = () => {
+    Alert.alert(
+      'Delete Account',
+      'Are you sure you want to permanently delete your account?\n\nThis will delete:\n• All your job applications\n• Your profile and preferences\n• All account data\n\nThis action is PERMANENT and cannot be undone. Your data cannot be restored.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        { 
+          text: 'Delete Account', 
+          style: 'destructive', 
+          onPress: () => {
+            // Second confirmation for extra safety
+            Alert.alert(
+              'Final Confirmation',
+              'This is your last chance. Are you absolutely sure you want to permanently delete your account and all data?',
+              [
+                { text: 'Cancel', style: 'cancel' },
+                { 
+                  text: 'Yes, Delete Everything', 
+                  style: 'destructive', 
+                  onPress: async () => {
+                    try {
+                      const response = await fetch(`${BACKEND_URL}/api/auth/account`, {
+                        method: 'DELETE',
+                        headers: {
+                          'Authorization': `Bearer ${sessionToken}`,
+                        },
+                      });
+                      
+                      if (response.ok) {
+                        Alert.alert(
+                          'Account Deleted',
+                          'Your account and all associated data have been permanently deleted.',
+                          [
+                            {
+                              text: 'OK',
+                              onPress: () => {
+                                logout();
+                                router.replace('/');
+                              }
+                            }
+                          ]
+                        );
+                      } else {
+                        const errorData = await response.json();
+                        Alert.alert('Error', errorData.detail || 'Failed to delete account. Please try again.');
+                      }
+                    } catch (error) {
+                      console.error('Error deleting account:', error);
+                      Alert.alert('Error', 'Failed to delete account. Please check your connection and try again.');
+                    }
+                  }
+                }
+              ]
+            );
+          }
+        }
+      ]
+    );
+  };
+
   const styles = StyleSheet.create({
     container: {
       flex: 1,
@@ -837,6 +897,15 @@ export default function SettingsScreen() {
       fontSize: 17,
       fontWeight: '400',
     },
+    deleteAccountButton: {
+      padding: 4,
+      alignItems: 'center',
+    },
+    deleteAccountButtonText: {
+      color: '#FF3B30',
+      fontSize: 17,
+      fontWeight: '400',
+    },
     // Country dropdown styles
     countryDropdownButton: {
       flexDirection: 'row',
@@ -1102,6 +1171,15 @@ export default function SettingsScreen() {
           <View style={styles.card}>
             <TouchableOpacity style={styles.signOutButton} onPress={handleLogout}>
               <Text style={styles.signOutButtonText}>Sign Out</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+
+        {/* Delete Account Button */}
+        <View style={styles.section}>
+          <View style={styles.card}>
+            <TouchableOpacity style={styles.deleteAccountButton} onPress={handleDeleteAccount}>
+              <Text style={styles.deleteAccountButtonText}>Delete Account</Text>
             </TouchableOpacity>
           </View>
         </View>

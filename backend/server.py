@@ -412,6 +412,41 @@ async def logout(authorization: Optional[str] = Header(None)):
     
     return {"message": "Logged out successfully"}
 
+@api_router.delete("/auth/account")
+async def delete_account(current_user: User = Depends(get_current_user)):
+    """
+    Permanently delete user account and all associated data.
+    This action is irreversible.
+    """
+    try:
+        user_id = current_user.user_id
+        
+        # Delete all job applications for this user
+        jobs_result = await db.job_applications.delete_many({"user_id": user_id})
+        
+        # Delete all user sessions
+        sessions_result = await db.user_sessions.delete_many({"user_id": user_id})
+        
+        # Delete the user record
+        user_result = await db.users.delete_one({"user_id": user_id})
+        
+        if user_result.deleted_count == 0:
+            raise HTTPException(status_code=404, detail="User not found")
+        
+        return {
+            "message": "Account and all associated data have been permanently deleted",
+            "deleted": {
+                "user": user_result.deleted_count,
+                "jobs": jobs_result.deleted_count,
+                "sessions": sessions_result.deleted_count
+            }
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        logging.error(f"Error deleting account: {e}")
+        raise HTTPException(status_code=500, detail="Failed to delete account")
+
 class AppleAuthRequest(BaseModel):
     identityToken: Optional[str] = None
     email: Optional[str] = None
