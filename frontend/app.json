@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "CareerFlow:Application Tracker",
+    "name": "Viniyo:Job Applications Tracker",
     "slug": "careerflow",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -26,7 +26,7 @@
         "NSCameraUsageDescription": "Take a profile photo",
         "NSFaceIDUsageDescription": "Use Face ID to login securely",
         "ITSAppUsesNonExemptEncryption": false,
-        "CFBundleDisplayName": "CareerFlow",
+        "CFBundleDisplayName": "Viniyo",
         "CFBundleURLTypes": [
           {
             "CFBundleURLName": "app.emergent.viniyo",
