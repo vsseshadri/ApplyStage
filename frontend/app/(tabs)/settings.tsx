@@ -900,9 +900,10 @@ export default function SettingsScreen() {
     deleteAccountButton: {
       padding: 4,
       alignItems: 'center',
+      marginTop: 8,
     },
     deleteAccountButtonText: {
-      color: '#FF3B30',
+      color: '#8B0000',
       fontSize: 17,
       fontWeight: '400',
     },
@@ -1176,7 +1177,7 @@ export default function SettingsScreen() {
         </View>
 
         {/* Delete Account Button */}
-        <View style={styles.section}>
+        <View style={[styles.section, { marginTop: 16 }]}>
           <View style={styles.card}>
             <TouchableOpacity style={styles.deleteAccountButton} onPress={handleDeleteAccount}>
               <Text style={styles.deleteAccountButtonText}>Delete Account</Text>
