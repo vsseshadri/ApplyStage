@@ -21,10 +21,10 @@
         "applinks:application-intel.emergent.host"
       ],
       "infoPlist": {
-        "NSCalendarsUsageDescription": "Schedule reminders for job follow-ups",
-        "NSPhotoLibraryUsageDescription": "Select a profile photo from your library",
-        "NSCameraUsageDescription": "Take a profile photo",
-        "NSFaceIDUsageDescription": "Use Face ID to login securely",
+        "NSCalendarsUsageDescription": "Viniyo uses your calendar to add interview appointments and job application follow-up reminders, helping you stay organized during your job search.",
+        "NSPhotoLibraryUsageDescription": "Viniyo needs access to your photo library so you can choose a profile picture to personalize your account. For example, you can select an existing photo to display on your profile.",
+        "NSCameraUsageDescription": "Viniyo uses your camera to let you take a new profile photo directly within the app to personalize your account.",
+        "NSFaceIDUsageDescription": "Viniyo uses Face ID to provide quick and secure access to your job application data without entering your password.",
         "ITSAppUsesNonExemptEncryption": false,
         "CFBundleDisplayName": "Viniyo",
         "CFBundleURLTypes": [
